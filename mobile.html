@@ -36,31 +36,34 @@
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
     .form-row {
-      display: flex;
-      flex-wrap: nowrap; /* ✅ ห้ามแตกบรรทัด */
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    .form-row > div {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    .form-row label {
-      font-weight: 600;
-      margin-bottom: 6px;
-      font-size: 14px;
-    }
-    .form-row input {
-      width: 100%;
-      padding: 10px;
-      font-size: 15px;
-      border: 1.5px solid #cbd5e1;
-      border-radius: 8px;
-      height: 40px;
-    }
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.form-row > div {
+  width: 48%; /* ✅ จำกัดขนาดแต่ละช่องไม่ให้เต็ม */
+  display: flex;
+  flex-direction: column;
+}
+
+.form-row label {
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 13.5px;
+  text-align: left;
+}
+
+.form-row input {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  height: 38px;
+}
+
     .readonly { background: #f1f5f9; }
     .btn {
       border: none; border-radius: 8px; padding: 12px;

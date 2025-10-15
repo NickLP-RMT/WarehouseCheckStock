@@ -42,12 +42,12 @@
 .compact-row {
   display: flex;
   justify-content: center;
-  gap: 54px;              /* ✅ เพิ่มระยะห่างระหว่างช่องให้กว้างขึ้น */
+  gap: 54px;              /* ✅ ระยะห่างตามที่มีอยู่ */
   margin-bottom: 16px;
 }
 
 .compact-row > div {
-  width: 60%;             /* ✅ ลดขนาดช่องแต่ละฝั่ง เพื่อบาลานซ์กับ gap */
+  width: 60%;             /* ✅ ขนาดช่องเดิม */
   display: flex;
   flex-direction: column;
 }
@@ -60,36 +60,35 @@
 
 .compact-row input {
   width: 100%;
-  padding: 8px;
-  font-size: 14px;
+  padding: 5px 6px;       /* ✅ ลด padding ด้านใน */
+  font-size: 13.5px;      /* ✅ ลดขนาดตัวอักษรลงเล็กน้อยให้สมดุล */
   border: 1.5px solid #cbd5e1;
-  border-radius: 8px;
-  height: 38px;
+  border-radius: 6px;
+  height: 30px;           /* ✅ ลดจาก 38px → 30px */
 }
 
 
+/* ✅ ช่องปกติ */
+.form-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+}
 
-    /* ✅ ช่องปกติ */
-    .form-row {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 14px;
-    }
+.form-row label {
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
 
-    .form-row label {
-      font-weight: 600;
-      margin-bottom: 4px;
-      font-size: 14px;
-    }
-
-    .form-row input {
-      width: 100%;
-      padding: 9px;
-      font-size: 15px;
-      border: 1.5px solid #cbd5e1;
-      border-radius: 8px;
-      height: 40px;
-    }
+.form-row input {
+  width: 100%;
+  padding: 5px 6px;       /* ✅ ลด padding */
+  font-size: 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  height: 32px;           /* ✅ ลดจาก 40px → 32px */
+}
 
     .readonly { background: #f1f5f9; }
 

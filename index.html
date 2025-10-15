@@ -49,6 +49,7 @@
     </div>
 
     <button class="btn btn-outline-primary w-100 mt-3" id="downloadBtn" onclick="downloadPDF()" disabled>Download PDF</button>
+    <button class="btn btn-danger w-100 mt-2" id="clearBtn" onclick="clearAll()" disabled>Clear</button>
   </div>
 
   <!-- Content -->
@@ -96,16 +97,18 @@
     progressBar.style.width = "0%";
     progressBar.innerText = "0%";
 
-    // สร้าง QR ทีละแถว (เริ่มจากแถวที่ 2)
     for (let i = 1; i < data.length; i++) {
       const row = data[i].filter(cell => cell !== undefined && cell !== "");
       if (row.length === 0) continue;
-      const text = row.join("/");
 
+      // แทนที่ / ด้วยช่องว่าง
+      const text = row.join(" ");
       const qrDiv = document.createElement("div");
       qrDiv.className = "qr-item";
+
       const qrCanvas = document.createElement("div");
       qrDiv.appendChild(qrCanvas);
+
       const label = document.createElement("div");
       label.innerText = text;
       label.style.fontSize = "10px";
@@ -113,33 +116,33 @@
       qrDiv.appendChild(label);
       container.appendChild(qrDiv);
 
-      new QRCode(qrCanvas, {
-        text: text,
-        width: 130,
-        height: 130
-      });
-
+      new QRCode(qrCanvas, { text: text, width: 130, height: 130 });
       qrDataList.push({ text, element: qrDiv });
 
-      // Update progress
       const percent = Math.round((i / (data.length - 1)) * 100);
       progressBar.style.width = percent + "%";
       progressBar.innerText = percent + "%";
-      await new Promise(r => setTimeout(r, 10)); // หน่วงเล็กน้อยให้ progress ลื่น
+      await new Promise(r => setTimeout(r, 10));
     }
 
     Swal.fire("✅", `Generated ${qrDataList.length} QR Codes successfully!`, "success");
     progressBar.classList.remove("bg-info");
     progressBar.classList.add("bg-success");
     document.getElementById("downloadBtn").disabled = false;
+    document.getElementById("clearBtn").disabled = false;
   }
 
   async function downloadPDF() {
+    if (qrDataList.length === 0) return;
+
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = pdf.internal.pageSize.getWidth();
-    const margin = 10;
-    const qrSize = 40;
-    let x = margin, y = margin;
+    const marginX = 10;
+    const marginY = 10;
+    const qrSize = 30;
+    const colCount = 5; // 5 columns per row
+    const rowCount = 10; // 10 rows per page (5x10 = 50 per A4)
+    let x = marginX, y = marginY, count = 0;
 
     for (let i = 0; i < qrDataList.length; i++) {
       const canvas = qrDataList[i].element.querySelector("canvas");
@@ -147,22 +150,35 @@
       const imgData = canvas.toDataURL("image/png");
 
       pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
-      pdf.setFontSize(7);
+      pdf.setFontSize(6);
       pdf.text(label, x, y + qrSize + 4, { maxWidth: qrSize });
 
-      x += qrSize + 10;
-      if (x + qrSize > pageWidth - margin) {
-        x = margin;
-        y += qrSize + 15;
+      count++;
+      if (count % colCount === 0) {
+        x = marginX;
+        y += qrSize + 10;
+      } else {
+        x += qrSize + 10;
       }
-      if (y + qrSize > 280 && i < qrDataList.length - 1) {
+
+      // หน้าละ 50 QR
+      if (count % (colCount * rowCount) === 0 && i < qrDataList.length - 1) {
         pdf.addPage();
-        x = margin;
-        y = margin;
+        x = marginX;
+        y = marginY;
       }
     }
 
     pdf.save(`RMT_QRCodes_${new Date().toISOString().split("T")[0]}.pdf`);
+  }
+
+  function clearAll() {
+    document.getElementById("qrContainer").innerHTML = "";
+    document.getElementById("progressBar").style.width = "0%";
+    document.getElementById("progressBar").innerText = "0%";
+    document.getElementById("downloadBtn").disabled = true;
+    document.getElementById("clearBtn").disabled = true;
+    Swal.fire("🧹", "All QR Codes cleared!", "info");
   }
   </script>
 </body>

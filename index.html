@@ -9,95 +9,67 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- SweetAlert -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- XLSX / QR / PDF -->
+  <!-- XLSX -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- QRCode -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+  <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    :root {
-      --primary: linear-gradient(90deg, #007BFF, #00C6FF);
-      --sidebar-bg: rgba(255, 255, 255, 0.9);
-    }
-
-    body { background: #f5f8fb; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
-
-    /* Navbar */
-    .navbar {
-      background: var(--primary);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .navbar-brand { font-weight: 600; color: #fff !important; }
-    .navbar-time { color: #fff; font-size: 15px; }
-
-    /* Sidebar */
+    body { overflow-x: hidden; background-color: #f8fafc; }
+    .navbar { background: #1e293b; color: white; }
+    .navbar-time { font-size: 16px; color: #e2e8f0; font-weight: 500; }
     .sidebar {
-      width: 260px; position: fixed; top: 56px; left: 0; bottom: 0;
-      background: var(--sidebar-bg); backdrop-filter: blur(8px);
-      border-right: 1px solid #e5e7eb; padding: 15px 10px; transition: all 0.3s;
+      width: 260px; height: 100vh; position: fixed;
+      left: 0; top: 56px; background: #1e293b; color: white; padding: 15px;
+      overflow-y: auto;
     }
     .menu-btn {
-      background: none; border: none; width: 100%;
-      text-align: left; font-size: 15px; color: #1e293b;
-      padding: 12px; border-radius: 10px; margin-bottom: 5px;
-      display: flex; align-items: center; gap: 10px;
-      transition: all 0.2s ease;
+      background: none; border: none; color: white;
+      width: 100%; text-align: left; font-size: 16px;
+      padding: 10px; border-radius: 6px; margin-bottom: 5px;
     }
     .menu-btn:hover, .menu-btn.active {
-      background: #007bff20;
-      color: #007BFF;
+      background-color: #334155;
     }
     .collapse-content {
-      background: white; border-radius: 10px; padding: 12px; margin-bottom: 15px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-
-    /* Main Content */
-    .content { margin-left: 280px; padding: 80px 40px; transition: all 0.3s ease; }
-    h4 { color: #1e293b; font-weight: 600; }
-    .qr-grid { display: flex; flex-wrap: wrap; gap: 15px; }
-    .qr-item {
-      text-align: center; background: #fff; border-radius: 12px;
-      padding: 10px; box-shadow: 0 1px 8px rgba(0,0,0,0.05);
-      transition: 0.2s ease;
-    }
-    .qr-item:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .progress { height: 18px; margin-top: 10px; display: none; }
-
-    /* Buttons */
-    .btn {
+      background-color: #243043;
       border-radius: 8px;
-      transition: 0.2s ease;
+      padding: 10px;
+      margin-bottom: 10px;
     }
-    .btn-primary, .btn-success {
-      background: var(--primary);
-      border: none;
+    .content {
+      margin-left: 260px; padding: 80px 30px;
+      transition: all 0.3s ease;
     }
-    .btn-primary:hover, .btn-success:hover {
-      filter: brightness(1.1);
-    }
+    .qr-grid { display: flex; flex-wrap: wrap; gap: 15px; }
+    .qr-item { text-align: center; background: white; border-radius: 10px; padding: 10px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); }
+    .progress { height: 20px; margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
   <!-- Navbar -->
-  <nav class="navbar navbar-dark fixed-top px-4 d-flex justify-content-between align-items-center">
-    <span class="navbar-brand">🏭 RMT Warehouse Check Stock</span>
+  <nav class="navbar navbar-dark fixed-top px-3 d-flex justify-content-between align-items-center">
+    <span class="navbar-brand h4 mb-0">📦 RMT Warehouse Check Stock</span>
     <div class="navbar-time" id="currentDateTime">--/--/---- --:--:--</div>
   </nav>
 
   <!-- Sidebar -->
   <div class="sidebar">
+    <!-- 📤 Import File -->
     <button class="menu-btn" data-bs-toggle="collapse" data-bs-target="#importSection" aria-expanded="false">📤 Import File</button>
     <div class="collapse collapse-content" id="importSection">
       <input type="file" id="fileInput" class="form-control mb-3" accept=".xlsx,.csv">
       <button class="btn btn-success w-100 mb-3" onclick="handleFile()">Generate QR</button>
       <div class="progress">
-        <div id="progressBar" class="progress-bar progress-bar-striped bg-info" style="width:0%">0%</div>
+        <div id="progressBar" class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 0%">0%</div>
       </div>
       <button class="btn btn-outline-primary w-100 mt-3" id="downloadBtn" onclick="downloadPDF()" disabled>Download PDF</button>
-      <button class="btn btn-outline-danger w-100 mt-2" id="clearBtn" onclick="clearAll()" disabled>Clear</button>
+      <button class="btn btn-danger w-100 mt-2" id="clearBtn" onclick="clearAll()" disabled>Clear</button>
     </div>
 
+    <!-- 🔍 Search Data -->
     <button class="menu-btn" data-bs-toggle="collapse" data-bs-target="#searchSection" aria-expanded="false">🔍 Search Data</button>
     <div class="collapse collapse-content" id="searchSection">
       <label>Start Date</label>
@@ -111,15 +83,17 @@
 
   <!-- Main Content -->
   <div class="content">
+    <!-- Import Preview -->
     <div id="contentImport">
       <h4>🧾 QR Code Preview</h4>
       <div id="qrContainer" class="qr-grid mt-3"></div>
     </div>
 
+    <!-- Search Table -->
     <div id="contentSearch" style="display:none;">
       <h4>🔍 Search Results</h4>
-      <table class="table table-hover mt-3 shadow-sm bg-white rounded">
-        <thead class="table-primary"><tr><th>#</th><th>Date</th><th>Item</th><th>Qty</th></tr></thead>
+      <table class="table table-striped mt-3">
+        <thead><tr><th>#</th><th>Date</th><th>Item</th><th>Qty</th></tr></thead>
         <tbody id="searchTableBody"></tbody>
       </table>
     </div>
@@ -129,7 +103,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-  // 🕒 Date-Time
+  // 🕒 อัปเดตวันที่และเวลาปัจจุบัน
   function updateDateTime() {
     const now = new Date();
     const formatted = now.toLocaleString('th-TH', {
@@ -141,7 +115,7 @@
   setInterval(updateDateTime, 1000);
   updateDateTime();
 
-  // Toggle content when collapse
+  // 🔹 Toggle content when collapsing menu
   const importCollapse = document.getElementById('importSection');
   const searchCollapse = document.getElementById('searchSection');
   const importContent = document.getElementById('contentImport');
@@ -152,13 +126,14 @@
     importContent.style.display = 'block';
     new bootstrap.Collapse(searchCollapse, { toggle: false }).hide();
   });
+
   searchCollapse.addEventListener('show.bs.collapse', () => {
     importContent.style.display = 'none';
     searchContent.style.display = 'block';
     new bootstrap.Collapse(importCollapse, { toggle: false }).hide();
   });
 
-  // Mock search data
+  // ---------- Mock Search ----------
   function searchData() {
     const start = document.getElementById("startDate").value;
     const end = document.getElementById("endDate").value;
@@ -166,6 +141,7 @@
       Swal.fire("⚠️", "Please select start and end date", "warning");
       return;
     }
+
     const tbody = document.getElementById("searchTableBody");
     tbody.innerHTML = "";
     const mockData = [
@@ -173,24 +149,34 @@
       { date: "2025-10-15", item: "Speaker B", qty: 1 },
       { date: "2025-10-16", item: "Projector", qty: 3 }
     ];
+
     mockData.forEach((d, i) => {
       tbody.innerHTML += `<tr><td>${i + 1}</td><td>${d.date}</td><td>${d.item}</td><td>${d.qty}</td></tr>`;
     });
+
     Swal.fire("✅", "Search complete!", "success");
   }
 
-  function exportExcel() { Swal.fire("📤", "Exporting search data...", "info"); }
+  function exportExcel() {
+    Swal.fire("📤", "Exporting search data...", "info");
+  }
 
-  // QR / PDF / Clear (unchanged)
+  // ---------------- QR Generate / PDF / Clear ----------------
   const { jsPDF } = window.jspdf;
   let qrDataList = [];
 
   function handleFile() {
-    const file = document.getElementById("fileInput").files[0];
-    if (!file) return Swal.fire("⚠️", "Please select a file!", "warning");
+    const fileInput = document.getElementById("fileInput");
+    if (!fileInput.files[0]) {
+      Swal.fire("⚠️", "Please select an Excel or CSV file first!", "warning");
+      return;
+    }
+    const file = fileInput.files[0];
     const reader = new FileReader();
+
     reader.onload = (e) => {
-      const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
       generateQRs(jsonData);
@@ -202,61 +188,97 @@
     const container = document.getElementById("qrContainer");
     const progressBar = document.getElementById("progressBar");
     const progressContainer = document.querySelector(".progress");
-    container.innerHTML = ""; qrDataList = [];
-    if (data.length <= 1) return Swal.fire("⚠️", "No data found!", "warning");
+    container.innerHTML = "";
+    qrDataList = [];
+
+    if (data.length <= 1) {
+      Swal.fire("⚠️", "No data found in file", "warning");
+      return;
+    }
 
     progressContainer.style.display = "block";
+    progressBar.style.width = "0%";
+    progressBar.innerText = "0%";
+
     for (let i = 1; i < data.length; i++) {
-      const row = data[i].filter(c => c);
+      const row = data[i].filter(cell => cell !== undefined && cell !== "");
+      if (row.length === 0) continue;
       const text = row.join("/");
       const qrDiv = document.createElement("div");
       qrDiv.className = "qr-item";
       const qrCanvas = document.createElement("div");
       qrDiv.appendChild(qrCanvas);
       const label = document.createElement("div");
-      label.innerText = text; label.style.fontSize = "10px"; label.style.marginTop = "5px";
-      qrDiv.appendChild(label); container.appendChild(qrDiv);
+      label.innerText = text;
+      label.style.fontSize = "10px";
+      label.style.marginTop = "5px";
+      qrDiv.appendChild(label);
+      container.appendChild(qrDiv);
       new QRCode(qrCanvas, { text: text, width: 130, height: 130 });
       qrDataList.push({ text, element: qrDiv });
       const percent = Math.round((i / (data.length - 1)) * 100);
-      progressBar.style.width = percent + "%"; progressBar.innerText = percent + "%";
+      progressBar.style.width = percent + "%";
+      progressBar.innerText = percent + "%";
       await new Promise(r => setTimeout(r, 10));
     }
-    Swal.fire("✅", `Generated ${qrDataList.length} QR Codes!`, "success");
+
+    Swal.fire("✅", `Generated ${qrDataList.length} QR Codes successfully!`, "success");
+    progressBar.classList.remove("bg-info");
+    progressBar.classList.add("bg-success");
     document.getElementById("downloadBtn").disabled = false;
     document.getElementById("clearBtn").disabled = false;
   }
 
-  function clearAll() {
-    document.getElementById("qrContainer").innerHTML = "";
-    document.getElementById("downloadBtn").disabled = true;
-    document.getElementById("clearBtn").disabled = true;
-    Swal.fire("🧹", "Cleared all QR codes!", "info");
-  }
-
   function downloadPDF() {
-    if (!qrDataList.length) return;
+    if (qrDataList.length === 0) return;
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const marginX = 8, marginY = 18, qrSize = 24, colCount = 6, rowCount = 7;
-    const gapX = 6, gapY = 5, stepY = qrSize + 10;
-    let x = marginX, y = marginY, col = 0, row = 0;
-    let headerName = qrDataList[0].text.split("/")[1] || "";
+    const gapX = 6, gapY = 5, labelYOffset = 4, stepY = qrSize + 10;
+    let x = marginX, y = marginY, col = 0, row = 0, counter = 1;
+    let headerName = "";
+    try { headerName = qrDataList[0].text.split("/")[1] || ""; } catch (e) {}
     const printHeader = () => {
       pdf.setFontSize(10);
-      const header = `RMT Warehouse QR List — ${headerName} (${new Date().toISOString().split("T")[0]})`;
+      pdf.setTextColor(40);
+      const today = new Date().toISOString().split("T")[0];
+      const headerText = `RMT Warehouse QR List — ${headerName} (${today})`;
       const pageWidth = pdf.internal.pageSize.getWidth();
-      pdf.text(header, (pageWidth - pdf.getTextWidth(header)) / 2, 10);
+      const textWidth = pdf.getTextWidth(headerText);
+      pdf.text(headerText, (pageWidth - textWidth) / 2, 10);
+      pdf.setTextColor(0);
     };
     printHeader();
-    qrDataList.forEach((d, i) => {
-      const img = d.element.querySelector("canvas").toDataURL("image/png");
-      pdf.addImage(img, "PNG", x, y, qrSize, qrSize);
-      pdf.text(pdf.splitTextToSize(d.text.replaceAll("/", " "), qrSize), x, y + qrSize + 4);
-      if (++col === colCount) { col = 0; x = marginX; y += stepY + gapY; row++; }
+
+    for (let i = 0; i < qrDataList.length; i++) {
+      const canvas = qrDataList[i].element.querySelector("canvas");
+      const qrText = qrDataList[i].text;
+      const parts = qrText.split("/");
+      const filtered = parts.filter((_, idx) => idx !== 1);
+      const label = filtered.join(" ").trim();
+      const imgData = canvas.toDataURL("image/png");
+      pdf.rect(x - 1, y - 1, qrSize + 2, qrSize + 10, "S");
+      pdf.setFontSize(7);
+      pdf.text(`${counter}`, x - 0.5, y - 2.5);
+      pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
+      pdf.setFontSize(6);
+      pdf.text(pdf.splitTextToSize(label, qrSize), x, y + qrSize + labelYOffset);
+      col++; counter++;
+      if (col === colCount) { col = 0; x = marginX; row++; y += stepY + gapY; }
       else x += qrSize + gapX;
-      if (row === rowCount && i < qrDataList.length - 1) { pdf.addPage(); printHeader(); x = marginX; y = marginY; row = 0; }
-    });
-    pdf.save(`RMT_QRCodes_${headerName}.pdf`);
+      if (row === rowCount && i < qrDataList.length - 1) {
+        pdf.addPage(); printHeader(); x = marginX; y = marginY; row = 0; col = 0;
+      }
+    }
+    pdf.save(`RMT_QRCodes_${headerName}_${new Date().toISOString().split("T")[0]}.pdf`);
+  }
+
+  function clearAll() {
+    document.getElementById("qrContainer").innerHTML = "";
+    document.getElementById("progressBar").style.width = "0%";
+    document.getElementById("progressBar").innerText = "0%";
+    document.getElementById("downloadBtn").disabled = true;
+    document.getElementById("clearBtn").disabled = true;
+    Swal.fire("🧹", "All QR Codes cleared!", "info");
   }
   </script>
 </body>

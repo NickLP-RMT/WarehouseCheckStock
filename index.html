@@ -132,7 +132,6 @@
     document.getElementById("clearBtn").disabled = false;
   }
 
-
 function downloadPDF() {
   if (qrDataList.length === 0) return;
 
@@ -140,34 +139,35 @@ function downloadPDF() {
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   // ---- Layout spec ----
-  const marginX = 8;          
-  const marginY = 18;          // เผื่อพื้นที่ header
-  const qrSize = 24;          
-  const colCount = 6;         
-  const rowCount = 7;         
-  const gapX = 6;             
-  const gapY = 5;             
-  const labelYOffset = 4;     
-  const stepY = qrSize + 10;  
+  const marginX = 8;
+  const marginY = 18; // เผื่อ header
+  const qrSize = 24;
+  const colCount = 6;
+  const rowCount = 7;
+  const gapX = 6;
+  const gapY = 5;
+  const labelYOffset = 4;
+  const stepY = qrSize + 10;
   let x = marginX;
   let y = marginY;
   let col = 0;
   let row = 0;
   let counter = 1;
 
-  // 🏷️ ดึงชื่อจาก column B ของแถวแรกสุด
-  // (ใช้ข้อมูลจาก qrDataList[0] ที่เก็บไว้ตอน generate)
+  // 🏷️ ดึงชื่อจาก column B (ชื่อคน เช่น Boonruen)
   let headerName = "";
   try {
-    // แยกจาก text เดิมของแถวแรก (เช่น "ATT Boonruen F0838 ...")
-    const firstText = qrDataList[0].text.split(" ");
-    headerName = firstText[1] || ""; // column B = index 1
-  } catch(e) { headerName = ""; }
+    const firstText = qrDataList[0].text.split("/");
+    headerName = firstText[1] || "";
+  } catch (e) {
+    headerName = "";
+  }
 
   pdf.setFontSize(6);
-  pdf.setDrawColor(180); 
+  pdf.setDrawColor(180);
 
-  const printHeader = (pageNum) => {
+  // 🧾 Header Function
+  const printHeader = () => {
     pdf.setFontSize(10);
     pdf.setTextColor(40);
     const today = new Date().toISOString().split("T")[0];
@@ -178,16 +178,18 @@ function downloadPDF() {
     pdf.setTextColor(0);
   };
 
-  printHeader(1); // หัวกระดาษหน้าแรก
+  printHeader(); // หน้าแรก
 
   for (let i = 0; i < qrDataList.length; i++) {
     const canvas = qrDataList[i].element.querySelector("canvas");
 
-    // แยกข้อมูลแต่ละคอลัมน์จากข้อความเต็ม (เพื่อข้าม column B)
-    const parts = qrDataList[i].text.split(" ");
-    // เอาทุกคอลัมน์ยกเว้น column B (index 1)
-    const filtered = parts.filter((_, idx) => idx !== 1);
-    const label = filtered.join(" ");
+    // 🧩 ใช้ text เดิมที่มี "/" สำหรับ QR
+    const qrText = qrDataList[i].text;
+
+    // 🏷️ สำหรับ label ให้แทน "/" ด้วย " "
+    const parts = qrText.split("/");
+    const filtered = parts.filter((_, idx) => idx !== 1); // skip column B
+    const label = filtered.join(" ").trim();
 
     const imgData = canvas.toDataURL("image/png");
 
@@ -198,14 +200,15 @@ function downloadPDF() {
     pdf.setFontSize(7);
     pdf.text(`${counter}`, x - 0.5, y - 2.5);
 
-    // 🧾 QR
+    // 🧾 วาด QR (ใช้ข้อความแบบมี /)
     pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
 
-    // 🏷️ Label (ไม่รวม column B)
+    // 🏷️ วาด Label (แทน / ด้วยช่องว่าง)
     pdf.setFontSize(6);
     const wrapped = pdf.splitTextToSize(label, qrSize);
     pdf.text(wrapped, x, y + qrSize + labelYOffset);
 
+    // เดินตำแหน่ง
     col++;
     counter++;
 
@@ -218,9 +221,10 @@ function downloadPDF() {
       x += qrSize + gapX;
     }
 
+    // ครบ 7 แถว → เปิดหน้าใหม่
     if (row === rowCount && i < qrDataList.length - 1) {
       pdf.addPage();
-      printHeader(); // หัวกระดาษทุกหน้า
+      printHeader();
       pdf.setDrawColor(180);
       pdf.setFontSize(6);
       x = marginX;

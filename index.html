@@ -132,45 +132,70 @@
     document.getElementById("clearBtn").disabled = false;
   }
 
-  async function downloadPDF() {
+function downloadPDF() {
   if (qrDataList.length === 0) return;
 
+  const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const marginX = 8;
-  const marginY = 8;
-  const qrSize = 35;         // ขนาด QR ที่เหมาะสมกับ A4
-  const colCount = 4;        // 4 คอลัมน์ต่อแถว
-  const rowCount = 12;       // 12 แถวต่อหน้า
-  const gap = 8;             // ระยะห่างระหว่าง QR
-  let x = marginX, y = marginY, count = 0;
+
+  // ---- Layout spec ตามที่ขอ ----
+  const marginX = 10;        // ระยะขอบซ้ายขวา
+  const marginY = 10;        // ระยะขอบบนล่าง
+  const qrSize  = 25;        // ขนาด QR (มม.)
+  const colCount = 5;        // 5 คอลัมน์/แถว
+  const rowCount = 6;        // 6 แถว/หน้า
+  const gapX = 6;            // ระยะห่างแนวนอนระหว่าง QR
+  const labelYOffset = 4;    // ระยะห่างจากขอบล่าง QR ถึงข้อความ
+  const stepY = qrSize + 10; // ระยะสูงต่อหนึ่งแถว (เผื่อข้อความ 2 บรรทัดพอดี)
+
+  let x = marginX;
+  let y = marginY;
+  let col = 0;
+  let row = 0;
+
+  pdf.setFontSize(6); // ขนาดตัวอักษรใต้ QR
 
   for (let i = 0; i < qrDataList.length; i++) {
     const canvas = qrDataList[i].element.querySelector("canvas");
-    const label = qrDataList[i].text;
-    const imgData = canvas.toDataURL("image/png");
+    const label  = qrDataList[i].text;
+    const img    = canvas.toDataURL("image/png");
 
-    pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
-    pdf.setFontSize(7);
-    pdf.text(label, x, y + qrSize + 6, { maxWidth: qrSize });
+    // วาด QR
+    pdf.addImage(img, "PNG", x, y, qrSize, qrSize);
 
-    count++;
-    if (count % colCount === 0) {
+    // ตัดบรรทัดข้อความให้พอดีความกว้าง qrSize และจำกัด 2 บรรทัด
+    const lines = pdf.splitTextToSize(label, qrSize);
+    const clipped = Array.isArray(lines) ? lines.slice(0, 2) : [label];
+
+    // วาดข้อความใต้ QR
+    pdf.text(clipped, x, y + qrSize + labelYOffset);
+
+    // เดินตำแหน่งคอลัมน์
+    col++;
+    if (col === colCount) {
+      // ขึ้นแถวใหม่
+      col = 0;
       x = marginX;
-      y += qrSize + gap + 6;  // เผื่อข้อความ 2 บรรทัด
+      row++;
+      y += stepY;
     } else {
-      x += qrSize + gap;
+      // ไปคอลัมน์ถัดไป
+      x += qrSize + gapX;
     }
 
-    if (count % (colCount * rowCount) === 0 && i < qrDataList.length - 1) {
+    // ครบ 6 แถว → เปิดหน้าใหม่เสมอ
+    if (row === rowCount && i < qrDataList.length - 1) {
       pdf.addPage();
       x = marginX;
       y = marginY;
+      row = 0;
+      col = 0;
     }
   }
 
   pdf.save(`RMT_QRCodes_${new Date().toISOString().split("T")[0]}.pdf`);
 }
+
 
 
   function clearAll() {

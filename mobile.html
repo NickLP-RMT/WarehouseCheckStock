@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📦 Warehouse QR Check</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      color: #1e293b;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: #1e3a8a;
+      color: white;
+      text-align: center;
+      padding: 14px 0;
+      font-weight: 600;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 100;
+    }
+    .container {
+      margin-top: 80px;
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 480px;
+      margin-inline: auto;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .form-group { margin-bottom: 16px; }
+    label { font-weight: 600; display: block; margin-bottom: 6px; }
+    input {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+    }
+    .readonly { background: #f1f5f9; }
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-weight: 600;
+      color: white;
+      background: #2563eb;
+      width: 100%;
+      margin-top: 10px;
+      cursor: pointer;
+      font-size: 17px;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn-scan {
+      background: #059669;
+      color: white;
+      font-size: 20px;
+      width: 60px;
+    }
+    #scanner-view {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000;
+      z-index: 200;
+    }
+    #scanner-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .scan-box {
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      border: 3px solid #00ff00;
+      border-radius: 10px;
+    }
+    .btn-close {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ef4444;
+      border: none;
+      border-radius: 50%;
+      color: white;
+      width: 60px;
+      height: 60px;
+      font-size: 28px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">📦 RMT Warehouse Check Stock</div>
+
+  <div class="container" id="main-view">
+    <div class="form-group">
+      <label>QR Code</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="qrText" placeholder="กดปุ่มสแกนเพื่ออ่าน QR" readonly>
+        <button class="btn-scan" onclick="startScanner()">📷</button>
+      </div>
+    </div>
+
+    <div class="form-group"><label>Customer</label><input id="customer" class="readonly" readonly></div>
+    <div class="form-group"><label>Name</label><input id="name" class="readonly" readonly></div>
+    <div class="form-group"><label>File</label><input id="file" class="readonly" readonly></div>
+    <div class="form-group"><label>Lot</label><input id="lot" class="readonly" readonly></div>
+    <div class="form-group"><label>Rack</label><input id="rack" class="readonly" readonly></div>
+    <div class="form-group"><label>Sum of Q'ty</label><input id="sumQty" class="readonly" readonly></div>
+
+    <hr>
+
+    <div class="form-group"><label>Act Rack</label><input id="actRack" placeholder="ใส่ตำแหน่งวางจริง เช่น R01-A"></div>
+
+    <div class="form-group">
+      <label>Package</label>
+      <input id="pkgA" type="number" style="width:28%;display:inline-block;text-align:center;"> ×
+      <input id="pkgB" type="number" style="width:28%;display:inline-block;text-align:center;"> +
+      <input id="pkgC" type="number" style="width:28%;display:inline-block;text-align:center;">
+    </div>
+
+    <div class="form-group"><label>Act Q'ty (คำนวณอัตโนมัติ)</label><input id="actQty" class="readonly" readonly></div>
+
+    <div class="form-group"><label>ชื่อผู้ตรวจ</label><input id="scannerName" placeholder="ชื่อพนักงาน"></div>
+
+    <button class="btn" onclick="submitData()">💾 บันทึกข้อมูล</button>
+
+    <p style="text-align:center;margin-top:12px;font-size:12px;color:#64748b;">
+      © 2025 Resonac Materials (Thailand) Co., Ltd.
+    </p>
+  </div>
+
+  <!-- Scanner Overlay -->
+  <div id="scanner-view">
+    <div id="scanner-container"></div>
+    <div class="scan-box"></div>
+    <button class="btn-close" onclick="stopScanner()">✕</button>
+  </div>
+
+  <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+
+  <script>
+    let codeReader;
+
+    async function startScanner() {
+      document.getElementById("main-view").style.display = "none";
+      document.getElementById("scanner-view").style.display = "block";
+
+      codeReader = new ZXing.BrowserMultiFormatReader();
+      const videoElem = document.createElement("video");
+      videoElem.setAttribute("playsinline", true);
+      videoElem.style.width = "100%";
+      videoElem.style.height = "100%";
+      document.getElementById("scanner-container").appendChild(videoElem);
+
+      try {
+        await codeReader.decodeFromVideoDevice(null, videoElem, (result, err) => {
+          if (result) {
+            const text = result.text.trim();
+            document.getElementById("beep").play();
+            stopScanner();
+            handleQRData(text);
+          }
+        });
+      } catch (e) {
+        Swal.fire("❌", "ไม่สามารถเปิดกล้องได้", "error");
+        stopScanner();
+      }
+    }
+
+    function stopScanner() {
+      if (codeReader) codeReader.reset();
+      document.getElementById("scanner-container").innerHTML = "";
+      document.getElementById("scanner-view").style.display = "none";
+      document.getElementById("main-view").style.display = "block";
+    }
+
+    function handleQRData(text) {
+      document.getElementById("qrText").value = text;
+
+      const parts = text.split("/");
+      document.getElementById("customer").value = parts[0] || "";
+      document.getElementById("name").value = parts[1] || "";
+      document.getElementById("file").value = parts[2] || "";
+      document.getElementById("lot").value = parts[3] || "";
+      document.getElementById("rack").value = parts[4] || "";
+      document.getElementById("sumQty").value = parts[5] || "";
+    }
+
+    // 📦 คำนวณ Act Q'ty อัตโนมัติ
+    const pkgInputs = ["pkgA", "pkgB", "pkgC"];
+    pkgInputs.forEach(id => {
+      document.getElementById(id).addEventListener("input", calcActQty);
+    });
+
+    function calcActQty() {
+      const a = Number(document.getElementById("pkgA").value) || 0;
+      const b = Number(document.getElementById("pkgB").value) || 0;
+      const c = Number(document.getElementById("pkgC").value) || 0;
+      document.getElementById("actQty").value = (a * b) + c;
+    }
+
+    async function submitData() {
+      const customer = customer.value;
+      const name = name.value;
+      const file = file.value;
+      const lot = lot.value;
+      const rack = rack.value;
+      const sumQty = sumQty.value;
+      const actRack = actRack.value;
+      const actQty = actQty.value;
+      const scannerName = document.getElementById("scannerName").value;
+
+      if (!customer || !file || !lot || !scannerName || !actRack || !actQty) {
+        Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบ", "warning");
+        return;
+      }
+
+      Swal.fire({ title: "กำลังบันทึก...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      try {
+        // 🔹 ตัวอย่างส่งไป Google Apps Script
+        const res = await fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
+          method: "POST",
+          body: JSON.stringify({ 
+            page: "submitStock",
+            customer, name, file, lot, rack, sumQty, actRack, actQty, scannerName
+          }),
+        });
+        Swal.close();
+        Swal.fire("✅", "บันทึกเรียบร้อย", "success");
+      } catch {
+        Swal.fire("❌", "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์", "error");
+      }
+    }
+  </script>
+</body>
+</html>

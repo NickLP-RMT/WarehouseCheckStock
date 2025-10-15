@@ -139,18 +139,19 @@ function downloadPDF() {
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   // ---- Layout spec ----
-  const marginX = 8;         // ขอบซ้ายขวา
-  const marginY = 8;         // ขอบบนล่าง
-  const qrSize = 25;         // ขนาด QR
+  const marginX = 8;         // ระยะขอบซ้ายขวา
+  const marginY = 8;         // ระยะขอบบนล่าง
+  const qrSize = 25;         // ขนาด QR (มม.)
   const colCount = 6;        // 6 คอลัมน์
   const rowCount = 7;        // 7 แถว
   const gapX = 5;            // ระยะห่างแนวนอน
   const labelYOffset = 4;    // ระยะห่างข้อความจาก QR
-  const stepY = qrSize + 10; // ความสูงต่อแถว
+  const stepY = qrSize + 10; // ความสูงต่อหนึ่งแถว
   let x = marginX;
   let y = marginY;
   let col = 0;
   let row = 0;
+  let counter = 1;
 
   pdf.setFontSize(6);
   pdf.setDrawColor(180); // สีเทาอ่อนสำหรับกรอบ
@@ -160,30 +161,37 @@ function downloadPDF() {
     const label = qrDataList[i].text;
     const imgData = canvas.toDataURL("image/png");
 
-    // วาดกรอบ (ช่วยจัดหน้าเวลา print)
+    // 🔳 วาดกรอบรอบ QR
     pdf.rect(x - 1, y - 1, qrSize + 2, qrSize + 10, "S");
 
-    // วาด QR
+    // 🔢 หมายเลขลำดับมุมบนซ้ายของกรอบ
+    pdf.setFontSize(7);
+    pdf.text(`${counter}`, x - 0.5, y - 1.5);
+
+    // 🧾 วาด QR Code
     pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
 
-    // วาดข้อความใต้ QR (wrap อัตโนมัติ ไม่จำกัดบรรทัด)
+    // 🏷️ วาดข้อความใต้ QR (wrap อัตโนมัติ ไม่จำกัดบรรทัด)
+    pdf.setFontSize(6);
     const wrapped = pdf.splitTextToSize(label, qrSize);
     pdf.text(wrapped, x, y + qrSize + labelYOffset);
 
     // เดินตำแหน่ง
     col++;
+    counter++;
+
     if (col === colCount) {
-      // แถวใหม่
+      // ขึ้นแถวใหม่
       col = 0;
       x = marginX;
       row++;
       y += stepY;
     } else {
-      // คอลัมน์ถัดไป
+      // ไปคอลัมน์ถัดไป
       x += qrSize + gapX;
     }
 
-    // ครบ 7 แถว → ขึ้นหน้าใหม่
+    // ครบ 7 แถว → เปิดหน้าใหม่
     if (row === rowCount && i < qrDataList.length - 1) {
       pdf.addPage();
       pdf.setDrawColor(180);

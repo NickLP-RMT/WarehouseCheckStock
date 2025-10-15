@@ -280,34 +280,38 @@
   <script>
     let html5QrCode;
 
-    async function startScanner() {
-      document.getElementById("main-view").style.display = "none";
-      document.getElementById("scanner-container").style.display = "block";
+async function startScanner() {
+  try {
+    // ✅ iPhone ต้องขอสิทธิ์ก่อน
+    await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
 
-      html5QrCode = new Html5Qrcode("reader");
-      const qrConfig = {
-        fps: 10,
-        qrbox: { width: 280, height: 280 },
-        aspectRatio: 1.0,
-        rememberLastUsedCamera: true
-      };
+    document.getElementById("main-view").style.display = "none";
+    document.getElementById("scanner-container").style.display = "block";
 
-      try {
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          qrConfig,
-          (decodedText) => {
-            document.getElementById("beep").play();
-            stopScanner();
-            handleQRData(decodedText);
-          },
-          (errorMessage) => {}
-        );
-      } catch (err) {
-        Swal.fire("❌", "ไม่สามารถเปิดกล้องได้", "error");
+    html5QrCode = new Html5Qrcode("reader");
+    const qrConfig = {
+      fps: 10,
+      qrbox: { width: 280, height: 280 },
+      aspectRatio: 1.0,
+      rememberLastUsedCamera: true
+    };
+
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      qrConfig,
+      (decodedText) => {
+        document.getElementById("beep").play();
         stopScanner();
-      }
-    }
+        handleQRData(decodedText);
+      },
+      (err) => {}
+    );
+  } catch (err) {
+    Swal.fire("❌", "ไม่สามารถเปิดกล้องได้ หรือผู้ใช้ไม่อนุญาต", "error");
+    console.error("Camera error:", err);
+    stopScanner();
+  }
+}
 
     async function stopScanner() {
       if (html5QrCode) await html5QrCode.stop().catch(()=>{});

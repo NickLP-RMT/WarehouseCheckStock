@@ -37,11 +37,14 @@
     }
     .form-row {
       display: flex;
+      flex-wrap: nowrap; /* ✅ ห้ามแตกบรรทัด */
+      justify-content: space-between;
       gap: 10px;
-      margin-bottom: 16px; /* ✅ spacing between rows */
+      margin-bottom: 16px;
     }
     .form-row > div {
       flex: 1;
+      min-width: 0;
       display: flex;
       flex-direction: column;
     }
@@ -124,20 +127,12 @@
       height: 60px;
       font-size: 28px;
     }
-
-    /* ✅ Responsive for small mobile */
-    @media (max-width: 480px) {
-      .form-row {
-        flex-direction: column;
-      }
-    }
   </style>
 </head>
 <body>
   <div class="header">📦 RMT Warehouse Check Stock</div>
 
   <div class="container" id="main-view">
-    <!-- ปุ่มสแกน QR -->
     <button class="btn-scan" onclick="startScanner()">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
         <path d="M3 3h8v8H3V3m2 2v4h4V5H5m6 6h2v2h-2v-2m0 4h2v2h-2v-2m4-4h2v2h-2v-2m0 4h2v2h-2v-2m-4 4h2v2h-2v-2m4 0h2v2h-2v-2M3 13h8v8H3v-8m2 2v4h4v-4H5m10-12h6v6h-6V3m2 2v2h2V5h-2m0 4h2v2h-2V9m0 4h6v6h-6v-6m2 2v2h2v-2h-2Z" />
@@ -147,6 +142,7 @@
 
     <hr>
 
+    <!-- ✅ อยู่บรรทัดเดียวกันเสมอ -->
     <div class="form-row">
       <div>
         <label>Customer</label>
@@ -192,7 +188,7 @@
       </div>
     </div>
 
-    <div class="form-row">
+    <div class="form-row" style="align-items:center;">
       <label style="width:100%;">Package</label>
       <input id="pkgA" type="number" style="width:30%;text-align:center;"> ×
       <input id="pkgB" type="number" style="width:30%;text-align:center;"> +
@@ -213,7 +209,6 @@
     </p>
   </div>
 
-  <!-- Scanner Overlay -->
   <div id="scanner-view">
     <div id="scanner-container"></div>
     <div class="scan-box"></div>
@@ -224,18 +219,15 @@
 
   <script>
     let codeReader;
-
     async function startScanner() {
       document.getElementById("main-view").style.display = "none";
       document.getElementById("scanner-view").style.display = "block";
-
       codeReader = new ZXing.BrowserMultiFormatReader();
       const videoElem = document.createElement("video");
       videoElem.setAttribute("playsinline", true);
       videoElem.style.width = "100%";
       videoElem.style.height = "100%";
       document.getElementById("scanner-container").appendChild(videoElem);
-
       try {
         await codeReader.decodeFromVideoDevice(null, videoElem, (result, err) => {
           if (result) {
@@ -250,32 +242,27 @@
         stopScanner();
       }
     }
-
     function stopScanner() {
       if (codeReader) codeReader.reset();
       document.getElementById("scanner-container").innerHTML = "";
       document.getElementById("scanner-view").style.display = "none";
       document.getElementById("main-view").style.display = "block";
     }
-
     function handleQRData(text) {
       const parts = text.split("/");
-      document.getElementById("customer").value = parts[0] || "";
-      document.getElementById("scannerName").value = parts[1] || "";
-      document.getElementById("file").value = parts[2] || "";
-      document.getElementById("lot").value = parts[3] || "";
-      document.getElementById("rack").value = parts[4] || "";
-      document.getElementById("sumQty").value = parts[5] || "";
+      customer.value = parts[0] || "";
+      scannerName.value = parts[1] || "";
+      file.value = parts[2] || "";
+      lot.value = parts[3] || "";
+      rack.value = parts[4] || "";
+      sumQty.value = parts[5] || "";
     }
-
-    // 📦 คำนวณ Act Q'ty
     ["pkgA","pkgB","pkgC"].forEach(id=>{
       document.getElementById(id).addEventListener("input",()=>{
-        const a=+pkgA.value||0, b=+pkgB.value||0, c=+pkgC.value||0;
+        const a=+pkgA.value||0,b=+pkgB.value||0,c=+pkgC.value||0;
         actQty.value=(a*b)+c;
       });
     });
-
     async function submitData() {
       const data = {
         customer: customer.value,
@@ -287,21 +274,12 @@
         actQty: actQty.value.trim(),
         scanner: scannerName.value
       };
-
-      if (!data.customer || !data.file || !data.lot || !data.actRack || !data.actQty) {
-        Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบ", "warning");
-        return;
-      }
-
-      Swal.fire({ title:"กำลังบันทึก...", allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
-
+      if (!data.customer || !data.file || !data.lot || !data.actRack || !data.actQty)
+        return Swal.fire("⚠️","กรุณากรอกข้อมูลให้ครบ","warning");
+      Swal.fire({title:"กำลังบันทึก...",allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
       try {
-        const res = await fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
-          method:"POST",
-          body: JSON.stringify(data)
-        });
-        Swal.close();
-        Swal.fire("✅", "บันทึกเรียบร้อย", "success");
+        await fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec",{method:"POST",body:JSON.stringify(data)});
+        Swal.close();Swal.fire("✅","บันทึกเรียบร้อย","success");
       } catch {
         Swal.fire("❌","ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์","error");
       }

@@ -132,6 +132,7 @@
     document.getElementById("clearBtn").disabled = false;
   }
 
+
 function downloadPDF() {
   if (qrDataList.length === 0) return;
 
@@ -139,14 +140,15 @@ function downloadPDF() {
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   // ---- Layout spec ----
-  const marginX = 8;         // ระยะขอบซ้ายขวา
-  const marginY = 8;         // ระยะขอบบนล่าง
-  const qrSize = 25;         // ขนาด QR (มม.)
-  const colCount = 6;        // 6 คอลัมน์
-  const rowCount = 7;        // 7 แถว
-  const gapX = 5;            // ระยะห่างแนวนอน
-  const labelYOffset = 4;    // ระยะห่างข้อความจาก QR
-  const stepY = qrSize + 10; // ความสูงต่อหนึ่งแถว
+  const marginX = 8;          // ระยะขอบซ้ายขวา
+  const marginY = 12;         // ระยะขอบบนล่าง (เพิ่มขึ้นเล็กน้อย)
+  const qrSize = 25;          // ขนาด QR
+  const colCount = 6;         // 6 คอลัมน์
+  const rowCount = 7;         // 7 แถว
+  const gapX = 6;             // ระยะห่างแนวนอน
+  const gapY = 6;             // ระยะห่างแนวตั้งเพิ่ม
+  const labelYOffset = 5;     // ระยะห่างข้อความจาก QR
+  const stepY = qrSize + 11;  // ความสูงต่อแถว (เพิ่ม spacing แนวตั้ง)
   let x = marginX;
   let y = marginY;
   let col = 0;
@@ -154,24 +156,24 @@ function downloadPDF() {
   let counter = 1;
 
   pdf.setFontSize(6);
-  pdf.setDrawColor(180); // สีเทาอ่อนสำหรับกรอบ
+  pdf.setDrawColor(180); // กรอบสีเทาอ่อน
 
   for (let i = 0; i < qrDataList.length; i++) {
     const canvas = qrDataList[i].element.querySelector("canvas");
     const label = qrDataList[i].text;
     const imgData = canvas.toDataURL("image/png");
 
-    // 🔳 วาดกรอบรอบ QR
-    pdf.rect(x - 1, y - 1, qrSize + 2, qrSize + 10, "S");
+    // 🔳 วาดกรอบ
+    pdf.rect(x - 1, y - 1, qrSize + 2, qrSize + 11, "S");
 
-    // 🔢 หมายเลขลำดับมุมบนซ้ายของกรอบ
+    // 🔢 วาดหมายเลขลำดับเหนือกรอบ (เลื่อนขึ้นชัดเจน)
     pdf.setFontSize(7);
-    pdf.text(`${counter}`, x - 0.5, y - 1.5);
+    pdf.text(`${counter}`, x - 0.5, y - 2.5);
 
-    // 🧾 วาด QR Code
+    // 🧾 วาด QR
     pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
 
-    // 🏷️ วาดข้อความใต้ QR (wrap อัตโนมัติ ไม่จำกัดบรรทัด)
+    // 🏷️ วาดข้อความใต้ QR (wrap อัตโนมัติ)
     pdf.setFontSize(6);
     const wrapped = pdf.splitTextToSize(label, qrSize);
     pdf.text(wrapped, x, y + qrSize + labelYOffset);
@@ -181,13 +183,13 @@ function downloadPDF() {
     counter++;
 
     if (col === colCount) {
-      // ขึ้นแถวใหม่
+      // แถวใหม่
       col = 0;
       x = marginX;
       row++;
-      y += stepY;
+      y += stepY + gapY;
     } else {
-      // ไปคอลัมน์ถัดไป
+      // คอลัมน์ถัดไป
       x += qrSize + gapX;
     }
 

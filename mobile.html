@@ -4,8 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📦 Warehouse QR Check</title>
+
+  <!-- ✅ Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -38,7 +41,7 @@
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-    /* ✅ ใช้กับ Customer/File & Lot/Q'ty */
+    /* ✅ Customer/File & Lot/Q'ty */
     .compact-row {
       display: flex;
       justify-content: center;
@@ -64,7 +67,7 @@
       height: 30px;
     }
 
-    /* ✅ ช่องปกติ */
+    /* ✅ ช่องทั่วไป */
     .form-row {
       display: flex;
       flex-direction: column;
@@ -108,9 +111,7 @@
       border: 1.5px solid #047857;
     }
     .btn-scan svg {
-      width: 22px;
-      height: 22px;
-      fill: white;
+      width: 22px; height: 22px; fill: white;
     }
     .btn-scan:hover { background: #047857; }
 
@@ -120,97 +121,67 @@
       margin: 20px 0;
     }
 
-    /* ==============================
-       ✅ Scanner Overlay + Animation
-       ============================== */
-    #scanner-view {
+    /* ✅ Scanner Overlay */
+    #scanner-container {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: #000;
-      z-index: 200;
+      background: black;
+      z-index: 999;
     }
-    #scanner-container {
+    #reader {
       width: 100%;
       height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      position: relative;
     }
 
+    /* มุมกรอบ + เส้นเลเซอร์ */
+    .scan-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000;
+    }
     .scan-box {
-      position: absolute;
-      width: 250px;
-      height: 250px;
-      border: 3px solid #00ff00;
+      position: relative;
+      width: 280px; height: 280px;
+      border: 2px solid rgba(0,255,0,0.6);
       border-radius: 10px;
-      z-index: 205;
+      box-shadow: 0 0 0 4000px rgba(0,0,0,0.7);
     }
-
-    .scan-corners {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 260px;
-      height: 260px;
-      z-index: 210;
-    }
-    .corner {
-      position: absolute;
-      width: 40px;
-      height: 40px;
-      border: 4px solid #00ff00;
-      border-radius: 8px;
-    }
-    .corner.top-left { top: -4px; left: -4px; border-right: none; border-bottom: none; }
-    .corner.top-right { top: -4px; right: -4px; border-left: none; border-bottom: none; }
-    .corner.bottom-left { bottom: -4px; left: -4px; border-right: none; border-top: none; }
-    .corner.bottom-right { bottom: -4px; right: -4px; border-left: none; border-top: none; }
-
     .scan-line {
       position: absolute;
-      top: calc(50% - 120px);
-      left: 50%;
-      transform: translateX(-50%);
-      width: 240px;
-      height: 2px;
+      top: 0; left: 0;
+      width: 100%; height: 2px;
       background: linear-gradient(to right, transparent, #00ff00, transparent);
-      animation: scanMove 2.2s infinite;
-      z-index: 211;
+      animation: scanMove 2s infinite;
     }
     @keyframes scanMove {
-      0% { top: calc(50% - 120px); opacity: 0.7; }
-      50% { top: calc(50% + 120px); opacity: 1; }
-      100% { top: calc(50% - 120px); opacity: 0.7; }
+      0% { top: 0; opacity: 0.7; }
+      50% { top: 100%; opacity: 1; }
+      100% { top: 0; opacity: 0.7; }
+    }
+
+    .btn-close {
+      position: absolute;
+      bottom: 40px; left: 50%;
+      transform: translateX(-50%);
+      background: #ef4444;
+      border: none; border-radius: 50%;
+      color: white; width: 60px; height: 60px;
+      font-size: 28px; z-index: 1100;
     }
 
     .scan-text {
       position: absolute;
-      bottom: 20%;
-      left: 0;
+      bottom: 18%;
       width: 100%;
       text-align: center;
       color: #00ff00;
       font-size: 18px;
       font-weight: 600;
       text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-      z-index: 212;
-    }
-
-    .btn-close {
-      position: absolute;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #ef4444;
-      border: none;
-      border-radius: 50%;
-      color: white;
-      width: 60px;
-      height: 60px;
-      font-size: 28px;
-      z-index: 213;
+      z-index: 1001;
     }
   </style>
 </head>
@@ -293,54 +264,54 @@
   </div>
 
   <!-- ✅ Scanner View -->
-  <div id="scanner-view">
-    <div id="scanner-container"></div>
-    <div class="scan-box"></div>
-    <div class="scan-corners">
-      <div class="corner top-left"></div>
-      <div class="corner top-right"></div>
-      <div class="corner bottom-left"></div>
-      <div class="corner bottom-right"></div>
+  <div id="scanner-container">
+    <div id="reader"></div>
+    <div class="scan-overlay">
+      <div class="scan-box">
+        <div class="scan-line"></div>
+      </div>
+      <div class="scan-text">📱 กำลังสแกน QR Code...</div>
     </div>
-    <div class="scan-line"></div>
-    <div class="scan-text">📱 กำลังสแกน QR Code...</div>
     <button class="btn-close" onclick="stopScanner()">✕</button>
   </div>
 
   <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
 
   <script>
-    let codeReader;
+    let html5QrCode;
+
     async function startScanner() {
       document.getElementById("main-view").style.display = "none";
-      document.getElementById("scanner-view").style.display = "block";
+      document.getElementById("scanner-container").style.display = "block";
 
-      codeReader = new ZXing.BrowserMultiFormatReader();
-      const videoElem = document.createElement("video");
-      videoElem.setAttribute("playsinline", true);
-      videoElem.style.width = "100%";
-      videoElem.style.height = "100%";
-      document.getElementById("scanner-container").appendChild(videoElem);
+      html5QrCode = new Html5Qrcode("reader");
+      const qrConfig = {
+        fps: 10,
+        qrbox: { width: 280, height: 280 },
+        aspectRatio: 1.0,
+        rememberLastUsedCamera: true
+      };
 
       try {
-        await codeReader.decodeFromVideoDevice(null, videoElem, (result, err) => {
-          if (result) {
-            const text = result.text.trim();
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          qrConfig,
+          (decodedText) => {
             document.getElementById("beep").play();
             stopScanner();
-            handleQRData(text);
-          }
-        });
-      } catch (e) {
+            handleQRData(decodedText);
+          },
+          (errorMessage) => {}
+        );
+      } catch (err) {
         Swal.fire("❌", "ไม่สามารถเปิดกล้องได้", "error");
         stopScanner();
       }
     }
 
-    function stopScanner() {
-      if (codeReader) codeReader.reset();
-      document.getElementById("scanner-container").innerHTML = "";
-      document.getElementById("scanner-view").style.display = "none";
+    async function stopScanner() {
+      if (html5QrCode) await html5QrCode.stop().catch(()=>{});
+      document.getElementById("scanner-container").style.display = "none";
       document.getElementById("main-view").style.display = "block";
     }
 

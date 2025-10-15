@@ -132,52 +132,80 @@
     document.getElementById("clearBtn").disabled = false;
   }
 
+
 function downloadPDF() {
   if (qrDataList.length === 0) return;
 
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  // ---- Layout spec ปรับแล้ว ----
-  const marginX = 8;          // ขอบซ้ายขวา
-  const marginY = 10;         // ขอบบนล่าง
-  const qrSize = 24;          // 🔹ลดจาก 25 เป็น 24 mm
-  const colCount = 6;         // 6 คอลัมน์
-  const rowCount = 7;         // 7 แถว
-  const gapX = 6;             // ช่องว่างแนวนอน
-  const gapY = 5;             // ช่องว่างแนวตั้ง
-  const labelYOffset = 4;     // ระยะข้อความใต้ QR
-  const stepY = qrSize + 10;  // ความสูงต่อแถว (พอดีไม่ล้น)
+  // ---- Layout spec ----
+  const marginX = 8;          
+  const marginY = 18;          // เผื่อพื้นที่ header
+  const qrSize = 24;          
+  const colCount = 6;         
+  const rowCount = 7;         
+  const gapX = 6;             
+  const gapY = 5;             
+  const labelYOffset = 4;     
+  const stepY = qrSize + 10;  
   let x = marginX;
   let y = marginY;
   let col = 0;
   let row = 0;
   let counter = 1;
 
+  // 🏷️ ดึงชื่อจาก column B ของแถวแรกสุด
+  // (ใช้ข้อมูลจาก qrDataList[0] ที่เก็บไว้ตอน generate)
+  let headerName = "";
+  try {
+    // แยกจาก text เดิมของแถวแรก (เช่น "ATT Boonruen F0838 ...")
+    const firstText = qrDataList[0].text.split(" ");
+    headerName = firstText[1] || ""; // column B = index 1
+  } catch(e) { headerName = ""; }
+
   pdf.setFontSize(6);
-  pdf.setDrawColor(180); // กรอบสีเทา
+  pdf.setDrawColor(180); 
+
+  const printHeader = (pageNum) => {
+    pdf.setFontSize(10);
+    pdf.setTextColor(40);
+    const today = new Date().toISOString().split("T")[0];
+    const headerText = `RMT Warehouse QR List — ${headerName} (${today})`;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const textWidth = pdf.getTextWidth(headerText);
+    pdf.text(headerText, (pageWidth - textWidth) / 2, 10);
+    pdf.setTextColor(0);
+  };
+
+  printHeader(1); // หัวกระดาษหน้าแรก
 
   for (let i = 0; i < qrDataList.length; i++) {
     const canvas = qrDataList[i].element.querySelector("canvas");
-    const label = qrDataList[i].text;
+
+    // แยกข้อมูลแต่ละคอลัมน์จากข้อความเต็ม (เพื่อข้าม column B)
+    const parts = qrDataList[i].text.split(" ");
+    // เอาทุกคอลัมน์ยกเว้น column B (index 1)
+    const filtered = parts.filter((_, idx) => idx !== 1);
+    const label = filtered.join(" ");
+
     const imgData = canvas.toDataURL("image/png");
 
-    // 🔳 วาดกรอบรอบ QR
+    // 🔳 วาดกรอบ
     pdf.rect(x - 1, y - 1, qrSize + 2, qrSize + 10, "S");
 
-    // 🔢 หมายเลขมุมบนซ้าย
+    // 🔢 ลำดับ
     pdf.setFontSize(7);
     pdf.text(`${counter}`, x - 0.5, y - 2.5);
 
-    // 🧾 วาด QR
+    // 🧾 QR
     pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
 
-    // 🏷️ วาด Label (wrap อัตโนมัติ)
+    // 🏷️ Label (ไม่รวม column B)
     pdf.setFontSize(6);
     const wrapped = pdf.splitTextToSize(label, qrSize);
     pdf.text(wrapped, x, y + qrSize + labelYOffset);
 
-    // เดินตำแหน่ง
     col++;
     counter++;
 
@@ -190,9 +218,9 @@ function downloadPDF() {
       x += qrSize + gapX;
     }
 
-    // ครบ 7 แถว → ขึ้นหน้าใหม่
     if (row === rowCount && i < qrDataList.length - 1) {
       pdf.addPage();
+      printHeader(); // หัวกระดาษทุกหน้า
       pdf.setDrawColor(180);
       pdf.setFontSize(6);
       x = marginX;
@@ -202,9 +230,8 @@ function downloadPDF() {
     }
   }
 
-  pdf.save(`RMT_QRCodes_${new Date().toISOString().split("T")[0]}.pdf`);
+  pdf.save(`RMT_QRCodes_${headerName}_${new Date().toISOString().split("T")[0]}.pdf`);
 }
-
 
   function clearAll() {
     document.getElementById("qrContainer").innerHTML = "";

@@ -21,18 +21,27 @@
     .navbar { background: #1e293b; }
     .sidebar {
       width: 260px; height: 100vh; position: fixed;
-      left: 0; top: 56px; background: #1e293b; color: white; padding: 20px;
+      left: 0; top: 56px; background: #1e293b; color: white; padding: 15px;
+      overflow-y: auto;
     }
-    .sidebar button.menu {
-      background: none; border: none; color: white; width: 100%;
-      text-align: left; font-size: 16px; margin-bottom: 10px; padding: 8px 10px;
-      border-radius: 8px; transition: background 0.2s;
+    .menu-btn {
+      background: none; border: none; color: white;
+      width: 100%; text-align: left; font-size: 16px;
+      padding: 10px; border-radius: 6px; margin-bottom: 5px;
     }
-    .sidebar button.menu:hover, .sidebar button.menu.active {
-      background: #334155;
+    .menu-btn:hover, .menu-btn.active {
+      background-color: #334155;
     }
-    .sidebar .menu-content { margin-top: 15px; }
-    .content { margin-left: 260px; padding: 80px 30px; transition: all 0.3s ease; }
+    .collapse-content {
+      background-color: #243043;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .content {
+      margin-left: 260px; padding: 80px 30px;
+      transition: all 0.3s ease;
+    }
     .qr-grid { display: flex; flex-wrap: wrap; gap: 15px; }
     .qr-item { text-align: center; background: white; border-radius: 10px; padding: 10px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); }
     .progress { height: 20px; margin-top: 10px; display: none; }
@@ -48,12 +57,9 @@
 
   <!-- Sidebar -->
   <div class="sidebar">
-    <!-- Menu Buttons -->
-    <button class="menu active" id="menuImport" onclick="showSection('import')">📤 Import File</button>
-    <button class="menu" id="menuSearch" onclick="showSection('search')">🔍 Search Data</button>
-
-    <!-- Import Section -->
-    <div class="menu-content" id="sectionImport">
+    <!-- 📤 Import File -->
+    <button class="menu-btn" data-bs-toggle="collapse" data-bs-target="#importSection" aria-expanded="false">📤 Import File</button>
+    <div class="collapse collapse-content" id="importSection">
       <input type="file" id="fileInput" class="form-control mb-3" accept=".xlsx,.csv">
       <button class="btn btn-success w-100 mb-3" onclick="handleFile()">Generate QR</button>
       <div class="progress">
@@ -63,8 +69,9 @@
       <button class="btn btn-danger w-100 mt-2" id="clearBtn" onclick="clearAll()" disabled>Clear</button>
     </div>
 
-    <!-- Search Section -->
-    <div class="menu-content" id="sectionSearch" style="display:none;">
+    <!-- 🔍 Search Data -->
+    <button class="menu-btn" data-bs-toggle="collapse" data-bs-target="#searchSection" aria-expanded="false">🔍 Search Data</button>
+    <div class="collapse collapse-content" id="searchSection">
       <label>Start Date</label>
       <input type="date" id="startDate" class="form-control mb-2">
       <label>End Date</label>
@@ -74,15 +81,15 @@
     </div>
   </div>
 
-  <!-- Content -->
+  <!-- Main Content -->
   <div class="content">
-    <!-- Import File -->
+    <!-- Import Preview -->
     <div id="contentImport">
       <h4>🧾 QR Code Preview</h4>
       <div id="qrContainer" class="qr-grid mt-3"></div>
     </div>
 
-    <!-- Search Data -->
+    <!-- Search Table -->
     <div id="contentSearch" style="display:none;">
       <h4>🔍 Search Results</h4>
       <table class="table table-striped mt-3">
@@ -92,18 +99,29 @@
     </div>
   </div>
 
-  <script>
-  // Sidebar toggle
-  function showSection(section) {
-    document.querySelectorAll('.menu').forEach(btn => btn.classList.remove('active'));
-    document.getElementById('menu' + section.charAt(0).toUpperCase() + section.slice(1)).classList.add('active');
-    document.getElementById('sectionImport').style.display = section === 'import' ? 'block' : 'none';
-    document.getElementById('sectionSearch').style.display = section === 'search' ? 'block' : 'none';
-    document.getElementById('contentImport').style.display = section === 'import' ? 'block' : 'none';
-    document.getElementById('contentSearch').style.display = section === 'search' ? 'block' : 'none';
-  }
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  // Mock search
+  <script>
+  // 🔹 เมื่อกดเปิดเมนู import หรือ search → สลับเนื้อหา Main Content
+  const importCollapse = document.getElementById('importSection');
+  const searchCollapse = document.getElementById('searchSection');
+  const importContent = document.getElementById('contentImport');
+  const searchContent = document.getElementById('contentSearch');
+
+  importCollapse.addEventListener('show.bs.collapse', () => {
+    searchContent.style.display = 'none';
+    importContent.style.display = 'block';
+    new bootstrap.Collapse(searchCollapse, { toggle: false }).hide();
+  });
+
+  searchCollapse.addEventListener('show.bs.collapse', () => {
+    importContent.style.display = 'none';
+    searchContent.style.display = 'block';
+    new bootstrap.Collapse(importCollapse, { toggle: false }).hide();
+  });
+
+  // ---------- Mock Search ----------
   function searchData() {
     const start = document.getElementById("startDate").value;
     const end = document.getElementById("endDate").value;
@@ -111,6 +129,7 @@
       Swal.fire("⚠️", "Please select start and end date", "warning");
       return;
     }
+
     const tbody = document.getElementById("searchTableBody");
     tbody.innerHTML = "";
     const mockData = [
@@ -118,10 +137,11 @@
       { date: "2025-10-15", item: "Speaker B", qty: 1 },
       { date: "2025-10-16", item: "Projector", qty: 3 }
     ];
+
     mockData.forEach((d, i) => {
-      const row = `<tr><td>${i + 1}</td><td>${d.date}</td><td>${d.item}</td><td>${d.qty}</td></tr>`;
-      tbody.innerHTML += row;
+      tbody.innerHTML += `<tr><td>${i + 1}</td><td>${d.date}</td><td>${d.item}</td><td>${d.qty}</td></tr>`;
     });
+
     Swal.fire("✅", "Search complete!", "success");
   }
 
@@ -129,7 +149,7 @@
     Swal.fire("📤", "Exporting search data...", "info");
   }
 
-  // ---- QR GENERATION (เหมือนเดิม) ----
+  // ---------------- QR Generate / PDF / Clear ----------------
   const { jsPDF } = window.jspdf;
   let qrDataList = [];
 
@@ -197,18 +217,14 @@
     document.getElementById("clearBtn").disabled = false;
   }
 
-  // ---- PDF EXPORT (เหมือนเดิม) ----
   function downloadPDF() {
     if (qrDataList.length === 0) return;
-
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const marginX = 8, marginY = 18, qrSize = 24, colCount = 6, rowCount = 7;
     const gapX = 6, gapY = 5, labelYOffset = 4, stepY = qrSize + 10;
     let x = marginX, y = marginY, col = 0, row = 0, counter = 1;
-
     let headerName = "";
     try { headerName = qrDataList[0].text.split("/")[1] || ""; } catch (e) {}
-
     const printHeader = () => {
       pdf.setFontSize(10);
       pdf.setTextColor(40);
@@ -228,14 +244,12 @@
       const filtered = parts.filter((_, idx) => idx !== 1);
       const label = filtered.join(" ").trim();
       const imgData = canvas.toDataURL("image/png");
-
       pdf.rect(x - 1, y - 1, qrSize + 2, qrSize + 10, "S");
       pdf.setFontSize(7);
       pdf.text(`${counter}`, x - 0.5, y - 2.5);
       pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
       pdf.setFontSize(6);
       pdf.text(pdf.splitTextToSize(label, qrSize), x, y + qrSize + labelYOffset);
-
       col++; counter++;
       if (col === colCount) { col = 0; x = marginX; row++; y += stepY + gapY; }
       else x += qrSize + gapX;

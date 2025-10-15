@@ -38,57 +38,51 @@
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-   /* ✅ ใช้กับ Customer/File & Lot/Q'ty */
-.compact-row {
-  display: flex;
-  justify-content: center;
-  gap: 54px;              /* ✅ ระยะห่างตามที่มีอยู่ */
-  margin-bottom: 16px;
-}
+    /* ✅ ใช้กับ Customer/File & Lot/Q'ty */
+    .compact-row {
+      display: flex;
+      justify-content: center;
+      gap: 54px;
+      margin-bottom: 16px;
+    }
+    .compact-row > div {
+      width: 60%;
+      display: flex;
+      flex-direction: column;
+    }
+    .compact-row label {
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 13.5px;
+    }
+    .compact-row input {
+      width: 100%;
+      padding: 5px 6px;
+      font-size: 13.5px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 6px;
+      height: 30px;
+    }
 
-.compact-row > div {
-  width: 60%;             /* ✅ ขนาดช่องเดิม */
-  display: flex;
-  flex-direction: column;
-}
-
-.compact-row label {
-  font-weight: 600;
-  margin-bottom: 4px;
-  font-size: 13.5px;
-}
-
-.compact-row input {
-  width: 100%;
-  padding: 5px 6px;       /* ✅ ลด padding ด้านใน */
-  font-size: 13.5px;      /* ✅ ลดขนาดตัวอักษรลงเล็กน้อยให้สมดุล */
-  border: 1.5px solid #cbd5e1;
-  border-radius: 6px;
-  height: 30px;           /* ✅ ลดจาก 38px → 30px */
-}
-
-
-/* ✅ ช่องปกติ */
-.form-row {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 14px;
-}
-
-.form-row label {
-  font-weight: 600;
-  margin-bottom: 4px;
-  font-size: 14px;
-}
-
-.form-row input {
-  width: 100%;
-  padding: 5px 6px;       /* ✅ ลด padding */
-  font-size: 14px;
-  border: 1.5px solid #cbd5e1;
-  border-radius: 6px;
-  height: 32px;           /* ✅ ลดจาก 40px → 32px */
-}
+    /* ✅ ช่องปกติ */
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 14px;
+    }
+    .form-row label {
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .form-row input {
+      width: 100%;
+      padding: 5px 6px;
+      font-size: 14px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 6px;
+      height: 32px;
+    }
 
     .readonly { background: #f1f5f9; }
 
@@ -97,7 +91,6 @@
       font-weight: 600; color: white; background: #2563eb;
       width: 100%; margin-top: 10px; cursor: pointer; font-size: 17px;
     }
-
     .btn:hover { background: #1d4ed8; }
 
     .btn-scan {
@@ -114,13 +107,11 @@
       gap: 10px;
       border: 1.5px solid #047857;
     }
-
     .btn-scan svg {
       width: 22px;
       height: 22px;
       fill: white;
     }
-
     .btn-scan:hover { background: #047857; }
 
     hr {
@@ -129,6 +120,9 @@
       margin: 20px 0;
     }
 
+    /* ==============================
+       ✅ Scanner Overlay + Animation
+       ============================== */
     #scanner-view {
       display: none;
       position: fixed;
@@ -136,7 +130,6 @@
       background: #000;
       z-index: 200;
     }
-
     #scanner-container {
       width: 100%;
       height: 100%;
@@ -151,6 +144,58 @@
       height: 250px;
       border: 3px solid #00ff00;
       border-radius: 10px;
+      z-index: 205;
+    }
+
+    .scan-corners {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 260px;
+      height: 260px;
+      z-index: 210;
+    }
+    .corner {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #00ff00;
+      border-radius: 8px;
+    }
+    .corner.top-left { top: -4px; left: -4px; border-right: none; border-bottom: none; }
+    .corner.top-right { top: -4px; right: -4px; border-left: none; border-bottom: none; }
+    .corner.bottom-left { bottom: -4px; left: -4px; border-right: none; border-top: none; }
+    .corner.bottom-right { bottom: -4px; right: -4px; border-left: none; border-top: none; }
+
+    .scan-line {
+      position: absolute;
+      top: calc(50% - 120px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 240px;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #00ff00, transparent);
+      animation: scanMove 2.2s infinite;
+      z-index: 211;
+    }
+    @keyframes scanMove {
+      0% { top: calc(50% - 120px); opacity: 0.7; }
+      50% { top: calc(50% + 120px); opacity: 1; }
+      100% { top: calc(50% - 120px); opacity: 0.7; }
+    }
+
+    .scan-text {
+      position: absolute;
+      bottom: 20%;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      color: #00ff00;
+      font-size: 18px;
+      font-weight: 600;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      z-index: 212;
     }
 
     .btn-close {
@@ -165,6 +210,7 @@
       width: 60px;
       height: 60px;
       font-size: 28px;
+      z-index: 213;
     }
   </style>
 </head>
@@ -181,7 +227,7 @@
 
     <hr>
 
-    <!-- ✅ แถว 1: Customer / File -->
+    <!-- ✅ Customer / File -->
     <div class="compact-row">
       <div>
         <label>Customer</label>
@@ -193,7 +239,7 @@
       </div>
     </div>
 
-    <!-- ✅ แถว 2: Lot / Q'ty -->
+    <!-- ✅ Lot / Q'ty -->
     <div class="compact-row">
       <div>
         <label>Lot</label>
@@ -205,13 +251,13 @@
       </div>
     </div>
 
-    <!-- ✅ แถว 3: Rack -->
+    <!-- ✅ Rack -->
     <div class="form-row">
       <label>Rack</label>
       <input id="rack" class="readonly" readonly>
     </div>
 
-    <!-- ✅ แถว 4: ชื่อผู้ตรวจ -->
+    <!-- ✅ ชื่อผู้ตรวจ -->
     <div class="form-row">
       <label>ชื่อผู้ตรวจ</label>
       <input id="scannerName" class="readonly" readonly>
@@ -246,10 +292,18 @@
     </p>
   </div>
 
-  <!-- Scanner Overlay -->
+  <!-- ✅ Scanner View -->
   <div id="scanner-view">
     <div id="scanner-container"></div>
     <div class="scan-box"></div>
+    <div class="scan-corners">
+      <div class="corner top-left"></div>
+      <div class="corner top-right"></div>
+      <div class="corner bottom-left"></div>
+      <div class="corner bottom-right"></div>
+    </div>
+    <div class="scan-line"></div>
+    <div class="scan-text">📱 กำลังสแกน QR Code...</div>
     <button class="btn-close" onclick="stopScanner()">✕</button>
   </div>
 

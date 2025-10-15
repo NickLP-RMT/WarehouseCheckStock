@@ -38,19 +38,25 @@
     .form-row {
       display: flex;
       gap: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 16px; /* ✅ spacing between rows */
+    }
+    .form-row > div {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
     .form-row label {
       font-weight: 600;
-      display: block;
+      margin-bottom: 6px;
       font-size: 14px;
     }
     .form-row input {
       width: 100%;
-      padding: 8px;
+      padding: 10px;
       font-size: 15px;
       border: 1.5px solid #cbd5e1;
       border-radius: 8px;
+      height: 40px;
     }
     .readonly { background: #f1f5f9; }
     .btn {
@@ -70,9 +76,20 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
+      border: 1.5px solid #047857;
+    }
+    .btn-scan svg {
+      width: 22px;
+      height: 22px;
+      fill: white;
     }
     .btn-scan:hover { background: #047857; }
+    hr {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 20px 0;
+    }
     #scanner-view {
       display: none;
       position: fixed;
@@ -107,6 +124,13 @@
       height: 60px;
       font-size: 28px;
     }
+
+    /* ✅ Responsive for small mobile */
+    @media (max-width: 480px) {
+      .form-row {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
@@ -115,42 +139,45 @@
   <div class="container" id="main-view">
     <!-- ปุ่มสแกน QR -->
     <button class="btn-scan" onclick="startScanner()">
-      <span style="font-size:22px;">🔳</span> Scan QR
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M3 3h8v8H3V3m2 2v4h4V5H5m6 6h2v2h-2v-2m0 4h2v2h-2v-2m4-4h2v2h-2v-2m0 4h2v2h-2v-2m-4 4h2v2h-2v-2m4 0h2v2h-2v-2M3 13h8v8H3v-8m2 2v4h4v-4H5m10-12h6v6h-6V3m2 2v2h2V5h-2m0 4h2v2h-2V9m0 4h6v6h-6v-6m2 2v2h2v-2h-2Z" />
+      </svg>
+      Scan QR
     </button>
 
-    <hr style="margin:20px 0;">
+    <hr>
 
     <div class="form-row">
-      <div style="flex:1">
+      <div>
         <label>Customer</label>
         <input id="customer" class="readonly" readonly>
       </div>
-      <div style="flex:1">
+      <div>
         <label>File</label>
         <input id="file" class="readonly" readonly>
       </div>
     </div>
 
     <div class="form-row">
-      <div style="flex:1">
+      <div>
         <label>Lot</label>
         <input id="lot" class="readonly" readonly>
       </div>
-      <div style="flex:1">
+      <div>
         <label>Q'ty</label>
         <input id="sumQty" class="readonly" readonly>
       </div>
     </div>
 
     <div class="form-row">
-      <div style="flex:1">
+      <div>
         <label>Rack</label>
         <input id="rack" class="readonly" readonly>
       </div>
     </div>
 
     <div class="form-row">
-      <div style="flex:1">
+      <div>
         <label>ชื่อผู้ตรวจ</label>
         <input id="scannerName" class="readonly" readonly>
       </div>
@@ -159,7 +186,7 @@
     <hr>
 
     <div class="form-row">
-      <div style="flex:1">
+      <div>
         <label>Act Rack</label>
         <input id="actRack" placeholder="เช่น R01-A">
       </div>
@@ -173,7 +200,7 @@
     </div>
 
     <div class="form-row">
-      <div style="flex:1">
+      <div>
         <label>Act Q'ty (คำนวณอัตโนมัติ)</label>
         <input id="actQty" class="readonly" readonly>
       </div>

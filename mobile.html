@@ -15,21 +15,42 @@
       min-height: 100vh;
     }
     .header {
-      position: fixed; top: 0; left: 0; width: 100%;
-      background: #1e3a8a; color: white; text-align: center;
-      padding: 14px 0; font-weight: 600; font-size: 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 100;
+      position: fixed;
+      top: 0; left: 0; width: 100%;
+      background: #1e3a8a;
+      color: white;
+      text-align: center;
+      padding: 14px 0;
+      font-weight: 600;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 100;
     }
     .container {
-      margin-top: 80px; background: white; border-radius: 12px;
-      padding: 24px; max-width: 480px; margin-inline: auto;
+      margin-top: 80px;
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 480px;
+      margin-inline: auto;
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
-    .form-group { margin-bottom: 16px; }
-    label { font-weight: 600; display: block; margin-bottom: 6px; }
-    input {
-      width: 100%; padding: 10px; font-size: 15px;
-      border: 1.5px solid #cbd5e1; border-radius: 8px;
+    .form-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .form-row label {
+      font-weight: 600;
+      display: block;
+      font-size: 14px;
+    }
+    .form-row input {
+      width: 100%;
+      padding: 8px;
+      font-size: 15px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
     }
     .readonly { background: #f1f5f9; }
     .btn {
@@ -39,24 +60,52 @@
     }
     .btn:hover { background: #1d4ed8; }
     .btn-scan {
-      background: #059669; color: white; font-size: 20px; width: 60px;
+      background: #059669;
+      color: white;
+      width: 100%;
+      font-size: 18px;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
+    .btn-scan:hover { background: #047857; }
     #scanner-view {
-      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: #000; z-index: 200;
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000;
+      z-index: 200;
     }
     #scanner-container {
-      width: 100%; height: 100%;
-      display: flex; justify-content: center; align-items: center;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .scan-box {
-      position: absolute; width: 250px; height: 250px;
-      border: 3px solid #00ff00; border-radius: 10px;
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      border: 3px solid #00ff00;
+      border-radius: 10px;
     }
     .btn-close {
-      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-      background: #ef4444; border: none; border-radius: 50%;
-      color: white; width: 60px; height: 60px; font-size: 28px;
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ef4444;
+      border: none;
+      border-radius: 50%;
+      color: white;
+      width: 60px;
+      height: 60px;
+      font-size: 28px;
     }
   </style>
 </head>
@@ -64,34 +113,71 @@
   <div class="header">📦 RMT Warehouse Check Stock</div>
 
   <div class="container" id="main-view">
-    <div class="form-group">
-      <label>QR Code</label>
-      <div style="display:flex; gap:8px;">
-        <input type="text" id="qrText" placeholder="กดปุ่มสแกนเพื่ออ่าน QR" readonly>
-        <button class="btn-scan" onclick="startScanner()">📷</button>
+    <!-- ปุ่มสแกน QR -->
+    <button class="btn-scan" onclick="startScanner()">
+      <span style="font-size:22px;">🔳</span> Scan QR
+    </button>
+
+    <hr style="margin:20px 0;">
+
+    <div class="form-row">
+      <div style="flex:1">
+        <label>Customer</label>
+        <input id="customer" class="readonly" readonly>
+      </div>
+      <div style="flex:1">
+        <label>File</label>
+        <input id="file" class="readonly" readonly>
       </div>
     </div>
 
-    <div class="form-group"><label>Customer</label><input id="customer" class="readonly" readonly></div>
-    <div class="form-group"><label>File</label><input id="file" class="readonly" readonly></div>
-    <div class="form-group"><label>Lot</label><input id="lot" class="readonly" readonly></div>
-    <div class="form-group"><label>Rack</label><input id="rack" class="readonly" readonly></div>
-    <div class="form-group"><label>Sum of Q'ty</label><input id="sumQty" class="readonly" readonly></div>
+    <div class="form-row">
+      <div style="flex:1">
+        <label>Lot</label>
+        <input id="lot" class="readonly" readonly>
+      </div>
+      <div style="flex:1">
+        <label>Q'ty</label>
+        <input id="sumQty" class="readonly" readonly>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div style="flex:1">
+        <label>Rack</label>
+        <input id="rack" class="readonly" readonly>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div style="flex:1">
+        <label>ชื่อผู้ตรวจ</label>
+        <input id="scannerName" class="readonly" readonly>
+      </div>
+    </div>
 
     <hr>
 
-    <div class="form-group"><label>Act Rack</label><input id="actRack" placeholder="ใส่ตำแหน่งวางจริง เช่น R01-A"></div>
-
-    <div class="form-group">
-      <label>Package</label>
-      <input id="pkgA" type="number" style="width:28%;text-align:center;"> ×
-      <input id="pkgB" type="number" style="width:28%;text-align:center;"> +
-      <input id="pkgC" type="number" style="width:28%;text-align:center;">
+    <div class="form-row">
+      <div style="flex:1">
+        <label>Act Rack</label>
+        <input id="actRack" placeholder="เช่น R01-A">
+      </div>
     </div>
 
-    <div class="form-group"><label>Act Q'ty (คำนวณอัตโนมัติ)</label><input id="actQty" class="readonly" readonly></div>
+    <div class="form-row">
+      <label style="width:100%;">Package</label>
+      <input id="pkgA" type="number" style="width:30%;text-align:center;"> ×
+      <input id="pkgB" type="number" style="width:30%;text-align:center;"> +
+      <input id="pkgC" type="number" style="width:30%;text-align:center;">
+    </div>
 
-    <div class="form-group"><label>ชื่อผู้ตรวจ</label><input id="scannerName" class="readonly" readonly></div>
+    <div class="form-row">
+      <div style="flex:1">
+        <label>Act Q'ty (คำนวณอัตโนมัติ)</label>
+        <input id="actQty" class="readonly" readonly>
+      </div>
+    </div>
 
     <button class="btn" onclick="submitData()">💾 บันทึกข้อมูล</button>
 
@@ -146,7 +232,6 @@
     }
 
     function handleQRData(text) {
-      document.getElementById("qrText").value = text;
       const parts = text.split("/");
       document.getElementById("customer").value = parts[0] || "";
       document.getElementById("scannerName").value = parts[1] || "";
@@ -166,7 +251,6 @@
 
     async function submitData() {
       const data = {
-        qr: qrText.value.trim(),
         customer: customer.value,
         file: file.value,
         lot: lot.value,
@@ -177,7 +261,7 @@
         scanner: scannerName.value
       };
 
-      if (!data.qr || !data.customer || !data.file || !data.lot || !data.actRack || !data.actQty) {
+      if (!data.customer || !data.file || !data.lot || !data.actRack || !data.actQty) {
         Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบ", "warning");
         return;
       }

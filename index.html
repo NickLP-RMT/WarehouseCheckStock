@@ -133,44 +133,45 @@
   }
 
   async function downloadPDF() {
-    if (qrDataList.length === 0) return;
+  if (qrDataList.length === 0) return;
 
-    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const marginX = 10;
-    const marginY = 10;
-    const qrSize = 30;
-    const colCount = 5; // 5 columns per row
-    const rowCount = 10; // 10 rows per page (5x10 = 50 per A4)
-    let x = marginX, y = marginY, count = 0;
+  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const marginX = 8;
+  const marginY = 8;
+  const qrSize = 35;         // ขนาด QR ที่เหมาะสมกับ A4
+  const colCount = 4;        // 4 คอลัมน์ต่อแถว
+  const rowCount = 12;       // 12 แถวต่อหน้า
+  const gap = 8;             // ระยะห่างระหว่าง QR
+  let x = marginX, y = marginY, count = 0;
 
-    for (let i = 0; i < qrDataList.length; i++) {
-      const canvas = qrDataList[i].element.querySelector("canvas");
-      const label = qrDataList[i].text;
-      const imgData = canvas.toDataURL("image/png");
+  for (let i = 0; i < qrDataList.length; i++) {
+    const canvas = qrDataList[i].element.querySelector("canvas");
+    const label = qrDataList[i].text;
+    const imgData = canvas.toDataURL("image/png");
 
-      pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
-      pdf.setFontSize(6);
-      pdf.text(label, x, y + qrSize + 4, { maxWidth: qrSize });
+    pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
+    pdf.setFontSize(7);
+    pdf.text(label, x, y + qrSize + 6, { maxWidth: qrSize });
 
-      count++;
-      if (count % colCount === 0) {
-        x = marginX;
-        y += qrSize + 10;
-      } else {
-        x += qrSize + 10;
-      }
-
-      // หน้าละ 50 QR
-      if (count % (colCount * rowCount) === 0 && i < qrDataList.length - 1) {
-        pdf.addPage();
-        x = marginX;
-        y = marginY;
-      }
+    count++;
+    if (count % colCount === 0) {
+      x = marginX;
+      y += qrSize + gap + 6;  // เผื่อข้อความ 2 บรรทัด
+    } else {
+      x += qrSize + gap;
     }
 
-    pdf.save(`RMT_QRCodes_${new Date().toISOString().split("T")[0]}.pdf`);
+    if (count % (colCount * rowCount) === 0 && i < qrDataList.length - 1) {
+      pdf.addPage();
+      x = marginX;
+      y = marginY;
+    }
   }
+
+  pdf.save(`RMT_QRCodes_${new Date().toISOString().split("T")[0]}.pdf`);
+}
+
 
   function clearAll() {
     document.getElementById("qrContainer").innerHTML = "";

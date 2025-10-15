@@ -1,165 +1,169 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RMT Warehouse Check Stock</title>
+
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- SweetAlert -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- XLSX -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <!-- QRCode -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
-    body { overflow-x: hidden; }
+    body { overflow-x: hidden; background-color: #f8fafc; }
+    .navbar { background: #1e293b; }
     .sidebar {
-      width: 260px;
-      height: 100vh;
-      position: fixed;
-      left: 0;
-      top: 56px;
-      background: #1e293b;
-      color: white;
-      padding: 20px;
+      width: 260px; height: 100vh; position: fixed;
+      left: 0; top: 56px; background: #1e293b; color: white; padding: 20px;
     }
-    .content {
-      margin-left: 260px;
-      padding: 80px 30px;
-      background: #f8fafc;
-      min-height: 100vh;
-    }
-    .sidebar h5 { color: #cbd5e1; margin-top: 20px; }
-    .btn-upload { width: 100%; margin-bottom: 20px; }
-    .table-container { max-height: 600px; overflow-y: auto; background: white; border-radius: 8px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; }
-    th { background: #e2e8f0; }
-    .pagination { justify-content: center; margin-top: 10px; }
+    .content { margin-left: 260px; padding: 80px 30px; }
+    .qr-grid { display: flex; flex-wrap: wrap; gap: 15px; }
+    .qr-item { text-align: center; background: white; border-radius: 10px; padding: 10px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); }
+    canvas { width: 130px !important; height: 130px !important; }
+    .progress { height: 20px; margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
-
   <!-- Navbar -->
-  <nav class="navbar navbar-dark bg-dark fixed-top">
+  <nav class="navbar navbar-dark fixed-top">
     <div class="container-fluid">
-      <span class="navbar-brand mb-0 h4">📦 RMT Warehouse Check Stock</span>
+      <span class="navbar-brand h4 mb-0">📦 RMT Warehouse Check Stock</span>
     </div>
   </nav>
 
   <!-- Sidebar -->
   <div class="sidebar">
-    <h5>📤 Zone 1: Upload</h5>
-    <input type="file" id="fileInput" class="form-control mb-2" accept=".csv,.xlsx" />
-    <button class="btn btn-success btn-upload" onclick="uploadFile()">Upload File</button>
+    <h5>📤 Import File</h5>
+    <input type="file" id="fileInput" class="form-control mb-3" accept=".xlsx,.csv">
+    <button class="btn btn-success w-100 mb-3" onclick="handleFile()">Generate QR</button>
 
-    <h5>🔍 Zone 2: Search</h5>
-    <label>Start Date</label>
-    <input type="date" id="startDate" class="form-control mb-2">
-    <label>End Date</label>
-    <input type="date" id="endDate" class="form-control mb-2">
-    <button class="btn btn-primary w-100" onclick="searchData()">Search</button>
-    <button class="btn btn-outline-success w-100 mt-2" onclick="downloadExcel()">Download Excel</button>
-  </div>
-
-  <!-- Main Content -->
-  <div class="content">
-    <h4>📊 Search Results</h4>
-    <div class="table-container mt-3">
-      <table class="table table-striped" id="dataTable">
-        <thead><tr id="tableHeader"></tr></thead>
-        <tbody id="tableBody"></tbody>
-      </table>
+    <div class="progress">
+      <div id="progressBar" class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 0%">0%</div>
     </div>
-    <nav><ul class="pagination" id="pagination"></ul></nav>
+
+    <button class="btn btn-outline-primary w-100 mt-3" id="downloadBtn" onclick="downloadPDF()" disabled>Download PDF</button>
   </div>
 
-<script>
-let allData = [];
-let currentPage = 1;
-const rowsPerPage = 10;
+  <!-- Content -->
+  <div class="content">
+    <h4>🧾 QR Code Preview</h4>
+    <div id="qrContainer" class="qr-grid mt-3"></div>
+  </div>
 
-async function searchData() {
-  const start = document.getElementById("startDate").value;
-  const end = document.getElementById("endDate").value;
-  if (!start || !end) {
-    Swal.fire("⚠️ Please select start and end date");
-    return;
+  <script>
+  const { jsPDF } = window.jspdf;
+  let qrDataList = [];
+
+  function handleFile() {
+    const fileInput = document.getElementById("fileInput");
+    if (!fileInput.files[0]) {
+      Swal.fire("⚠️", "Please select an Excel or CSV file first!", "warning");
+      return;
+    }
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      generateQRs(jsonData);
+    };
+    reader.readAsArrayBuffer(file);
   }
 
-  Swal.fire({ title: "Fetching data...", didOpen: () => Swal.showLoading() });
+  async function generateQRs(data) {
+    const container = document.getElementById("qrContainer");
+    const progressBar = document.getElementById("progressBar");
+    const progressContainer = document.querySelector(".progress");
+    container.innerHTML = "";
+    qrDataList = [];
 
-  // 👉 ดึงข้อมูลจาก Google Sheets Web App (แก้ URL ตามของคุณ)
-  const url = `https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?page=search&start=${start}&end=${end}`;
-  const res = await fetch(url);
-  const json = await res.json();
-  allData = json.data || [];
+    if (data.length <= 1) {
+      Swal.fire("⚠️", "No data found in file", "warning");
+      return;
+    }
 
-  Swal.close();
-  renderTable();
-}
+    progressContainer.style.display = "block";
+    progressBar.style.width = "0%";
+    progressBar.innerText = "0%";
 
-function renderTable(page = 1) {
-  currentPage = page;
-  const start = (page - 1) * rowsPerPage;
-  const end = start + rowsPerPage;
-  const pageData = allData.slice(start, end);
+    // สร้าง QR ทีละแถว (เริ่มจากแถวที่ 2)
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i].filter(cell => cell !== undefined && cell !== "");
+      if (row.length === 0) continue;
+      const text = row.join("/");
 
-  const headerRow = document.getElementById("tableHeader");
-  const body = document.getElementById("tableBody");
-  body.innerHTML = "";
-  headerRow.innerHTML = "";
+      const qrDiv = document.createElement("div");
+      qrDiv.className = "qr-item";
+      const qrCanvas = document.createElement("div");
+      qrDiv.appendChild(qrCanvas);
+      const label = document.createElement("div");
+      label.innerText = text;
+      label.style.fontSize = "10px";
+      label.style.marginTop = "5px";
+      qrDiv.appendChild(label);
+      container.appendChild(qrDiv);
 
-  if (pageData.length === 0) {
-    body.innerHTML = "<tr><td colspan='5' class='text-center text-muted'>No data found</td></tr>";
-    return;
+      new QRCode(qrCanvas, {
+        text: text,
+        width: 130,
+        height: 130
+      });
+
+      qrDataList.push({ text, element: qrDiv });
+
+      // Update progress
+      const percent = Math.round((i / (data.length - 1)) * 100);
+      progressBar.style.width = percent + "%";
+      progressBar.innerText = percent + "%";
+      await new Promise(r => setTimeout(r, 10)); // หน่วงเล็กน้อยให้ progress ลื่น
+    }
+
+    Swal.fire("✅", `Generated ${qrDataList.length} QR Codes successfully!`, "success");
+    progressBar.classList.remove("bg-info");
+    progressBar.classList.add("bg-success");
+    document.getElementById("downloadBtn").disabled = false;
   }
 
-  Object.keys(pageData[0]).forEach(col => {
-    headerRow.innerHTML += `<th>${col}</th>`;
-  });
+  async function downloadPDF() {
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 10;
+    const qrSize = 40;
+    let x = margin, y = margin;
 
-  pageData.forEach(row => {
-    const tr = document.createElement("tr");
-    Object.values(row).forEach(val => {
-      tr.innerHTML += `<td>${val}</td>`;
-    });
-    body.appendChild(tr);
-  });
+    for (let i = 0; i < qrDataList.length; i++) {
+      const canvas = qrDataList[i].element.querySelector("canvas");
+      const label = qrDataList[i].text;
+      const imgData = canvas.toDataURL("image/png");
 
-  renderPagination();
-}
+      pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
+      pdf.setFontSize(7);
+      pdf.text(label, x, y + qrSize + 4, { maxWidth: qrSize });
 
-function renderPagination() {
-  const totalPages = Math.ceil(allData.length / rowsPerPage);
-  const pagination = document.getElementById("pagination");
-  pagination.innerHTML = "";
-  for (let i = 1; i <= totalPages; i++) {
-    const li = document.createElement("li");
-    li.className = `page-item ${i === currentPage ? 'active' : ''}`;
-    li.innerHTML = `<a class='page-link' href='#' onclick='renderTable(${i})'>${i}</a>`;
-    pagination.appendChild(li);
+      x += qrSize + 10;
+      if (x + qrSize > pageWidth - margin) {
+        x = margin;
+        y += qrSize + 15;
+      }
+      if (y + qrSize > 280 && i < qrDataList.length - 1) {
+        pdf.addPage();
+        x = margin;
+        y = margin;
+      }
+    }
+
+    pdf.save(`RMT_QRCodes_${new Date().toISOString().split("T")[0]}.pdf`);
   }
-}
-
-function downloadExcel() {
-  if (allData.length === 0) {
-    Swal.fire("⚠️ No data to export");
-    return;
-  }
-  const ws = XLSX.utils.json_to_sheet(allData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "SearchData");
-  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-  saveAs(new Blob([wbout], {type:"application/octet-stream"}), `RMT_SearchData_${new Date().toISOString().split('T')[0]}.xlsx`);
-}
-
-function uploadFile() {
-  const fileInput = document.getElementById("fileInput");
-  if (!fileInput.files[0]) {
-    Swal.fire("⚠️ Please select a file first!");
-    return;
-  }
-  Swal.fire("✅ File uploaded successfully!");
-}
-</script>
-
+  </script>
 </body>
 </html>

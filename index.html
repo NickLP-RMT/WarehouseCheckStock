@@ -23,10 +23,18 @@
       width: 260px; height: 100vh; position: fixed;
       left: 0; top: 56px; background: #1e293b; color: white; padding: 20px;
     }
-    .content { margin-left: 260px; padding: 80px 30px; }
+    .sidebar button.menu {
+      background: none; border: none; color: white; width: 100%;
+      text-align: left; font-size: 16px; margin-bottom: 10px; padding: 8px 10px;
+      border-radius: 8px; transition: background 0.2s;
+    }
+    .sidebar button.menu:hover, .sidebar button.menu.active {
+      background: #334155;
+    }
+    .sidebar .menu-content { margin-top: 15px; }
+    .content { margin-left: 260px; padding: 80px 30px; transition: all 0.3s ease; }
     .qr-grid { display: flex; flex-wrap: wrap; gap: 15px; }
     .qr-item { text-align: center; background: white; border-radius: 10px; padding: 10px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); }
-    canvas { width: 130px !important; height: 130px !important; }
     .progress { height: 20px; margin-top: 10px; display: none; }
   </style>
 </head>
@@ -40,25 +48,88 @@
 
   <!-- Sidebar -->
   <div class="sidebar">
-    <h5>📤 Import File</h5>
-    <input type="file" id="fileInput" class="form-control mb-3" accept=".xlsx,.csv">
-    <button class="btn btn-success w-100 mb-3" onclick="handleFile()">Generate QR</button>
+    <!-- Menu Buttons -->
+    <button class="menu active" id="menuImport" onclick="showSection('import')">📤 Import File</button>
+    <button class="menu" id="menuSearch" onclick="showSection('search')">🔍 Search Data</button>
 
-    <div class="progress">
-      <div id="progressBar" class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 0%">0%</div>
+    <!-- Import Section -->
+    <div class="menu-content" id="sectionImport">
+      <input type="file" id="fileInput" class="form-control mb-3" accept=".xlsx,.csv">
+      <button class="btn btn-success w-100 mb-3" onclick="handleFile()">Generate QR</button>
+      <div class="progress">
+        <div id="progressBar" class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 0%">0%</div>
+      </div>
+      <button class="btn btn-outline-primary w-100 mt-3" id="downloadBtn" onclick="downloadPDF()" disabled>Download PDF</button>
+      <button class="btn btn-danger w-100 mt-2" id="clearBtn" onclick="clearAll()" disabled>Clear</button>
     </div>
 
-    <button class="btn btn-outline-primary w-100 mt-3" id="downloadBtn" onclick="downloadPDF()" disabled>Download PDF</button>
-    <button class="btn btn-danger w-100 mt-2" id="clearBtn" onclick="clearAll()" disabled>Clear</button>
+    <!-- Search Section -->
+    <div class="menu-content" id="sectionSearch" style="display:none;">
+      <label>Start Date</label>
+      <input type="date" id="startDate" class="form-control mb-2">
+      <label>End Date</label>
+      <input type="date" id="endDate" class="form-control mb-3">
+      <button class="btn btn-primary w-100 mb-2" onclick="searchData()">Search</button>
+      <button class="btn btn-outline-success w-100" onclick="exportExcel()">Export Excel</button>
+    </div>
   </div>
 
   <!-- Content -->
   <div class="content">
-    <h4>🧾 QR Code Preview</h4>
-    <div id="qrContainer" class="qr-grid mt-3"></div>
+    <!-- Import File -->
+    <div id="contentImport">
+      <h4>🧾 QR Code Preview</h4>
+      <div id="qrContainer" class="qr-grid mt-3"></div>
+    </div>
+
+    <!-- Search Data -->
+    <div id="contentSearch" style="display:none;">
+      <h4>🔍 Search Results</h4>
+      <table class="table table-striped mt-3">
+        <thead><tr><th>#</th><th>Date</th><th>Item</th><th>Qty</th></tr></thead>
+        <tbody id="searchTableBody"></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
+  // Sidebar toggle
+  function showSection(section) {
+    document.querySelectorAll('.menu').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('menu' + section.charAt(0).toUpperCase() + section.slice(1)).classList.add('active');
+    document.getElementById('sectionImport').style.display = section === 'import' ? 'block' : 'none';
+    document.getElementById('sectionSearch').style.display = section === 'search' ? 'block' : 'none';
+    document.getElementById('contentImport').style.display = section === 'import' ? 'block' : 'none';
+    document.getElementById('contentSearch').style.display = section === 'search' ? 'block' : 'none';
+  }
+
+  // Mock search
+  function searchData() {
+    const start = document.getElementById("startDate").value;
+    const end = document.getElementById("endDate").value;
+    if (!start || !end) {
+      Swal.fire("⚠️", "Please select start and end date", "warning");
+      return;
+    }
+    const tbody = document.getElementById("searchTableBody");
+    tbody.innerHTML = "";
+    const mockData = [
+      { date: "2025-10-14", item: "Speaker A", qty: 2 },
+      { date: "2025-10-15", item: "Speaker B", qty: 1 },
+      { date: "2025-10-16", item: "Projector", qty: 3 }
+    ];
+    mockData.forEach((d, i) => {
+      const row = `<tr><td>${i + 1}</td><td>${d.date}</td><td>${d.item}</td><td>${d.qty}</td></tr>`;
+      tbody.innerHTML += row;
+    });
+    Swal.fire("✅", "Search complete!", "success");
+  }
+
+  function exportExcel() {
+    Swal.fire("📤", "Exporting search data...", "info");
+  }
+
+  // ---- QR GENERATION (เหมือนเดิม) ----
   const { jsPDF } = window.jspdf;
   let qrDataList = [];
 
@@ -100,25 +171,19 @@
     for (let i = 1; i < data.length; i++) {
       const row = data[i].filter(cell => cell !== undefined && cell !== "");
       if (row.length === 0) continue;
-
-      // แทนที่ / ด้วยช่องว่าง
       const text = row.join("/");
       const qrDiv = document.createElement("div");
       qrDiv.className = "qr-item";
-
       const qrCanvas = document.createElement("div");
       qrDiv.appendChild(qrCanvas);
-
       const label = document.createElement("div");
       label.innerText = text;
       label.style.fontSize = "10px";
       label.style.marginTop = "5px";
       qrDiv.appendChild(label);
       container.appendChild(qrDiv);
-
       new QRCode(qrCanvas, { text: text, width: 130, height: 130 });
       qrDataList.push({ text, element: qrDiv });
-
       const percent = Math.round((i / (data.length - 1)) * 100);
       progressBar.style.width = percent + "%";
       progressBar.innerText = percent + "%";
@@ -132,110 +197,54 @@
     document.getElementById("clearBtn").disabled = false;
   }
 
-function downloadPDF() {
-  if (qrDataList.length === 0) return;
+  // ---- PDF EXPORT (เหมือนเดิม) ----
+  function downloadPDF() {
+    if (qrDataList.length === 0) return;
 
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const marginX = 8, marginY = 18, qrSize = 24, colCount = 6, rowCount = 7;
+    const gapX = 6, gapY = 5, labelYOffset = 4, stepY = qrSize + 10;
+    let x = marginX, y = marginY, col = 0, row = 0, counter = 1;
 
-  // ---- Layout spec ----
-  const marginX = 8;
-  const marginY = 18; // เผื่อ header
-  const qrSize = 24;
-  const colCount = 6;
-  const rowCount = 7;
-  const gapX = 6;
-  const gapY = 5;
-  const labelYOffset = 4;
-  const stepY = qrSize + 10;
-  let x = marginX;
-  let y = marginY;
-  let col = 0;
-  let row = 0;
-  let counter = 1;
+    let headerName = "";
+    try { headerName = qrDataList[0].text.split("/")[1] || ""; } catch (e) {}
 
-  // 🏷️ ดึงชื่อจาก column B (ชื่อคน เช่น Boonruen)
-  let headerName = "";
-  try {
-    const firstText = qrDataList[0].text.split("/");
-    headerName = firstText[1] || "";
-  } catch (e) {
-    headerName = "";
-  }
+    const printHeader = () => {
+      pdf.setFontSize(10);
+      pdf.setTextColor(40);
+      const today = new Date().toISOString().split("T")[0];
+      const headerText = `RMT Warehouse QR List — ${headerName} (${today})`;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const textWidth = pdf.getTextWidth(headerText);
+      pdf.text(headerText, (pageWidth - textWidth) / 2, 10);
+      pdf.setTextColor(0);
+    };
+    printHeader();
 
-  pdf.setFontSize(6);
-  pdf.setDrawColor(180);
+    for (let i = 0; i < qrDataList.length; i++) {
+      const canvas = qrDataList[i].element.querySelector("canvas");
+      const qrText = qrDataList[i].text;
+      const parts = qrText.split("/");
+      const filtered = parts.filter((_, idx) => idx !== 1);
+      const label = filtered.join(" ").trim();
+      const imgData = canvas.toDataURL("image/png");
 
-  // 🧾 Header Function
-  const printHeader = () => {
-    pdf.setFontSize(10);
-    pdf.setTextColor(40);
-    const today = new Date().toISOString().split("T")[0];
-    const headerText = `RMT Warehouse QR List — ${headerName} (${today})`;
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const textWidth = pdf.getTextWidth(headerText);
-    pdf.text(headerText, (pageWidth - textWidth) / 2, 10);
-    pdf.setTextColor(0);
-  };
-
-  printHeader(); // หน้าแรก
-
-  for (let i = 0; i < qrDataList.length; i++) {
-    const canvas = qrDataList[i].element.querySelector("canvas");
-
-    // 🧩 ใช้ text เดิมที่มี "/" สำหรับ QR
-    const qrText = qrDataList[i].text;
-
-    // 🏷️ สำหรับ label ให้แทน "/" ด้วย " "
-    const parts = qrText.split("/");
-    const filtered = parts.filter((_, idx) => idx !== 1); // skip column B
-    const label = filtered.join(" ").trim();
-
-    const imgData = canvas.toDataURL("image/png");
-
-    // 🔳 วาดกรอบ
-    pdf.rect(x - 1, y - 1, qrSize + 2, qrSize + 10, "S");
-
-    // 🔢 ลำดับ
-    pdf.setFontSize(7);
-    pdf.text(`${counter}`, x - 0.5, y - 2.5);
-
-    // 🧾 วาด QR (ใช้ข้อความแบบมี /)
-    pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
-
-    // 🏷️ วาด Label (แทน / ด้วยช่องว่าง)
-    pdf.setFontSize(6);
-    const wrapped = pdf.splitTextToSize(label, qrSize);
-    pdf.text(wrapped, x, y + qrSize + labelYOffset);
-
-    // เดินตำแหน่ง
-    col++;
-    counter++;
-
-    if (col === colCount) {
-      col = 0;
-      x = marginX;
-      row++;
-      y += stepY + gapY;
-    } else {
-      x += qrSize + gapX;
-    }
-
-    // ครบ 7 แถว → เปิดหน้าใหม่
-    if (row === rowCount && i < qrDataList.length - 1) {
-      pdf.addPage();
-      printHeader();
-      pdf.setDrawColor(180);
+      pdf.rect(x - 1, y - 1, qrSize + 2, qrSize + 10, "S");
+      pdf.setFontSize(7);
+      pdf.text(`${counter}`, x - 0.5, y - 2.5);
+      pdf.addImage(imgData, "PNG", x, y, qrSize, qrSize);
       pdf.setFontSize(6);
-      x = marginX;
-      y = marginY;
-      row = 0;
-      col = 0;
-    }
-  }
+      pdf.text(pdf.splitTextToSize(label, qrSize), x, y + qrSize + labelYOffset);
 
-  pdf.save(`RMT_QRCodes_${headerName}_${new Date().toISOString().split("T")[0]}.pdf`);
-}
+      col++; counter++;
+      if (col === colCount) { col = 0; x = marginX; row++; y += stepY + gapY; }
+      else x += qrSize + gapX;
+      if (row === rowCount && i < qrDataList.length - 1) {
+        pdf.addPage(); printHeader(); x = marginX; y = marginY; row = 0; col = 0;
+      }
+    }
+    pdf.save(`RMT_QRCodes_${headerName}_${new Date().toISOString().split("T")[0]}.pdf`);
+  }
 
   function clearAll() {
     document.getElementById("qrContainer").innerHTML = "";

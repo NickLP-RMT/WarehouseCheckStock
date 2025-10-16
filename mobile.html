@@ -69,9 +69,7 @@ hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
   height: 30px;
   padding: 2px;
 }
-.pkg-input.a { width: 45px; }
-.pkg-input.b { width: 45px; }
-.pkg-input.c { width: 55px; }
+.pkg-input.a, .pkg-input.b, .pkg-input.c { width: 45px; }
 
 /* Button Row */
 .button-row {
@@ -117,24 +115,13 @@ hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
 }
 #scanner-container {
   width: 100%; height: 100%; position: relative;
-  overflow: hidden; display: flex; justify-content: center; align-items: center;
+  display: flex; justify-content: center; align-items: center;
 }
 video { object-fit: cover; width: 100%; height: 100%; }
-.focus-box {
-  position: absolute; top: 50%; left: 50%;
-  width: 250px; height: 250px;
-  transform: translate(-50%, -50%);
-  border: 2px solid #00ff00;
-  border-radius: 10px;
-  z-index: 210;
-  box-shadow: 0 0 0 2000px rgba(0,0,0,0.6);
-}
-.scan-text {
-  position: absolute; bottom: 16%; width: 100%;
-  text-align: center; color: #00ff00;
-  font-size: 17px; font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-  z-index: 211;
+.scan-box {
+  position: absolute; width: 260px; height: 260px;
+  border: 3px solid #00ff00; border-radius: 10px;
+  box-shadow: 0 0 0 4000px rgba(0,0,0,0.6);
 }
 .btn-close {
   position: absolute; bottom: 30px; left: 50%;
@@ -142,7 +129,10 @@ video { object-fit: cover; width: 100%; height: 100%; }
   background: #ef4444; border: none;
   border-radius: 50%; color: white;
   width: 60px; height: 60px; font-size: 28px;
-  z-index: 212;
+}
+.scan-text {
+  position: absolute; bottom: 15%; width: 100%;
+  text-align: center; color: #00ff00; font-size: 17px; font-weight: 600;
 }
 </style>
 </head>
@@ -210,92 +200,47 @@ video { object-fit: cover; width: 100%; height: 100%; }
 <!-- Scanner View -->
 <div id="scanner-view">
   <div id="scanner-container"></div>
-  <div class="focus-box"></div>
-  <div class="scan-text">แตะตรงกลางจอเพื่อจับภาพ QR</div>
+  <div class="scan-box"></div>
+  <div class="scan-text">📱 กำลังสแกน QR Code...</div>
   <button class="btn-close" onclick="stopScanner()">✕</button>
 </div>
 
 <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
 
 <script>
-let codeReader, videoElem, scanning = false;
+let codeReader;
 
 async function startScanner() {
   document.getElementById("main-view").style.display = "none";
   document.getElementById("scanner-view").style.display = "block";
 
   codeReader = new ZXing.BrowserMultiFormatReader();
-  videoElem = document.createElement("video");
+  const videoElem = document.createElement("video");
   videoElem.setAttribute("playsinline", true);
   videoElem.style.width = "100%";
   videoElem.style.height = "100%";
   document.getElementById("scanner-container").appendChild(videoElem);
-  videoElem.addEventListener("click", captureFrame);
 
   try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const camera = devices.find(d => d.kind === "videoinput" && /back|environment/i.test(d.label));
-    await navigator.mediaDevices.getUserMedia({
-      video: { deviceId: camera ? camera.deviceId : undefined, facingMode: "environment" }
-    }).then(stream => videoElem.srcObject = stream);
-    await videoElem.play();
+    await codeReader.decodeFromVideoDevice(null, videoElem, (result, err) => {
+      if (result) {
+        const text = result.text.trim();
+        document.getElementById("beep").play();
+        stopScanner();
+        handleQRData(text);
+      }
+    });
   } catch (e) {
-    Swal.fire("❌", "ไม่สามารถเปิดกล้องได้ หรือผู้ใช้ไม่อนุญาต", "error");
+    Swal.fire("❌", "ไม่สามารถเปิดกล้องได้", "error");
     stopScanner();
   }
 }
 
-async function captureFrame() {
-  if (scanning) return;
-  scanning = true;
-  document.getElementById("beep").play();
-
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  canvas.width = videoElem.videoWidth;
-  canvas.height = videoElem.videoHeight;
-  const region = { x: canvas.width * 0.25, y: canvas.height * 0.25, w: canvas.width * 0.5, h: canvas.height * 0.5 };
-  ctx.drawImage(videoElem, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
-  const imgData = canvas.toDataURL("image/png");
-
-  const confirm = await Swal.fire({
-    title: "ตรวจพบ QR Code",
-    html: `<img src="${imgData}" style="width:90%;border-radius:10px;margin-top:10px;"><p style="margin-top:10px;">ต้องการอ่าน QR นี้หรือไม่?</p>`,
-    showCancelButton: true,
-    confirmButtonText: "✅ อ่าน QR",
-    cancelButtonText: "❌ ยกเลิก",
-    allowOutsideClick: false
-  });
-
-  if (confirm.isConfirmed) {
-    const result = await decodeQR(canvas);
-    if (result) {
-      stopScanner();
-      handleQRData(result);
-    } else {
-      Swal.fire("⚠️", "ไม่พบ QR ในภาพที่ถ่าย", "warning");
-      scanning = false;
-    }
-  } else scanning = false;
-}
-
-async function decodeQR(canvas) {
-  try {
-    const luminanceSource = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
-    const binaryBitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminanceSource));
-    const result = new ZXing.MultiFormatReader().decode(binaryBitmap);
-    return result.text.trim();
-  } catch {
-    return null;
-  }
-}
-
 function stopScanner() {
-  if (videoElem && videoElem.srcObject) videoElem.srcObject.getTracks().forEach(t => t.stop());
+  if (codeReader) codeReader.reset();
   document.getElementById("scanner-container").innerHTML = "";
   document.getElementById("scanner-view").style.display = "none";
   document.getElementById("main-view").style.display = "block";
-  scanning = false;
 }
 
 function handleQRData(text) {

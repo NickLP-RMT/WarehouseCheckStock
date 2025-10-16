@@ -38,7 +38,6 @@
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-    /* ✅ ใช้กับ Customer/File & Lot/Q'ty */
     .compact-row {
       display: flex;
       justify-content: center;
@@ -64,17 +63,8 @@
       height: 30px;
     }
 
-    /* ✅ ช่องปกติ */
-    .form-row {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 14px;
-    }
-    .form-row label {
-      font-weight: 600;
-      margin-bottom: 4px;
-      font-size: 14px;
-    }
+    .form-row { display: flex; flex-direction: column; margin-bottom: 14px; }
+    .form-row label { font-weight: 600; margin-bottom: 4px; font-size: 14px; }
     .form-row input {
       width: 100%;
       padding: 5px 6px;
@@ -107,22 +97,12 @@
       gap: 10px;
       border: 1.5px solid #047857;
     }
-    .btn-scan svg {
-      width: 22px;
-      height: 22px;
-      fill: white;
-    }
+    .btn-scan svg { width: 22px; height: 22px; fill: white; }
     .btn-scan:hover { background: #047857; }
 
-    hr {
-      border: none;
-      border-top: 1px solid #e2e8f0;
-      margin: 20px 0;
-    }
+    hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
 
-    /* ==============================
-       ✅ Scanner Overlay + Animation
-       ============================== */
+    /* ===================== Scanner Overlay ===================== */
     #scanner-view {
       display: none;
       position: fixed;
@@ -130,43 +110,33 @@
       background: #000;
       z-index: 200;
     }
+
     #scanner-container {
       width: 100%;
       height: 100%;
+      position: relative;
+      overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
     }
 
-    .scan-box {
-      position: absolute;
-      width: 250px;
-      height: 250px;
-      border: 3px solid #00ff00;
-      border-radius: 10px;
-      z-index: 205;
+    video {
+      object-fit: cover;
+      width: 100%;
+      height: 100%;
     }
 
-    .scan-corners {
+    .scan-box {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
       width: 260px;
       height: 260px;
+      border: 2px solid #00ff00;
+      border-radius: 10px;
       z-index: 210;
+      box-shadow: 0 0 0 2000px rgba(0,0,0,0.7);
+      transition: border-color 0.2s ease;
     }
-    .corner {
-      position: absolute;
-      width: 40px;
-      height: 40px;
-      border: 4px solid #00ff00;
-      border-radius: 8px;
-    }
-    .corner.top-left { top: -4px; left: -4px; border-right: none; border-bottom: none; }
-    .corner.top-right { top: -4px; right: -4px; border-left: none; border-bottom: none; }
-    .corner.bottom-left { bottom: -4px; left: -4px; border-right: none; border-top: none; }
-    .corner.bottom-right { bottom: -4px; right: -4px; border-left: none; border-top: none; }
 
     .scan-line {
       position: absolute;
@@ -179,6 +149,7 @@
       animation: scanMove 2.2s infinite;
       z-index: 211;
     }
+
     @keyframes scanMove {
       0% { top: calc(50% - 120px); opacity: 0.7; }
       50% { top: calc(50% + 120px); opacity: 1; }
@@ -187,8 +158,7 @@
 
     .scan-text {
       position: absolute;
-      bottom: 20%;
-      left: 0;
+      bottom: 18%;
       width: 100%;
       text-align: center;
       color: #00ff00;
@@ -227,51 +197,22 @@
 
     <hr>
 
-    <!-- ✅ Customer / File -->
     <div class="compact-row">
-      <div>
-        <label>Customer</label>
-        <input id="customer" class="readonly" readonly>
-      </div>
-      <div>
-        <label>File</label>
-        <input id="file" class="readonly" readonly>
-      </div>
+      <div><label>Customer</label><input id="customer" class="readonly" readonly></div>
+      <div><label>File</label><input id="file" class="readonly" readonly></div>
     </div>
 
-    <!-- ✅ Lot / Q'ty -->
     <div class="compact-row">
-      <div>
-        <label>Lot</label>
-        <input id="lot" class="readonly" readonly>
-      </div>
-      <div>
-        <label>Q'ty</label>
-        <input id="sumQty" class="readonly" readonly>
-      </div>
+      <div><label>Lot</label><input id="lot" class="readonly" readonly></div>
+      <div><label>Q'ty</label><input id="sumQty" class="readonly" readonly></div>
     </div>
 
-    <!-- ✅ Rack -->
-    <div class="form-row">
-      <label>Rack</label>
-      <input id="rack" class="readonly" readonly>
-    </div>
-
-    <!-- ✅ ชื่อผู้ตรวจ -->
-    <div class="form-row">
-      <label>ชื่อผู้ตรวจ</label>
-      <input id="scannerName" class="readonly" readonly>
-    </div>
+    <div class="form-row"><label>Rack</label><input id="rack" class="readonly" readonly></div>
+    <div class="form-row"><label>ชื่อผู้ตรวจ</label><input id="scannerName" class="readonly" readonly></div>
 
     <hr>
+    <div class="form-row"><label>Act Rack</label><input id="actRack" placeholder="เช่น R01-A"></div>
 
-    <!-- ✅ Act Rack -->
-    <div class="form-row">
-      <label>Act Rack</label>
-      <input id="actRack" placeholder="เช่น R01-A">
-    </div>
-
-    <!-- ✅ Package -->
     <div class="form-row" style="flex-direction: row; align-items: center; justify-content: center; gap: 6px;">
       <label style="width: 100%;">Package</label>
       <input id="pkgA" type="number" style="width: 30%; text-align: center;"> ×
@@ -279,56 +220,64 @@
       <input id="pkgC" type="number" style="width: 30%; text-align: center;">
     </div>
 
-    <!-- ✅ Act Q'ty -->
-    <div class="form-row">
-      <label>Act Q'ty (คำนวณอัตโนมัติ)</label>
-      <input id="actQty" class="readonly" readonly>
-    </div>
+    <div class="form-row"><label>Act Q'ty (คำนวณอัตโนมัติ)</label><input id="actQty" class="readonly" readonly></div>
 
     <button class="btn" onclick="submitData()">💾 บันทึกข้อมูล</button>
 
-    <p style="text-align:center;margin-top:12px;font-size:12px;color:#64748b;">
-      © 2025 Resonac Materials (Thailand) Co., Ltd.
-    </p>
+    <p style="text-align:center;margin-top:12px;font-size:12px;color:#64748b;">© 2025 Resonac Materials (Thailand) Co., Ltd.</p>
   </div>
 
   <!-- ✅ Scanner View -->
   <div id="scanner-view">
     <div id="scanner-container"></div>
-    <div class="scan-box"></div>
-    <div class="scan-corners">
-      <div class="corner top-left"></div>
-      <div class="corner top-right"></div>
-      <div class="corner bottom-left"></div>
-      <div class="corner bottom-right"></div>
-    </div>
+    <div class="scan-box" id="scanBox"></div>
     <div class="scan-line"></div>
-    <div class="scan-text">📱 กำลังสแกน QR Code...</div>
+    <div class="scan-text">📱 สแกนเฉพาะ QR ตรงกลางจอ</div>
     <button class="btn-close" onclick="stopScanner()">✕</button>
   </div>
 
   <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
 
   <script>
-    let codeReader;
+    let codeReader, videoElem;
+
     async function startScanner() {
       document.getElementById("main-view").style.display = "none";
       document.getElementById("scanner-view").style.display = "block";
 
       codeReader = new ZXing.BrowserMultiFormatReader();
-      const videoElem = document.createElement("video");
+      videoElem = document.createElement("video");
       videoElem.setAttribute("playsinline", true);
       videoElem.style.width = "100%";
       videoElem.style.height = "100%";
       document.getElementById("scanner-container").appendChild(videoElem);
 
+      const scanBox = document.getElementById("scanBox");
+
       try {
         await codeReader.decodeFromVideoDevice(null, videoElem, (result, err) => {
           if (result) {
-            const text = result.text.trim();
-            document.getElementById("beep").play();
-            stopScanner();
-            handleQRData(text);
+            const points = result.resultPoints;
+            if (points && points.length > 0) {
+              const centerX = points.reduce((sum, p) => sum + p.x, 0) / points.length;
+              const centerY = points.reduce((sum, p) => sum + p.y, 0) / points.length;
+
+              const withinCenter = (
+                centerX > videoElem.videoWidth * 0.3 &&
+                centerX < videoElem.videoWidth * 0.7 &&
+                centerY > videoElem.videoHeight * 0.3 &&
+                centerY < videoElem.videoHeight * 0.7
+              );
+
+              // ✅ Highlight เมื่อเจอ QR ในกรอบกลาง
+              scanBox.style.borderColor = withinCenter ? "#00ff00" : "#444";
+
+              if (withinCenter) {
+                document.getElementById("beep").play();
+                stopScanner();
+                handleQRData(result.text.trim());
+              }
+            }
           }
         });
       } catch (e) {
@@ -363,13 +312,9 @@
 
     async function submitData() {
       const data = {
-        customer: customer.value,
-        file: file.value,
-        lot: lot.value,
-        rack: rack.value,
-        sumQty: sumQty.value,
-        actRack: actRack.value.trim(),
-        actQty: actQty.value.trim(),
+        customer: customer.value, file: file.value, lot: lot.value,
+        rack: rack.value, sumQty: sumQty.value,
+        actRack: actRack.value.trim(), actQty: actQty.value.trim(),
         scanner: scannerName.value
       };
 

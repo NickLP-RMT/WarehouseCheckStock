@@ -186,20 +186,23 @@ video { object-fit: cover; width: 100%; height: 100%; }
     <div class="rack-set">
       <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
       <div class="form-row"><label>Act Rack</label><input class="actRack" placeholder="เช่น R01-A"></div>
-      <div class="compact-row">
-        <div>
-          <label>Package</label>
-          <div class="package-box">
-            <input type="number" class="pkg-input a"> ×
-            <input type="number" class="pkg-input b"> +
-            <input type="number" class="pkg-input c">
-          </div>
-        </div>
-        <div>
-          <label>Act Q'ty</label>
-          <input class="actQty readonly" readonly>
-        </div>
-      </div>
+      <!-- ✅ Package / Act Q'ty -->
+<div class="compact-row">
+  <div>
+    <label>Package</label>
+    <div class="package-box">
+      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="validateNumber(this)">
+      ×
+      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input b" oninput="validateNumber(this)">
+      +
+      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input c" oninput="validateNumber(this)">
+    </div>
+  </div>
+  <div>
+    <label>Act Q'ty</label>
+    <input id="actQty" class="readonly" readonly>
+  </div>
+</div>
     </div>
   </div>
 
@@ -398,6 +401,12 @@ async function submitData() {
     Swal.fire("❌","ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์","error");
   }
 }
+
+  function validateNumber(input) {
+  // ลบตัวอักษรใดๆ ที่ไม่ใช่ตัวเลข
+  input.value = input.value.replace(/[^0-9]/g, "");
+}
+
 </script>
 </body>
 </html>

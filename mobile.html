@@ -114,6 +114,27 @@ video { object-fit: cover; width: 100%; height: 100%; }
   max-width: 90%; border-radius: 10px;
   box-shadow: 0 0 15px rgba(0,0,0,0.4);
 }
+  .package-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pkg-input {
+  text-align: center;
+  font-size: 13.5px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  height: 30px;
+  padding: 2px;
+}
+
+/* ✅ กำหนดขนาดแต่ละช่อง */
+.pkg-input.a { width: 60px; }
+.pkg-input.b { width: 60px; }
+.pkg-input.c { width: 80px; }
+
 </style>
 </head>
 
@@ -152,21 +173,22 @@ video { object-fit: cover; width: 100%; height: 100%; }
   <!-- ✅ Act Rack -->
   <div class="form-row"><label>Act Rack</label><input id="actRack" placeholder="เช่น R01-A"></div>
 
-  <!-- ✅ Package / Act Q'ty -->
-  <div class="compact-row">
-    <div>
-      <label>Package</label>
-      <div style="display:flex; align-items:center; gap:6px;">
-        <input id="pkgA" type="number" style="width:33%; text-align:center;"> ×
-        <input id="pkgB" type="number" style="width:33%; text-align:center;"> +
-        <input id="pkgC" type="number" style="width:33%; text-align:center;">
-      </div>
-    </div>
-    <div>
-      <label>Act Q'ty</label>
-      <input id="actQty" class="readonly" readonly>
+ <!-- ✅ Package / Act Q'ty -->
+<div class="compact-row">
+  <div>
+    <label>Package</label>
+    <div class="package-box">
+      <input id="pkgA" type="number" class="pkg-input a"> ×
+      <input id="pkgB" type="number" class="pkg-input b"> +
+      <input id="pkgC" type="number" class="pkg-input c">
     </div>
   </div>
+  <div>
+    <label>Act Q'ty</label>
+    <input id="actQty" class="readonly" readonly>
+  </div>
+</div>
+
 
   <button class="btn" onclick="submitData()">💾 บันทึกข้อมูล</button>
 

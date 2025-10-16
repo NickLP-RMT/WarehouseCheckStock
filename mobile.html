@@ -1,352 +1,248 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📦 Warehouse QR Check</title>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📦 Warehouse QR Check</title>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
 
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      color: #1e293b;
-      padding: 20px;
-      min-height: 100vh;
-    }
+<style>
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #1e293b;
+  padding: 20px;
+  min-height: 100vh;
+}
+.header {
+  position: fixed; top: 0; left: 0; width: 100%;
+  background: #1e3a8a; color: white;
+  text-align: center; padding: 14px 0;
+  font-weight: 600; font-size: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 100;
+}
+.container {
+  margin-top: 80px; background: white;
+  border-radius: 12px; padding: 24px;
+  max-width: 480px; margin-inline: auto;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.compact-row { display: flex; justify-content: center; gap: 54px; margin-bottom: 16px; }
+.compact-row > div { width: 60%; display: flex; flex-direction: column; }
+.compact-row label { font-weight: 600; margin-bottom: 4px; font-size: 13.5px; }
+.compact-row input {
+  width: 100%; padding: 5px 6px; font-size: 13.5px;
+  border: 1.5px solid #cbd5e1; border-radius: 6px; height: 30px;
+}
+.form-row { display: flex; flex-direction: column; margin-bottom: 14px; }
+.form-row label { font-weight: 600; margin-bottom: 4px; font-size: 14px; }
+.form-row input {
+  width: 100%; padding: 5px 6px; font-size: 14px;
+  border: 1.5px solid #cbd5e1; border-radius: 6px; height: 32px;
+}
+.readonly { background: #f1f5f9; }
+.btn {
+  border: none; border-radius: 8px; padding: 12px;
+  font-weight: 600; color: white; background: #2563eb;
+  width: 100%; margin-top: 10px; cursor: pointer; font-size: 17px;
+}
+.btn:hover { background: #1d4ed8; }
+.btn-scan {
+  background: #059669; color: white; width: 100%;
+  font-size: 18px; padding: 14px; border-radius: 10px;
+  font-weight: 600; display: flex; align-items: center;
+  justify-content: center; gap: 10px; border: 1.5px solid #047857;
+}
+.btn-scan svg { width: 22px; height: 22px; fill: white; }
+.btn-scan:hover { background: #047857; }
+hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
 
-    .header {
-      position: fixed;
-      top: 0; left: 0; width: 100%;
-      background: #1e3a8a;
-      color: white;
-      text-align: center;
-      padding: 14px 0;
-      font-weight: 600;
-      font-size: 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      z-index: 100;
-    }
-
-    .container {
-      margin-top: 80px;
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      max-width: 480px;
-      margin-inline: auto;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-
-    .compact-row {
-      display: flex;
-      justify-content: center;
-      gap: 54px;
-      margin-bottom: 16px;
-    }
-    .compact-row > div {
-      width: 60%;
-      display: flex;
-      flex-direction: column;
-    }
-    .compact-row label {
-      font-weight: 600;
-      margin-bottom: 4px;
-      font-size: 13.5px;
-    }
-    .compact-row input {
-      width: 100%;
-      padding: 5px 6px;
-      font-size: 13.5px;
-      border: 1.5px solid #cbd5e1;
-      border-radius: 6px;
-      height: 30px;
-    }
-
-    .form-row { display: flex; flex-direction: column; margin-bottom: 14px; }
-    .form-row label { font-weight: 600; margin-bottom: 4px; font-size: 14px; }
-    .form-row input {
-      width: 100%;
-      padding: 5px 6px;
-      font-size: 14px;
-      border: 1.5px solid #cbd5e1;
-      border-radius: 6px;
-      height: 32px;
-    }
-
-    .readonly { background: #f1f5f9; }
-
-    .btn {
-      border: none; border-radius: 8px; padding: 12px;
-      font-weight: 600; color: white; background: #2563eb;
-      width: 100%; margin-top: 10px; cursor: pointer; font-size: 17px;
-    }
-    .btn:hover { background: #1d4ed8; }
-
-    .btn-scan {
-      background: #059669;
-      color: white;
-      width: 100%;
-      font-size: 18px;
-      padding: 14px;
-      border-radius: 10px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      border: 1.5px solid #047857;
-    }
-    .btn-scan svg { width: 22px; height: 22px; fill: white; }
-    .btn-scan:hover { background: #047857; }
-
-    hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
-
-    /* ===================== Scanner Overlay ===================== */
-    #scanner-view {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #000;
-      z-index: 200;
-    }
-
-    #scanner-container {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    video {
-      object-fit: cover;
-      width: 100%;
-      height: 100%;
-    }
-
-    .scan-box {
-      position: absolute;
-      width: 260px;
-      height: 260px;
-      border: 2px solid #00ff00;
-      border-radius: 10px;
-      z-index: 210;
-      box-shadow: 0 0 0 2000px rgba(0,0,0,0.7);
-    }
-
-    .scan-line {
-      position: absolute;
-      top: calc(50% - 120px);
-      left: 50%;
-      transform: translateX(-50%);
-      width: 240px;
-      height: 2px;
-      background: linear-gradient(to right, transparent, #00ff00, transparent);
-      animation: scanMove 2.2s infinite;
-      z-index: 211;
-    }
-    @keyframes scanMove {
-      0% { top: calc(50% - 120px); opacity: 0.7; }
-      50% { top: calc(50% + 120px); opacity: 1; }
-      100% { top: calc(50% - 120px); opacity: 0.7; }
-    }
-
-    .preview-box {
-      position: absolute;
-      border: 3px solid #ffcc00;
-      border-radius: 10px;
-      z-index: 999;
-      display: none;
-      transition: all 0.2s ease;
-      box-shadow: 0 0 12px #ffcc00;
-    }
-
-    .scan-text {
-      position: absolute;
-      bottom: 18%;
-      width: 100%;
-      text-align: center;
-      color: #00ff00;
-      font-size: 18px;
-      font-weight: 600;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-      z-index: 212;
-    }
-
-    .btn-close {
-      position: absolute;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #ef4444;
-      border: none;
-      border-radius: 50%;
-      color: white;
-      width: 60px;
-      height: 60px;
-      font-size: 28px;
-      z-index: 213;
-    }
-  </style>
+#scanner-view {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: #000; z-index: 200;
+}
+#scanner-container {
+  width: 100%; height: 100%; position: relative;
+  overflow: hidden; display: flex; justify-content: center; align-items: center;
+}
+video { object-fit: cover; width: 100%; height: 100%; }
+.scan-box {
+  position: absolute; width: 260px; height: 260px;
+  border: 2px solid #00ff00; border-radius: 10px;
+  z-index: 210; box-shadow: 0 0 0 2000px rgba(0,0,0,0.7);
+}
+.scan-line {
+  position: absolute; top: calc(50% - 120px);
+  left: 50%; transform: translateX(-50%);
+  width: 240px; height: 2px;
+  background: linear-gradient(to right, transparent, #00ff00, transparent);
+  animation: scanMove 2.2s infinite; z-index: 211;
+}
+@keyframes scanMove {
+  0% { top: calc(50% - 120px); opacity: 0.7; }
+  50% { top: calc(50% + 120px); opacity: 1; }
+  100% { top: calc(50% - 120px); opacity: 0.7; }
+}
+.scan-text {
+  position: absolute; bottom: 18%; width: 100%;
+  text-align: center; color: #00ff00; font-size: 18px;
+  font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  z-index: 212;
+}
+.btn-close {
+  position: absolute; bottom: 30px; left: 50%;
+  transform: translateX(-50%);
+  background: #ef4444; border: none; border-radius: 50%;
+  color: white; width: 60px; height: 60px; font-size: 28px; z-index: 213;
+}
+.preview-popup img {
+  max-width: 90%; border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.4);
+}
+</style>
 </head>
 
 <body>
-  <div class="header">📦 RMT Warehouse Check Stock</div>
+<div class="header">📦 RMT Warehouse Check Stock</div>
 
-  <div class="container" id="main-view">
-    <button class="btn-scan" onclick="startScanner()">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <path d="M3 3h8v8H3V3m2 2v4h4V5H5m6 6h2v2h-2v-2m0 4h2v2h-2v-2m4-4h2v2h-2v-2m0 4h2v2h-2v-2m-4 4h2v2h-2v-2m4 0h2v2h-2v-2M3 13h8v8H3v-8m2 2v4h4v-4H5m10-12h6v6h-6V3m2 2v2h2V5h-2m0 4h2v2h-2V9m0 4h6v6h-6v-6m2 2v2h2v-2h-2Z" />
-      </svg>
-      Scan QR
-    </button>
+<div class="container" id="main-view">
+  <button class="btn-scan" onclick="startScanner()">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M3 3h8v8H3V3m2 2v4h4V5H5m6 6h2v2h-2v-2m0 4h2v2h-2v-2m4-4h2v2h-2v-2m0 4h2v2h-2v-2m-4 4h2v2h-2v-2m4 0h2v2h-2v-2M3 13h8v8H3v-8m2 2v4h4v-4H5m10-12h6v6h-6V3m2 2v2h2V5h-2m0 4h2v2h-2V9m0 4h6v6h-6v-6m2 2v2h2v-2h-2Z" />
+    </svg> Scan QR
+  </button>
 
-    <hr>
-
-    <div class="compact-row">
-      <div><label>Customer</label><input id="customer" class="readonly" readonly></div>
-      <div><label>File</label><input id="file" class="readonly" readonly></div>
-    </div>
-
-    <div class="compact-row">
-      <div><label>Lot</label><input id="lot" class="readonly" readonly></div>
-      <div><label>Q'ty</label><input id="sumQty" class="readonly" readonly></div>
-    </div>
-
-    <div class="form-row"><label>Rack</label><input id="rack" class="readonly" readonly></div>
-    <div class="form-row"><label>ชื่อผู้ตรวจ</label><input id="scannerName" class="readonly" readonly></div>
-
-    <hr>
-    <div class="form-row"><label>Act Rack</label><input id="actRack" placeholder="เช่น R01-A"></div>
-
-    <div class="form-row" style="flex-direction: row; align-items: center; justify-content: center; gap: 6px;">
-      <label style="width: 100%;">Package</label>
-      <input id="pkgA" type="number" style="width: 30%; text-align: center;"> ×
-      <input id="pkgB" type="number" style="width: 30%; text-align: center;"> +
-      <input id="pkgC" type="number" style="width: 30%; text-align: center;">
-    </div>
-
-    <div class="form-row"><label>Act Q'ty (คำนวณอัตโนมัติ)</label><input id="actQty" class="readonly" readonly></div>
-
-    <button class="btn" onclick="submitData()">💾 บันทึกข้อมูล</button>
-
-    <p style="text-align:center;margin-top:12px;font-size:12px;color:#64748b;">© 2025 Resonac Materials (Thailand) Co., Ltd.</p>
+  <hr>
+  <div class="compact-row">
+    <div><label>Customer</label><input id="customer" class="readonly" readonly></div>
+    <div><label>File</label><input id="file" class="readonly" readonly></div>
   </div>
-
-  <!-- ✅ Scanner View -->
-  <div id="scanner-view">
-    <div id="scanner-container"></div>
-    <div class="scan-box"></div>
-    <div class="scan-line"></div>
-    <div class="preview-box" id="previewBox"></div>
-    <div class="scan-text">📱 จับ QR แล้วค่อยอ่านอัตโนมัติ</div>
-    <button class="btn-close" onclick="stopScanner()">✕</button>
+  <div class="compact-row">
+    <div><label>Lot</label><input id="lot" class="readonly" readonly></div>
+    <div><label>Q'ty</label><input id="sumQty" class="readonly" readonly></div>
   </div>
+  <div class="form-row"><label>Rack</label><input id="rack" class="readonly" readonly></div>
+  <div class="form-row"><label>ชื่อผู้ตรวจ</label><input id="scannerName" class="readonly" readonly></div>
+  <hr>
+  <div class="form-row"><label>Act Rack</label><input id="actRack" placeholder="เช่น R01-A"></div>
+  <div class="form-row" style="flex-direction: row; align-items: center; justify-content: center; gap: 6px;">
+    <label style="width: 100%;">Package</label>
+    <input id="pkgA" type="number" style="width: 30%; text-align: center;"> ×
+    <input id="pkgB" type="number" style="width: 30%; text-align: center;"> +
+    <input id="pkgC" type="number" style="width: 30%; text-align: center;">
+  </div>
+  <div class="form-row"><label>Act Q'ty (คำนวณอัตโนมัติ)</label><input id="actQty" class="readonly" readonly></div>
+  <button class="btn" onclick="submitData()">💾 บันทึกข้อมูล</button>
+  <p style="text-align:center;margin-top:12px;font-size:12px;color:#64748b;">© 2025 Resonac Materials (Thailand) Co., Ltd.</p>
+</div>
 
-  <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+<div id="scanner-view">
+  <div id="scanner-container"></div>
+  <div class="scan-box"></div>
+  <div class="scan-line"></div>
+  <div class="scan-text">📱 จับ QR แล้วแสดงภาพก่อนอ่าน</div>
+  <button class="btn-close" onclick="stopScanner()">✕</button>
+</div>
 
-  <script>
-    let codeReader, videoElem, previewBox, decodeTimeout = null;
+<audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
 
-    async function startScanner() {
-      document.getElementById("main-view").style.display = "none";
-      document.getElementById("scanner-view").style.display = "block";
+<script>
+let codeReader, videoElem, scanning = false;
 
-      codeReader = new ZXing.BrowserMultiFormatReader();
-      videoElem = document.createElement("video");
-      videoElem.setAttribute("playsinline", true);
-      videoElem.style.width = "100%";
-      videoElem.style.height = "100%";
-      document.getElementById("scanner-container").appendChild(videoElem);
+async function startScanner() {
+  document.getElementById("main-view").style.display = "none";
+  document.getElementById("scanner-view").style.display = "block";
 
-      previewBox = document.getElementById("previewBox");
+  codeReader = new ZXing.BrowserMultiFormatReader();
+  videoElem = document.createElement("video");
+  videoElem.setAttribute("playsinline", true);
+  videoElem.style.width = "100%";
+  videoElem.style.height = "100%";
+  document.getElementById("scanner-container").appendChild(videoElem);
 
-      try {
-        await codeReader.decodeFromVideoDevice(null, videoElem, (result, err) => {
-          if (result) {
-            const points = result.resultPoints;
-            if (points && points.length > 1) {
-              const minX = Math.min(...points.map(p => p.x));
-              const maxX = Math.max(...points.map(p => p.x));
-              const minY = Math.min(...points.map(p => p.y));
-              const maxY = Math.max(...points.map(p => p.y));
-              const width = maxX - minX;
-              const height = maxY - minY;
+  try {
+    await codeReader.decodeFromVideoDevice(null, videoElem, async (result, err) => {
+      if (result && !scanning) {
+        scanning = true;
+        document.getElementById("beep").play();
 
-              // 🟨 แสดง preview box แบบ iOS
-              previewBox.style.left = `${minX * (videoElem.offsetWidth / videoElem.videoWidth)}px`;
-              previewBox.style.top = `${minY * (videoElem.offsetHeight / videoElem.videoHeight)}px`;
-              previewBox.style.width = `${width * (videoElem.offsetWidth / videoElem.videoWidth)}px`;
-              previewBox.style.height = `${height * (videoElem.offsetHeight / videoElem.videoHeight)}px`;
-              previewBox.style.display = "block";
+        // 🟡 capture image
+        const canvas = document.createElement("canvas");
+        canvas.width = videoElem.videoWidth;
+        canvas.height = videoElem.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(videoElem, 0, 0, canvas.width, canvas.height);
+        const imgData = canvas.toDataURL("image/png");
 
-              // ⏱ หน่วง 1 วิ ก่อนอ่านจริง
-              if (!decodeTimeout) {
-                decodeTimeout = setTimeout(() => {
-                  document.getElementById("beep").play();
-                  stopScanner();
-                  handleQRData(result.text.trim());
-                }, 1000);
-              }
-            }
-          }
+        const confirm = await Swal.fire({
+          title: "ตรวจพบ QR Code",
+          html: `<img src="${imgData}" style="width:90%;border-radius:10px;margin-top:10px;"><p style="margin-top:10px;">ต้องการอ่าน QR นี้หรือไม่?</p>`,
+          showCancelButton: true,
+          confirmButtonText: "✅ อ่าน QR",
+          cancelButtonText: "❌ ยกเลิก",
+          allowOutsideClick: false
         });
-      } catch (e) {
-        Swal.fire("❌", "ไม่สามารถเปิดกล้องได้ หรือผู้ใช้ไม่อนุญาต", "error");
-        stopScanner();
+
+        if (confirm.isConfirmed) {
+          stopScanner();
+          handleQRData(result.text.trim());
+        } else {
+          scanning = false;
+        }
       }
-    }
-
-    function stopScanner() {
-      if (codeReader) codeReader.reset();
-      document.getElementById("scanner-container").innerHTML = "";
-      document.getElementById("scanner-view").style.display = "none";
-      document.getElementById("main-view").style.display = "block";
-      decodeTimeout = null;
-    }
-
-    function handleQRData(text) {
-      const parts = text.split("/");
-      customer.value = parts[0] || "";
-      scannerName.value = parts[1] || "";
-      file.value = parts[2] || "";
-      lot.value = parts[3] || "";
-      rack.value = parts[4] || "";
-      sumQty.value = parts[5] || "";
-    }
-
-    ["pkgA","pkgB","pkgC"].forEach(id=>{
-      document.getElementById(id).addEventListener("input",()=>{
-        const a=+pkgA.value||0,b=+pkgB.value||0,c=+pkgC.value||0;
-        actQty.value=(a*b)+c;
-      });
     });
+  } catch (e) {
+    Swal.fire("❌", "ไม่สามารถเปิดกล้องได้ หรือผู้ใช้ไม่อนุญาต", "error");
+    stopScanner();
+  }
+}
 
-    async function submitData() {
-      const data = {
-        customer: customer.value, file: file.value, lot: lot.value,
-        rack: rack.value, sumQty: sumQty.value,
-        actRack: actRack.value.trim(), actQty: actQty.value.trim(),
-        scanner: scannerName.value
-      };
+function stopScanner() {
+  if (codeReader) codeReader.reset();
+  document.getElementById("scanner-container").innerHTML = "";
+  document.getElementById("scanner-view").style.display = "none";
+  document.getElementById("main-view").style.display = "block";
+  scanning = false;
+}
 
-      if (!data.customer || !data.file || !data.lot || !data.actRack || !data.actQty)
-        return Swal.fire("⚠️","กรุณากรอกข้อมูลให้ครบ","warning");
+function handleQRData(text) {
+  const parts = text.split("/");
+  customer.value = parts[0] || "";
+  scannerName.value = parts[1] || "";
+  file.value = parts[2] || "";
+  lot.value = parts[3] || "";
+  rack.value = parts[4] || "";
+  sumQty.value = parts[5] || "";
+}
 
-      Swal.fire({title:"กำลังบันทึก...",allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+["pkgA","pkgB","pkgC"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",()=>{
+    const a=+pkgA.value||0,b=+pkgB.value||0,c=+pkgC.value||0;
+    actQty.value=(a*b)+c;
+  });
+});
 
-      try {
-        await fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec",{method:"POST",body:JSON.stringify(data)});
-        Swal.close();
-        Swal.fire("✅","บันทึกเรียบร้อย","success");
-      } catch {
-        Swal.fire("❌","ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์","error");
-      }
-    }
-  </script>
+async function submitData() {
+  const data = {
+    customer: customer.value, file: file.value, lot: lot.value,
+    rack: rack.value, sumQty: sumQty.value,
+    actRack: actRack.value.trim(), actQty: actQty.value.trim(),
+    scanner: scannerName.value
+  };
+  if (!data.customer || !data.file || !data.lot || !data.actRack || !data.actQty)
+    return Swal.fire("⚠️","กรุณากรอกข้อมูลให้ครบ","warning");
+
+  Swal.fire({title:"กำลังบันทึก...",allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+  try {
+    await fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec",{method:"POST",body:JSON.stringify(data)});
+    Swal.close();
+    Swal.fire("✅","บันทึกเรียบร้อย","success");
+  } catch {
+    Swal.fire("❌","ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์","error");
+  }
+}
+</script>
 </body>
 </html>

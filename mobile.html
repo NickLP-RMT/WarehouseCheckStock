@@ -6,6 +6,7 @@
   <title>📦 Warehouse QR Check</title>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -135,7 +136,6 @@
       border-radius: 10px;
       z-index: 210;
       box-shadow: 0 0 0 2000px rgba(0,0,0,0.7);
-      transition: border-color 0.2s ease;
     }
 
     .scan-line {
@@ -149,11 +149,20 @@
       animation: scanMove 2.2s infinite;
       z-index: 211;
     }
-
     @keyframes scanMove {
       0% { top: calc(50% - 120px); opacity: 0.7; }
       50% { top: calc(50% + 120px); opacity: 1; }
       100% { top: calc(50% - 120px); opacity: 0.7; }
+    }
+
+    .preview-box {
+      position: absolute;
+      border: 3px solid #ffcc00;
+      border-radius: 10px;
+      z-index: 999;
+      display: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 12px #ffcc00;
     }
 
     .scan-text {
@@ -184,6 +193,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="header">📦 RMT Warehouse Check Stock</div>
 
@@ -230,16 +240,17 @@
   <!-- ✅ Scanner View -->
   <div id="scanner-view">
     <div id="scanner-container"></div>
-    <div class="scan-box" id="scanBox"></div>
+    <div class="scan-box"></div>
     <div class="scan-line"></div>
-    <div class="scan-text">📱 สแกนเฉพาะ QR ตรงกลางจอ</div>
+    <div class="preview-box" id="previewBox"></div>
+    <div class="scan-text">📱 จับ QR แล้วค่อยอ่านอัตโนมัติ</div>
     <button class="btn-close" onclick="stopScanner()">✕</button>
   </div>
 
   <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
 
   <script>
-    let codeReader, videoElem;
+    let codeReader, videoElem, previewBox, decodeTimeout = null;
 
     async function startScanner() {
       document.getElementById("main-view").style.display = "none";
@@ -252,36 +263,40 @@
       videoElem.style.height = "100%";
       document.getElementById("scanner-container").appendChild(videoElem);
 
-      const scanBox = document.getElementById("scanBox");
+      previewBox = document.getElementById("previewBox");
 
       try {
         await codeReader.decodeFromVideoDevice(null, videoElem, (result, err) => {
           if (result) {
             const points = result.resultPoints;
-            if (points && points.length > 0) {
-              const centerX = points.reduce((sum, p) => sum + p.x, 0) / points.length;
-              const centerY = points.reduce((sum, p) => sum + p.y, 0) / points.length;
+            if (points && points.length > 1) {
+              const minX = Math.min(...points.map(p => p.x));
+              const maxX = Math.max(...points.map(p => p.x));
+              const minY = Math.min(...points.map(p => p.y));
+              const maxY = Math.max(...points.map(p => p.y));
+              const width = maxX - minX;
+              const height = maxY - minY;
 
-              const withinCenter = (
-                centerX > videoElem.videoWidth * 0.3 &&
-                centerX < videoElem.videoWidth * 0.7 &&
-                centerY > videoElem.videoHeight * 0.3 &&
-                centerY < videoElem.videoHeight * 0.7
-              );
+              // 🟨 แสดง preview box แบบ iOS
+              previewBox.style.left = `${minX * (videoElem.offsetWidth / videoElem.videoWidth)}px`;
+              previewBox.style.top = `${minY * (videoElem.offsetHeight / videoElem.videoHeight)}px`;
+              previewBox.style.width = `${width * (videoElem.offsetWidth / videoElem.videoWidth)}px`;
+              previewBox.style.height = `${height * (videoElem.offsetHeight / videoElem.videoHeight)}px`;
+              previewBox.style.display = "block";
 
-              // ✅ Highlight เมื่อเจอ QR ในกรอบกลาง
-              scanBox.style.borderColor = withinCenter ? "#00ff00" : "#444";
-
-              if (withinCenter) {
-                document.getElementById("beep").play();
-                stopScanner();
-                handleQRData(result.text.trim());
+              // ⏱ หน่วง 1 วิ ก่อนอ่านจริง
+              if (!decodeTimeout) {
+                decodeTimeout = setTimeout(() => {
+                  document.getElementById("beep").play();
+                  stopScanner();
+                  handleQRData(result.text.trim());
+                }, 1000);
               }
             }
           }
         });
       } catch (e) {
-        Swal.fire("❌", "ไม่สามารถเปิดกล้องได้", "error");
+        Swal.fire("❌", "ไม่สามารถเปิดกล้องได้ หรือผู้ใช้ไม่อนุญาต", "error");
         stopScanner();
       }
     }
@@ -291,6 +306,7 @@
       document.getElementById("scanner-container").innerHTML = "";
       document.getElementById("scanner-view").style.display = "none";
       document.getElementById("main-view").style.display = "block";
+      decodeTimeout = null;
     }
 
     function handleQRData(text) {

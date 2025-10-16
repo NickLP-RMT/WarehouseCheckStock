@@ -69,9 +69,9 @@ hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
   height: 30px;
   padding: 2px;
 }
-.pkg-input.a { width: 40px; }
-.pkg-input.b { width: 40px; }
-.pkg-input.c { width: 40px; }
+.pkg-input.a { width: 45px; }
+.pkg-input.b { width: 45px; }
+.pkg-input.c { width: 55px; }
 
 /* Button Row */
 .button-row {
@@ -186,23 +186,22 @@ video { object-fit: cover; width: 100%; height: 100%; }
     <div class="rack-set">
       <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
       <div class="form-row"><label>Act Rack</label><input class="actRack" placeholder="เช่น R01-A"></div>
-      <!-- ✅ Package / Act Q'ty -->
-<div class="compact-row">
-  <div>
-    <label>Package</label>
-    <div class="package-box">
-      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="validateNumber(this)">
-      ×
-      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input b" oninput="validateNumber(this)">
-      +
-      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input c" oninput="validateNumber(this)">
-    </div>
-  </div>
-  <div>
-    <label>Act Q'ty</label>
-    <input id="actQty" class="readonly" readonly>
-  </div>
-</div>
+      <div class="compact-row">
+        <div>
+          <label>Package</label>
+          <div class="package-box">
+            <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="validateNumber(this)" onkeyup="autoJump(this)">
+            ×
+            <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input b" oninput="validateNumber(this)" onkeyup="autoJump(this)">
+            +
+            <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input c" oninput="validateNumber(this)">
+          </div>
+        </div>
+        <div>
+          <label>Act Q'ty</label>
+          <input class="actQty readonly" readonly>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -320,8 +319,9 @@ function handleQRData(text) {
 
 function bindPackageEvents(container) {
   const inputs = container.querySelectorAll(".pkg-input");
-  inputs.forEach(input => {
+  inputs.forEach((input, idx) => {
     input.addEventListener("input", () => {
+      validateNumber(input);
       const a = +container.querySelector(".pkg-input.a").value || 0;
       const b = +container.querySelector(".pkg-input.b").value || 0;
       const c = +container.querySelector(".pkg-input.c").value || 0;
@@ -341,9 +341,11 @@ function addRackSet() {
       <div>
         <label>Package</label>
         <div class="package-box">
-          <input type="number" class="pkg-input a"> ×
-          <input type="number" class="pkg-input b"> +
-          <input type="number" class="pkg-input c">
+          <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="validateNumber(this)" onkeyup="autoJump(this)">
+          ×
+          <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input b" oninput="validateNumber(this)" onkeyup="autoJump(this)">
+          +
+          <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input c" oninput="validateNumber(this)">
         </div>
       </div>
       <div>
@@ -357,14 +359,24 @@ function addRackSet() {
 }
 
 function removeRackSet(btn) {
-  const set = btn.closest(".rack-set");
-  set.remove();
+  btn.closest(".rack-set").remove();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const firstSet = document.querySelector(".rack-set");
-  if (firstSet) bindPackageEvents(firstSet);
+  bindPackageEvents(document.querySelector(".rack-set"));
 });
+
+function validateNumber(input) {
+  input.value = input.value.replace(/[^0-9]/g, "");
+}
+
+function autoJump(input) {
+  if (input.value.length > 0) {
+    const inputs = Array.from(input.closest(".package-box").querySelectorAll(".pkg-input"));
+    const index = inputs.indexOf(input);
+    if (index < inputs.length - 1) inputs[index + 1].focus();
+  }
+}
 
 async function submitData() {
   const rackSets = document.querySelectorAll(".rack-set");
@@ -397,16 +409,33 @@ async function submitData() {
     });
     Swal.close();
     Swal.fire("✅","บันทึกเรียบร้อย","success");
+    document.getElementById("rackZone").innerHTML = `
+      <div class="rack-set">
+        <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+        <div class="form-row"><label>Act Rack</label><input class="actRack" placeholder="เช่น R01-A"></div>
+        <div class="compact-row">
+          <div>
+            <label>Package</label>
+            <div class="package-box">
+              <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="validateNumber(this)" onkeyup="autoJump(this)">
+              ×
+              <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input b" oninput="validateNumber(this)" onkeyup="autoJump(this)">
+              +
+              <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input c" oninput="validateNumber(this)">
+            </div>
+          </div>
+          <div>
+            <label>Act Q'ty</label>
+            <input class="actQty readonly" readonly>
+          </div>
+        </div>
+      </div>
+    `;
+    bindPackageEvents(document.querySelector(".rack-set"));
   } catch {
     Swal.fire("❌","ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์","error");
   }
 }
-
-  function validateNumber(input) {
-  // ลบตัวอักษรใดๆ ที่ไม่ใช่ตัวเลข
-  input.value = input.value.replace(/[^0-9]/g, "");
-}
-
 </script>
 </body>
 </html>

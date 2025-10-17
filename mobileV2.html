@@ -26,12 +26,25 @@ h3 { text-align: center; margin-bottom: 20px; }
 label { font-weight: 600; font-size: 13.5px; }
 input, select {
   width: 100%;
-  padding: 8px 10px;
   border: 1.5px solid #cbd5e1;
   border-radius: 6px;
   font-size: 14px;
-  height: 42px;
+  height: 42px;          /* ความสูงเท่ากันทุกชนิด */
+  padding: 0 10px;       /* ปรับ padding ให้น้อยลง */
+  box-sizing: border-box; /* ป้องกัน padding ทำให้สูงเกิน */
+  line-height: 42px;     /* จัดตัวหนังสือให้อยู่กึ่งกลางแนวตั้ง */
+  background-color: #fff;
 }
+
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 14px;
+}
+
 input[readonly] { background: #f8fafc; }
 button {
   border: none;

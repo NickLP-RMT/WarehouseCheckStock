@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📋 Warehouse Check (Mobile V2.3)</title>
+<title>📋 Warehouse Check (Mobile V2.4)</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
@@ -89,7 +89,7 @@ button {
 </head>
 <body>
 <div class="container">
-  <h3>📋 Warehouse Check (V2.3)</h3>
+  <h3>📋 Warehouse Check (V2.4)</h3>
 
   <label>ชื่อผู้ทำ</label>
   <select id="nameSelect"></select>
@@ -187,17 +187,20 @@ async function fetchItems() {
     if (!rows || rows.length === 0) return Swal.fire("ℹ️", "ไม่พบข้อมูลของผู้ทำคนนี้", "info");
 
     currentItems = rows;
-    const itemSelect = document.getElementById("itemSelect");
-    itemSelect.innerHTML = rows.map(r => {
-      const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
-      return `<option value="${r.File5digit}">${done} ${r.File5digit} (${r.Lot})</option>`;
-    }).join('');
-
+    renderDropdown(rows);
     document.getElementById("itemSection").style.display = "block";
     showDetail();
   } catch {
     Swal.fire("❌", "ไม่สามารถดึงข้อมูลได้", "error");
   }
+}
+
+function renderDropdown(rows) {
+  const itemSelect = document.getElementById("itemSelect");
+  itemSelect.innerHTML = rows.map(r => {
+    const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
+    return `<option value="${r.File5digit}">${done} ${r.File5digit} (${r.Lot})</option>`;
+  }).join('');
 }
 
 function showDetail() {
@@ -275,6 +278,33 @@ async function saveData() {
   }
 
   Swal.fire("✅", "บันทึกข้อมูลสำเร็จแล้ว", "success");
+
+  // 🧹 Clear Form & Refresh Status
+  resetForm();
+  await fetchItems(); // refresh dropdown status
+}
+
+function resetForm() {
+  document.getElementById("rackZone").innerHTML = `
+    <div class="rack-set">
+      <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+      <label>Act Rack</label>
+      <input class="actRack" placeholder="เช่น R01-A">
+      <div style='display:flex; align-items:center; justify-content:space-between; margin-top:8px;'>
+        <div style='flex:1;'>
+          <label>Package</label>
+          <div class='package-box'>
+            <input type='number' class='pkg-input a' oninput='calcActQty(this)'>×
+            <input type='number' class='pkg-input b' oninput='calcActQty(this)'>+
+            <input type='number' class='pkg-input c' oninput='calcActQty(this)'>
+          </div>
+        </div>
+        <div style='flex:1;'>
+          <label>Act Q'ty</label>
+          <input class='actQty' readonly>
+        </div>
+      </div>
+    </div>`;
 }
 </script>
 </body>

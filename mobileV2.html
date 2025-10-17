@@ -90,43 +90,64 @@ button {
 
 .package-row {
   display: flex;
-  align-items: flex-end;
   justify-content: space-between;
+  align-items: flex-end;
   gap: 10px;
   flex-wrap: nowrap;
   margin-top: 10px;
 }
 
+/* 🔹 สัดส่วน 60:40 */
 .package-box {
-  flex: 0.6;                /* 📦 ใช้พื้นที่ 60% */
+  flex: 0 0 60%;
   display: flex;
-  flex-direction: column;   /* ให้ label อยู่บน */
+  flex-direction: column;
+  min-width: 0;
 }
 
+.actQty-box {
+  flex: 0 0 40%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* 🔹 ภายในช่อง Package */
 .package-inputs {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .pkg-input {
-  width: 60px;
+  width: 55px;
   text-align: center;
   border: 1.5px solid #cbd5e1;
   border-radius: 6px;
   height: 42px;
   font-size: 14px;
+  flex-shrink: 0;
 }
 
-.actQty-box {
-  flex: 0.4;                /* ⚙️ ใช้พื้นที่ 40% */
-  display: flex;
-  flex-direction: column;
+.package-inputs span {
+  font-weight: 600;
 }
 
-.actQty-box input {
-  height: 42px;
+/* 📱 ปรับเฉพาะหน้าจอมือถือเล็ก (ไม่บีบจนซ้อน) */
+@media (max-width: 400px) {
+  .pkg-input {
+    width: 48px;
+  }
+  .package-box {
+    flex: 0 0 65%;
+  }
+  .actQty-box {
+    flex: 0 0 35%;
+  }
 }
+
 
 .footer {
   text-align: center;

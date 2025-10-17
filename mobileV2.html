@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📋 Warehouse Check (Mobile V2)</title>
+<title>📋 Warehouse Check (Mobile V2.1)</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
 body {
@@ -37,11 +37,10 @@ button {
 </head>
 <body>
 <div class="container">
-  <h3>📋 Warehouse Check (V2)</h3>
+  <h3>📋 Warehouse Check (V2.1)</h3>
 
   <label>ชื่อผู้ทำ</label>
   <select id="nameSelect"></select>
-
   <button class="btn-primary" onclick="fetchItems()">🔍 ค้นหารายการ</button>
 
   <div id="itemSection" style="display:none;">
@@ -63,14 +62,15 @@ button {
     <label>Sum of Qty</label>
     <input id="sumQty" readonly>
 
-    <label>Act_Rack</label>
-    <input id="actRack" placeholder="ระบุ Rack ที่ตรวจจริง">
+    <!-- ✅ เปลี่ยนลำดับ: Act_Package ขึ้นก่อน -->
+    <label>Act_Package</label>
+    <input id="actPackage" placeholder="เช่น 20×24+0" oninput="calcActQty()">
 
     <label>Act_Qty</label>
-    <input id="actQty" type="number" inputmode="numeric" placeholder="จำนวนจริง">
+    <input id="actQty" readonly placeholder="จำนวนรวมจะคำนวณอัตโนมัติ">
 
-    <label>Act_Package</label>
-    <input id="actPackage" placeholder="ตัวอย่างเช่น 20×24+0">
+    <label>Act_Rack</label>
+    <input id="actRack" placeholder="ระบุ Rack ที่ตรวจจริง">
 
     <button class="btn-success" onclick="saveData()">💾 บันทึกข้อมูล</button>
     <button class="btn-secondary" onclick="resetForm()">🔄 เริ่มใหม่</button>
@@ -85,15 +85,15 @@ button {
 const scriptURL = "https://script.google.com/macros/s/AKfycbx17uBD3jJO2wpVgYiSdc7shdthNMKrUXx4qxD3Fie8NV5w26uxE5l_7Kn9nZDdQn8g/exec";
 let currentItems = [];
 
-// 🧭 โหลดรายชื่อผู้ทำทั้งหมด
+// 🧭 โหลดรายชื่อผู้ทำ
 async function loadNames() {
   try {
     const res = await fetch(`${scriptURL}?page=getNames`);
     const data = await res.json();
     const select = document.getElementById("nameSelect");
     select.innerHTML = '<option value="">-- เลือกชื่อผู้ทำ --</option>' + data.map(n => `<option>${n}</option>`).join('');
-  } catch (err) {
-    Swal.fire("❌", "ไม่สามารถโหลดรายชื่อผู้ทำได้", "error");
+  } catch {
+    Swal.fire("❌", "โหลดรายชื่อผู้ทำไม่สำเร็จ", "error");
   }
 }
 loadNames();
@@ -101,10 +101,7 @@ loadNames();
 // 🔍 ดึงรายการตามชื่อ
 async function fetchItems() {
   const name = document.getElementById("nameSelect").value;
-  if (!name) {
-    Swal.fire("⚠️", "กรุณาเลือกชื่อผู้ทำ", "warning");
-    return;
-  }
+  if (!name) return Swal.fire("⚠️", "กรุณาเลือกชื่อผู้ทำ", "warning");
 
   Swal.fire({ title: "กำลังดึงข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
   try {
@@ -112,22 +109,19 @@ async function fetchItems() {
     const rows = await res.json();
     Swal.close();
 
-    if (!rows || rows.length === 0) {
-      Swal.fire("ℹ️", "ไม่พบข้อมูลของผู้ทำคนนี้", "info");
-      return;
-    }
+    if (!rows || rows.length === 0) return Swal.fire("ℹ️", "ไม่พบข้อมูลของผู้ทำคนนี้", "info");
 
     currentItems = rows;
     const itemSelect = document.getElementById("itemSelect");
     itemSelect.innerHTML = rows.map(r => `<option value="${r.File5digit}">${r.File5digit} (${r.Lot})</option>`).join('');
     document.getElementById("itemSection").style.display = "block";
     showDetail();
-  } catch (err) {
+  } catch {
     Swal.fire("❌", "ไม่สามารถดึงข้อมูลได้", "error");
   }
 }
 
-// 📋 แสดงรายละเอียดของรายการที่เลือก
+// 📋 แสดงรายละเอียด
 function showDetail() {
   const file = document.getElementById("itemSelect").value;
   const row = currentItems.find(r => r.File5digit === file);
@@ -137,21 +131,46 @@ function showDetail() {
   lot.value = row.Lot || "";
   rack.value = row.Rack || "";
   sumQty.value = row["Sum of Qty"] || "";
-  actRack.value = row.Act_Rack || "";
-  actQty.value = row.Act_Qty || "";
   actPackage.value = row.Act_Package || "";
+  actQty.value = row.Act_Qty || "";
+  actRack.value = row.Act_Rack || "";
 }
 
-// 💾 บันทึกข้อมูลจริง
-async function saveData() {
-  const name = document.getElementById("nameSelect").value;
-  const file = document.getElementById("file5digit").value;
-  const actRack = document.getElementById("actRack").value;
-  const actQty = document.getElementById("actQty").value;
-  const actPackage = document.getElementById("actPackage").value;
+// 🧮 คำนวณ Act_Qty จาก Act_Package
+function calcActQty() {
+  const input = document.getElementById("actPackage").value.trim();
+  const output = document.getElementById("actQty");
 
-  if (!name || !file) {
-    Swal.fire("⚠️", "กรุณาเลือกรายการให้ครบ", "warning");
+  if (!input) { output.value = ""; return; }
+
+  // รองรับรูปแบบ เช่น 20×24+3 หรือ 20x24+3
+  const pattern = /^(\d+)[x×](\d+)(?:\+(\d+))?$/i;
+  const match = input.match(pattern);
+
+  if (match) {
+    const a = parseInt(match[1]);
+    const b = parseInt(match[2]);
+    const c = match[3] ? parseInt(match[3]) : 0;
+    output.value = (a * b) + c;
+  } else {
+    output.value = "";
+  }
+}
+
+// 💾 บันทึกข้อมูล
+async function saveData() {
+  const name = nameSelect.value;
+  const file = file5digit.value;
+  const actRack = actRackInput.value;
+  const actQty = actQtyInput.value;
+  const actPackage = actPackageInput.value;
+
+  const actRackInput = document.getElementById("actRack");
+  const actQtyInput = document.getElementById("actQty");
+  const actPackageInput = document.getElementById("actPackage");
+
+  if (!name || !file || !actPackageInput.value) {
+    Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบ", "warning");
     return;
   }
 
@@ -160,17 +179,23 @@ async function saveData() {
   try {
     const res = await fetch(`${scriptURL}?page=updateRecord`, {
       method: "POST",
-      body: new URLSearchParams({ name, file5digit: file, actRack, actQty, actPackage })
+      body: new URLSearchParams({
+        name,
+        file5digit: file,
+        actRack: actRackInput.value,
+        actQty: actQtyInput.value,
+        actPackage: actPackageInput.value
+      })
     });
     const json = await res.json();
     Swal.fire(json.success ? "✅" : "❌", json.message, json.success ? "success" : "error");
     if (json.success) resetForm();
-  } catch (err) {
+  } catch {
     Swal.fire("❌", "ไม่สามารถบันทึกข้อมูลได้", "error");
   }
 }
 
-// 🔄 เริ่มใหม่ (เคลียร์ฟอร์ม)
+// 🔄 เริ่มใหม่
 function resetForm() {
   document.getElementById("itemSection").style.display = "none";
   document.getElementById("nameSelect").value = "";

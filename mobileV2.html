@@ -11,12 +11,28 @@ body {
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   color: #1e293b; padding: 20px; min-height: 100vh;
 }
-.container { max-width: 460px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.container {
+  max-width: 460px; margin: 0 auto; background: white;
+  padding: 24px; border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
 label { font-weight: 600; margin-top: 10px; }
-input, select { width: 100%; padding: 8px; border-radius: 6px; border: 1.5px solid #cbd5e1; }
-button { margin-top: 15px; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
+input, select {
+  width: 100%; padding: 8px;
+  border-radius: 6px; border: 1.5px solid #cbd5e1;
+}
+button {
+  margin-top: 15px; padding: 10px;
+  border: none; border-radius: 8px;
+  font-weight: 600; cursor: pointer; width: 100%;
+}
 .btn-primary { background: #2563eb; color: white; }
 .btn-success { background: #059669; color: white; }
+.btn-secondary { background: #6b7280; color: white; }
+.footer {
+  text-align: center; margin-top: 20px;
+  font-size: 12px; color: #94a3b8;
+}
 </style>
 </head>
 <body>
@@ -34,58 +50,84 @@ button { margin-top: 15px; padding: 10px; border: none; border-radius: 8px; font
 
     <label>Customer</label>
     <input id="customer" readonly>
+
     <label>File5digit</label>
     <input id="file5digit" readonly>
+
     <label>Lot</label>
     <input id="lot" readonly>
+
     <label>Rack</label>
     <input id="rack" readonly>
+
     <label>Sum of Qty</label>
     <input id="sumQty" readonly>
 
     <label>Act_Rack</label>
-    <input id="actRack">
+    <input id="actRack" placeholder="ระบุ Rack ที่ตรวจจริง">
+
     <label>Act_Qty</label>
-    <input id="actQty">
+    <input id="actQty" type="number" inputmode="numeric" placeholder="จำนวนจริง">
+
     <label>Act_Package</label>
-    <input id="actPackage">
+    <input id="actPackage" placeholder="ตัวอย่างเช่น 20×24+0">
 
     <button class="btn-success" onclick="saveData()">💾 บันทึกข้อมูล</button>
+    <button class="btn-secondary" onclick="resetForm()">🔄 เริ่มใหม่</button>
+  </div>
+
+  <div class="footer">
+    © 2025 Resonac Materials (Thailand) Co., Ltd.
   </div>
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbxPOcopzEm_qb4zv8UDwz82-3hYCF9xqHPctHrrD0g_TKjVxuWfqZ7nid5pTquUiGyC/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbx17uBD3jJO2wpVgYiSdc7shdthNMKrUXx4qxD3Fie8NV5w26uxE5l_7Kn9nZDdQn8g/exec";
 let currentItems = [];
 
+// 🧭 โหลดรายชื่อผู้ทำทั้งหมด
 async function loadNames() {
-  const res = await fetch(`${scriptURL}?page=getNames`);
-  const data = await res.json();
-  const select = document.getElementById("nameSelect");
-  select.innerHTML = '<option value="">-- เลือกชื่อผู้ทำ --</option>' + data.map(n => `<option>${n}</option>`).join('');
+  try {
+    const res = await fetch(`${scriptURL}?page=getNames`);
+    const data = await res.json();
+    const select = document.getElementById("nameSelect");
+    select.innerHTML = '<option value="">-- เลือกชื่อผู้ทำ --</option>' + data.map(n => `<option>${n}</option>`).join('');
+  } catch (err) {
+    Swal.fire("❌", "ไม่สามารถโหลดรายชื่อผู้ทำได้", "error");
+  }
 }
 loadNames();
 
+// 🔍 ดึงรายการตามชื่อ
 async function fetchItems() {
   const name = document.getElementById("nameSelect").value;
-  if (!name) { Swal.fire("⚠️", "กรุณาเลือกชื่อผู้ทำ", "warning"); return; }
-
-  Swal.fire({ title: "กำลังดึงข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-  const res = await fetch(`${scriptURL}?page=getDataByName&name=${encodeURIComponent(name)}`);
-  const rows = await res.json();
-  Swal.close();
-
-  if (!rows || rows.length === 0) {
-    Swal.fire("ℹ️", "ไม่พบข้อมูลของผู้ทำคนนี้", "info");
+  if (!name) {
+    Swal.fire("⚠️", "กรุณาเลือกชื่อผู้ทำ", "warning");
     return;
   }
 
-  currentItems = rows;
-  const itemSelect = document.getElementById("itemSelect");
-  itemSelect.innerHTML = rows.map(r => `<option value="${r.File5digit}">${r.File5digit} (${r.Lot})</option>`).join('');
-  document.getElementById("itemSection").style.display = "block";
+  Swal.fire({ title: "กำลังดึงข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  try {
+    const res = await fetch(`${scriptURL}?page=getDataByName&name=${encodeURIComponent(name)}`);
+    const rows = await res.json();
+    Swal.close();
+
+    if (!rows || rows.length === 0) {
+      Swal.fire("ℹ️", "ไม่พบข้อมูลของผู้ทำคนนี้", "info");
+      return;
+    }
+
+    currentItems = rows;
+    const itemSelect = document.getElementById("itemSelect");
+    itemSelect.innerHTML = rows.map(r => `<option value="${r.File5digit}">${r.File5digit} (${r.Lot})</option>`).join('');
+    document.getElementById("itemSection").style.display = "block";
+    showDetail();
+  } catch (err) {
+    Swal.fire("❌", "ไม่สามารถดึงข้อมูลได้", "error");
+  }
 }
 
+// 📋 แสดงรายละเอียดของรายการที่เลือก
 function showDetail() {
   const file = document.getElementById("itemSelect").value;
   const row = currentItems.find(r => r.File5digit === file);
@@ -100,6 +142,7 @@ function showDetail() {
   actPackage.value = row.Act_Package || "";
 }
 
+// 💾 บันทึกข้อมูลจริง
 async function saveData() {
   const name = document.getElementById("nameSelect").value;
   const file = document.getElementById("file5digit").value;
@@ -107,14 +150,31 @@ async function saveData() {
   const actQty = document.getElementById("actQty").value;
   const actPackage = document.getElementById("actPackage").value;
 
-  if (!name || !file) { Swal.fire("⚠️", "กรุณาเลือกรายการให้ครบ", "warning"); return; }
+  if (!name || !file) {
+    Swal.fire("⚠️", "กรุณาเลือกรายการให้ครบ", "warning");
+    return;
+  }
 
-  const res = await fetch(`${scriptURL}?page=updateRecord`, {
-    method: "POST",
-    body: new URLSearchParams({ name, file5digit: file, actRack, actQty, actPackage })
-  });
-  const json = await res.json();
-  Swal.fire(json.success ? "✅" : "❌", json.message, json.success ? "success" : "error");
+  Swal.fire({ title: "กำลังบันทึก...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  try {
+    const res = await fetch(`${scriptURL}?page=updateRecord`, {
+      method: "POST",
+      body: new URLSearchParams({ name, file5digit: file, actRack, actQty, actPackage })
+    });
+    const json = await res.json();
+    Swal.fire(json.success ? "✅" : "❌", json.message, json.success ? "success" : "error");
+    if (json.success) resetForm();
+  } catch (err) {
+    Swal.fire("❌", "ไม่สามารถบันทึกข้อมูลได้", "error");
+  }
+}
+
+// 🔄 เริ่มใหม่ (เคลียร์ฟอร์ม)
+function resetForm() {
+  document.getElementById("itemSection").style.display = "none";
+  document.getElementById("nameSelect").value = "";
+  currentItems = [];
 }
 </script>
 </body>

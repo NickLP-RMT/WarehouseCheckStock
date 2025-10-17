@@ -388,12 +388,17 @@ function resetForm() {
         </div>
         <div class='col'><select class='rackSub'></select></div>
       </div>
-      <div class='package-row' style='margin-top:8px;'>
+
+      <div class='package-row'>
         <div class='package-box'>
           <label>Package</label>
-          <input type='number' class='pkg-input a' oninput='calcActQty(this)'>×
-          <input type='number' class='pkg-input b' oninput='calcActQty(this)'>+
-          <input type='number' class='pkg-input c' oninput='calcActQty(this)'>
+          <div class='package-inputs'>
+            <input type='number' inputmode='numeric' pattern='[0-9]*' class='pkg-input a' oninput='calcActQty(this)'>
+            <span>×</span>
+            <input type='number' inputmode='numeric' pattern='[0-9]*' class='pkg-input b' oninput='calcActQty(this)'>
+            <span>+</span>
+            <input type='number' inputmode='numeric' pattern='[0-9]*' class='pkg-input c' oninput='calcActQty(this)'>
+          </div>
         </div>
         <div class='actQty-box'>
           <label>Act Q'ty</label>
@@ -402,6 +407,7 @@ function resetForm() {
       </div>
     </div>`;
 }
+
 </script>
 </body>
 </html>

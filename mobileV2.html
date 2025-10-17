@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📋 Warehouse Check (Mobile V2.4)</title>
+<title>📋 Warehouse Check (Mobile V2.5)</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
@@ -79,6 +79,13 @@ button {
   height: 32px;
   font-size: 14px;
 }
+.row2col {
+  display: flex;
+  gap: 10px;
+}
+.col {
+  flex: 1;
+}
 .footer {
   text-align: center;
   margin-top: 20px;
@@ -89,7 +96,7 @@ button {
 </head>
 <body>
 <div class="container">
-  <h3>📋 Warehouse Check (V2.4)</h3>
+  <h3>📋 Warehouse Check (V2.5)</h3>
 
   <label>ชื่อผู้ทำ</label>
   <select id="nameSelect"></select>
@@ -99,30 +106,30 @@ button {
     <label>เลือกรายการ</label>
     <select id="itemSelect" onchange="showDetail()"></select>
 
-    <label>Customer</label>
-    <input id="customer" readonly>
-
-    <div style="display:flex; gap:10px;">
-      <div style="flex:1;">
+    <div class="row2col">
+      <div class="col">
+        <label>Customer</label>
+        <input id="customer" readonly>
+      </div>
+      <div class="col">
         <label>File</label>
         <input id="file5digit" readonly>
       </div>
-      <div style="flex:1;">
+    </div>
+
+    <div class="row2col">
+      <div class="col">
+        <label>Lot</label>
+        <input id="lot" readonly>
+      </div>
+      <div class="col">
         <label>Q'ty</label>
         <input id="sumQty" readonly>
       </div>
     </div>
 
-    <div style="display:flex; gap:10px;">
-      <div style="flex:1;">
-        <label>Lot</label>
-        <input id="lot" readonly>
-      </div>
-      <div style="flex:1;">
-        <label>Rack</label>
-        <input id="rack" readonly>
-      </div>
-    </div>
+    <label>Rack</label>
+    <input id="rack" readonly>
 
     <div id="rackZone">
       <div class="rack-set">
@@ -278,8 +285,6 @@ async function saveData() {
   }
 
   Swal.fire("✅", "บันทึกข้อมูลสำเร็จแล้ว", "success");
-
-  // 🧹 Clear Form & Refresh Status
   resetForm();
   await fetchItems(); // refresh dropdown status
 }

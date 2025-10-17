@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📋 Warehouse Check (Mobile V2.5)</title>
+<title>📋 Warehouse Check (Mobile V2.6)</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
@@ -32,10 +32,11 @@ label {
 }
 input, select {
   width: 100%;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border: 1.5px solid #cbd5e1;
   border-radius: 6px;
   font-size: 14px;
+  height: 38px;
 }
 input[readonly] {
   background: #f8fafc;
@@ -43,12 +44,12 @@ input[readonly] {
 button {
   border: none;
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px 14px;
   font-weight: 600;
   cursor: pointer;
 }
-.btn-primary { background: #2563eb; color: white; width: 70%; font-size: 16px; }
-.btn-add { background: #10b981; color: white; width: 28%; font-size: 20px; }
+.btn-primary { background: #2563eb; color: white; font-size: 14px; }
+.btn-add { background: #10b981; color: white; font-size: 20px; }
 .btn-delete {
   position: absolute;
   top: 0; right: 0;
@@ -57,6 +58,25 @@ button {
   padding: 4px 10px;
   font-weight: bold;
   cursor: pointer;
+}
+.row2col {
+  display: flex;
+  gap: 12px;
+}
+.col {
+  flex: 1;
+}
+.name-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.name-row select {
+  flex: 1;
+  height: 38px;
+}
+.name-row button {
+  flex: 0 0 110px;
 }
 .rack-set {
   position: relative;
@@ -76,15 +96,8 @@ button {
   text-align: center;
   border: 1.5px solid #cbd5e1;
   border-radius: 6px;
-  height: 32px;
+  height: 38px;
   font-size: 14px;
-}
-.row2col {
-  display: flex;
-  gap: 10px;
-}
-.col {
-  flex: 1;
 }
 .footer {
   text-align: center;
@@ -96,17 +109,21 @@ button {
 </head>
 <body>
 <div class="container">
-  <h3>📋 Warehouse Check (V2.5)</h3>
+  <h3>📋 Warehouse Check (V2.6)</h3>
 
-  <label>ชื่อผู้ทำ</label>
-  <select id="nameSelect"></select>
-  <button class="btn-primary w-100" onclick="fetchItems()">🔍 ค้นหารายการ</button>
+  <div class="name-row">
+    <div style="flex:1;">
+      <label>ชื่อผู้ทำ</label>
+      <select id="nameSelect"></select>
+    </div>
+    <button class="btn-primary" onclick="fetchItems()">🔍 ค้นหา</button>
+  </div>
 
   <div id="itemSection" style="display:none;">
     <label>เลือกรายการ</label>
     <select id="itemSelect" onchange="showDetail()"></select>
 
-    <div class="row2col">
+    <div class="row2col" style="margin-top:10px;">
       <div class="col">
         <label>Customer</label>
         <input id="customer" readonly>
@@ -156,7 +173,7 @@ button {
 
     <div style="display:flex; gap:10px; margin-top:15px;">
       <button class="btn-add" onclick="addRackSet()">＋</button>
-      <button class="btn-primary" onclick="saveData()">💾 บันทึกข้อมูล</button>
+      <button class="btn-primary" style="flex:1;" onclick="saveData()">💾 บันทึกข้อมูล</button>
     </div>
   </div>
 

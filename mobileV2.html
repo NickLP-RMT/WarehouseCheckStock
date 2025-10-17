@@ -90,18 +90,25 @@ button {
 
 .package-row {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
   flex-wrap: nowrap;
+  margin-top: 10px;
 }
+
 .package-box {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column; /* 🔧 ให้ label อยู่บน */
+}
+
+.package-inputs {
   display: flex;
   align-items: center;
-  justify-content: start;
   gap: 6px;
-  flex: 1.2;
-  min-width: 0;
 }
+
 .pkg-input {
   width: 60px;
   text-align: center;
@@ -110,10 +117,17 @@ button {
   height: 42px;
   font-size: 14px;
 }
+
 .actQty-box {
   flex: 0.8;
-  min-width: 100px;
+  display: flex;
+  flex-direction: column;
 }
+
+.actQty-box input {
+  height: 42px;
+}
+
 .footer {
   text-align: center;
   margin-top: 20px;
@@ -185,18 +199,23 @@ button {
           </div>
         </div>
 
-        <div class="package-row" style="margin-top:8px;">
-          <div class="package-box">
-            <label>Package</label>
-            <input type="number" class="pkg-input a" oninput="calcActQty(this)">×
-            <input type="number" class="pkg-input b" oninput="calcActQty(this)">+
-            <input type="number" class="pkg-input c" oninput="calcActQty(this)">
-          </div>
-          <div class="actQty-box">
-            <label>Act Q'ty</label>
-            <input class="actQty" readonly>
-          </div>
-        </div>
+<div class="package-row">
+  <div class="package-box">
+    <label>Package</label>
+    <div class="package-inputs">
+      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="calcActQty(this)" placeholder="">
+      <span>×</span>
+      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input b" oninput="calcActQty(this)" placeholder="">
+      <span>+</span>
+      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input c" oninput="calcActQty(this)" placeholder="">
+    </div>
+  </div>
+  <div class="actQty-box">
+    <label>Act Q'ty</label>
+    <input class="actQty" readonly>
+  </div>
+</div>
+
       </div>
     </div>
 

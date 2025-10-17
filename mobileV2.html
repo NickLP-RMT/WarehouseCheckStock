@@ -306,10 +306,19 @@ function calcActQty(input) {
 function addRackSet() {
   const zone = document.getElementById("rackZone");
   const newSet = document.querySelector(".rack-set").cloneNode(true);
+
+  // เคลียร์ค่าช่อง input และ select เดิม
   newSet.querySelectorAll("input").forEach(i => i.value = "");
   newSet.querySelectorAll("select").forEach(s => s.innerHTML = "<option value=''>--เลือก--</option>");
+
+  // ✅ เพิ่ม event listener ใหม่ให้ select group ทุกอัน
+  newSet.querySelector(".rackGroup").addEventListener("change", function() {
+    updateRackSub(this);
+  });
+
   zone.appendChild(newSet);
 }
+
 
 function removeRackSet(btn) { btn.closest(".rack-set").remove(); }
 

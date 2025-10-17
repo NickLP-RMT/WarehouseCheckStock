@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📋 Warehouse Check (Mobile V2.1)</title>
+<title>📋 Warehouse Check (Mobile V2.2)</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
 body {
@@ -37,7 +37,7 @@ button {
 </head>
 <body>
 <div class="container">
-  <h3>📋 Warehouse Check (V2.1)</h3>
+  <h3>📋 Warehouse Check (V2.2)</h3>
 
   <label>ชื่อผู้ทำ</label>
   <select id="nameSelect"></select>
@@ -62,12 +62,11 @@ button {
     <label>Sum of Qty</label>
     <input id="sumQty" readonly>
 
-    <!-- ✅ เปลี่ยนลำดับ: Act_Package ขึ้นก่อน -->
     <label>Act_Package</label>
     <input id="actPackage" placeholder="เช่น 20×24+0" oninput="calcActQty()">
 
     <label>Act_Qty</label>
-    <input id="actQty" readonly placeholder="จำนวนรวมจะคำนวณอัตโนมัติ">
+    <input id="actQty" readonly placeholder="ระบบคำนวณให้อัตโนมัติ">
 
     <label>Act_Rack</label>
     <input id="actRack" placeholder="ระบุ Rack ที่ตรวจจริง">
@@ -112,8 +111,14 @@ async function fetchItems() {
     if (!rows || rows.length === 0) return Swal.fire("ℹ️", "ไม่พบข้อมูลของผู้ทำคนนี้", "info");
 
     currentItems = rows;
+
+    // ✅ เพิ่มไอคอนสถานะใน dropdown
     const itemSelect = document.getElementById("itemSelect");
-    itemSelect.innerHTML = rows.map(r => `<option value="${r.File5digit}">${r.File5digit} (${r.Lot})</option>`).join('');
+    itemSelect.innerHTML = rows.map(r => {
+      const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
+      return `<option value="${r.File5digit}">${done} ${r.File5digit} (${r.Lot})</option>`;
+    }).join('');
+
     document.getElementById("itemSection").style.display = "block";
     showDetail();
   } catch {
@@ -140,13 +145,10 @@ function showDetail() {
 function calcActQty() {
   const input = document.getElementById("actPackage").value.trim();
   const output = document.getElementById("actQty");
-
   if (!input) { output.value = ""; return; }
 
-  // รองรับรูปแบบ เช่น 20×24+3 หรือ 20x24+3
   const pattern = /^(\d+)[x×](\d+)(?:\+(\d+))?$/i;
   const match = input.match(pattern);
-
   if (match) {
     const a = parseInt(match[1]);
     const b = parseInt(match[2]);
@@ -159,17 +161,13 @@ function calcActQty() {
 
 // 💾 บันทึกข้อมูล
 async function saveData() {
-  const name = nameSelect.value;
-  const file = file5digit.value;
-  const actRack = actRackInput.value;
-  const actQty = actQtyInput.value;
-  const actPackage = actPackageInput.value;
+  const name = document.getElementById("nameSelect").value;
+  const file = document.getElementById("file5digit").value;
+  const actRack = document.getElementById("actRack").value;
+  const actQty = document.getElementById("actQty").value;
+  const actPackage = document.getElementById("actPackage").value;
 
-  const actRackInput = document.getElementById("actRack");
-  const actQtyInput = document.getElementById("actQty");
-  const actPackageInput = document.getElementById("actPackage");
-
-  if (!name || !file || !actPackageInput.value) {
+  if (!name || !file || !actPackage) {
     Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบ", "warning");
     return;
   }
@@ -179,17 +177,18 @@ async function saveData() {
   try {
     const res = await fetch(`${scriptURL}?page=updateRecord`, {
       method: "POST",
-      body: new URLSearchParams({
-        name,
-        file5digit: file,
-        actRack: actRackInput.value,
-        actQty: actQtyInput.value,
-        actPackage: actPackageInput.value
-      })
+      body: new URLSearchParams({ name, file5digit: file, actRack, actQty, actPackage })
     });
     const json = await res.json();
     Swal.fire(json.success ? "✅" : "❌", json.message, json.success ? "success" : "error");
-    if (json.success) resetForm();
+
+    if (json.success) {
+      // ✅ อัปเดต dropdown ให้แสดง “✅” ทันทีหลังบันทึก
+      const select = document.getElementById("itemSelect");
+      const option = select.options[select.selectedIndex];
+      option.textContent = `✅ ${file} (${lot.value})`;
+    }
+
   } catch {
     Swal.fire("❌", "ไม่สามารถบันทึกข้อมูลได้", "error");
   }

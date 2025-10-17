@@ -343,17 +343,25 @@ function addRackSet() {
   const zone = document.getElementById("rackZone");
   const newSet = document.querySelector(".rack-set").cloneNode(true);
 
-  // เคลียร์ค่าช่อง input และ select เดิม
+  // ล้างค่าทั้งหมดในชุดใหม่
   newSet.querySelectorAll("input").forEach(i => i.value = "");
-  newSet.querySelectorAll("select").forEach(s => s.innerHTML = "<option value=''>--เลือก--</option>");
+  newSet.querySelectorAll("select").forEach(s => {
+    if (s.classList.contains("rackSub")) {
+      s.innerHTML = ""; // ล้าง sub dropdown
+    } else {
+      s.value = ""; // reset main dropdown
+    }
+  });
 
-  // ✅ เพิ่ม event listener ใหม่ให้ select group ทุกอัน
-  newSet.querySelector(".rackGroup").addEventListener("change", function() {
+  // ✅ เพิ่ม event listener ให้ select .rackGroup ในชุดใหม่
+  const rackGroup = newSet.querySelector(".rackGroup");
+  rackGroup.addEventListener("change", function () {
     updateRackSub(this);
   });
 
   zone.appendChild(newSet);
 }
+
 
 
 function removeRackSet(btn) { btn.closest(".rack-set").remove(); }

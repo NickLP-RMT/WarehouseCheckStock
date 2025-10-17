@@ -3,10 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📋 Warehouse Check (V2.9)</title>
+<title>📋 Warehouse Check (V2.9.5)</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
+:root {
+  --pkg-a: 60px;  /* ช่องแรก */
+  --pkg-b: 60px;  /* ช่องกลาง */
+  --pkg-c: 60px;  /* ช่องสุดท้าย */
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background: #f1f5f9;
@@ -33,11 +39,7 @@ body {
   border-radius: 14px 14px 0 0;
   margin: -24px -24px 20px -24px;
 }
-.header-bar h3 {
-  margin: 0;
-  font-weight: 600;
-  font-size: 17px;
-}
+.header-bar h3 { margin: 0; font-weight: 600; font-size: 17px; }
 
 /* Layouts */
 label { font-weight: 600; font-size: 13.5px; }
@@ -121,8 +123,12 @@ button {
   flex-wrap: nowrap;
 }
 
+/* ✅ ปรับขนาดได้จากตัวแปร CSS */
+.pkg-input.a { width: var(--pkg-a); }
+.pkg-input.b { width: var(--pkg-b); }
+.pkg-input.c { width: var(--pkg-c); }
+
 .pkg-input {
-  width: 55px;
   text-align: center;
   border: 1.5px solid #cbd5e1;
   border-radius: 6px;
@@ -131,23 +137,13 @@ button {
   flex-shrink: 0;
 }
 
-.package-inputs span {
-  font-weight: 600;
-}
+.package-inputs span { font-weight: 600; }
 
-/* 📱 ปรับเฉพาะหน้าจอมือถือเล็ก (ไม่บีบจนซ้อน) */
+/* 📱 ปรับเฉพาะหน้าจอมือถือเล็ก */
 @media (max-width: 400px) {
-  .pkg-input {
-    width: 48px;
-  }
-  .package-box {
-    flex: 0 0 65%;
-  }
-  .actQty-box {
-    flex: 0 0 35%;
-  }
+  .package-box { flex: 0 0 65%; }
+  .actQty-box { flex: 0 0 35%; }
 }
-
 
 .footer {
   text-align: center;
@@ -161,7 +157,7 @@ button {
 <body>
 <div class="container">
   <div class="header-bar">
-    <h3>📋 Warehouse Check (V2.9)</h3>
+    <h3>📋 Warehouse Check (V2.9.5)</h3>
   </div>
 
   <div class="name-row">
@@ -177,25 +173,13 @@ button {
     <select id="itemSelect" onchange="showDetail()"></select>
 
     <div class="row2col" style="margin-top:10px;">
-      <div class="col">
-        <label>Customer</label>
-        <input id="customer" readonly>
-      </div>
-      <div class="col">
-        <label>File</label>
-        <input id="file5digit" readonly>
-      </div>
+      <div class="col"><label>Customer</label><input id="customer" readonly></div>
+      <div class="col"><label>File</label><input id="file5digit" readonly></div>
     </div>
 
     <div class="row2col">
-      <div class="col">
-        <label>Lot</label>
-        <input id="lot" readonly>
-      </div>
-      <div class="col">
-        <label>Q'ty</label>
-        <input id="sumQty" readonly>
-      </div>
+      <div class="col"><label>Lot</label><input id="lot" readonly></div>
+      <div class="col"><label>Q'ty</label><input id="sumQty" readonly></div>
     </div>
 
     <label>Rack</label>
@@ -215,28 +199,25 @@ button {
               <option value="D">D</option>
             </select>
           </div>
-          <div class="col">
-            <select class="rackSub"></select>
-          </div>
+          <div class="col"><select class="rackSub"></select></div>
         </div>
 
-<div class="package-row">
-  <div class="package-box">
-    <label>Package</label>
-    <div class="package-inputs">
-      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="calcActQty(this)" placeholder="">
-      <span>×</span>
-      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input b" oninput="calcActQty(this)" placeholder="">
-      <span>+</span>
-      <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input c" oninput="calcActQty(this)" placeholder="">
-    </div>
-  </div>
-  <div class="actQty-box">
-    <label>Act Q'ty</label>
-    <input class="actQty" readonly>
-  </div>
-</div>
-
+        <div class="package-row">
+          <div class="package-box">
+            <label>Package</label>
+            <div class="package-inputs">
+              <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="calcActQty(this)">
+              <span>×</span>
+              <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input b" oninput="calcActQty(this)">
+              <span>+</span>
+              <input type="number" inputmode="numeric" pattern="[0-9]*" class="pkg-input c" oninput="calcActQty(this)">
+            </div>
+          </div>
+          <div class="actQty-box">
+            <label>Act Q'ty</label>
+            <input class="actQty" readonly>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -265,15 +246,12 @@ const rackMap = {
      "D-A8","D-A9","D-A10","D-A11","D-A12","D-A13","D-A14"]
 };
 
-// โหลดรายชื่อผู้ทำ
 async function loadNames() {
   try {
     const res = await fetch(`${scriptURL}?page=getNames`);
     const data = await res.json();
     nameSelect.innerHTML = '<option value="">-- เลือกชื่อผู้ทำ --</option>' + data.map(n => `<option>${n}</option>`).join('');
-  } catch {
-    Swal.fire("❌", "โหลดรายชื่อผู้ทำไม่สำเร็จ", "error");
-  }
+  } catch { Swal.fire("❌", "โหลดรายชื่อผู้ทำไม่สำเร็จ", "error"); }
 }
 loadNames();
 
@@ -290,9 +268,7 @@ async function fetchItems() {
     renderDropdown(rows);
     itemSection.style.display = "block";
     showDetail();
-  } catch {
-    Swal.fire("❌", "ไม่สามารถดึงข้อมูลได้", "error");
-  }
+  } catch { Swal.fire("❌", "ไม่สามารถดึงข้อมูลได้", "error"); }
 }
 
 function renderDropdown(rows) {
@@ -335,9 +311,7 @@ function addRackSet() {
   zone.appendChild(newSet);
 }
 
-function removeRackSet(btn) {
-  btn.closest(".rack-set").remove();
-}
+function removeRackSet(btn) { btn.closest(".rack-set").remove(); }
 
 async function saveData() {
   const name = nameSelect.value;
@@ -355,7 +329,7 @@ async function saveData() {
     let a = s.querySelector(".pkg-input.a").value || 0;
     let b = s.querySelector(".pkg-input.b").value || 0;
     let c = s.querySelector(".pkg-input.c").value;
-    if (c === "" || c === undefined) c = 0; // ✅ autofill 0
+    if (c === "" || c === undefined) c = 0;
 
     const actPackage = `${a}×${b}+${c}`;
     if (!actRack || !actQty) continue;
@@ -388,7 +362,6 @@ function resetForm() {
         </div>
         <div class='col'><select class='rackSub'></select></div>
       </div>
-
       <div class='package-row'>
         <div class='package-box'>
           <label>Package</label>
@@ -407,7 +380,6 @@ function resetForm() {
       </div>
     </div>`;
 }
-
 </script>
 </body>
 </html>

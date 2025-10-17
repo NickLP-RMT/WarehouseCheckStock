@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📋 Warehouse Check (Mobile V2.6)</title>
+<title>📋 Warehouse Check (Mobile V2.7)</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
@@ -22,14 +22,8 @@ body {
   padding: 24px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
-h3 {
-  text-align: center;
-  margin-bottom: 20px;
-}
-label {
-  font-weight: 600;
-  font-size: 13.5px;
-}
+h3 { text-align: center; margin-bottom: 20px; }
+label { font-weight: 600; font-size: 13.5px; }
 input, select {
   width: 100%;
   padding: 8px 10px;
@@ -38,9 +32,7 @@ input, select {
   font-size: 14px;
   height: 38px;
 }
-input[readonly] {
-  background: #f8fafc;
-}
+input[readonly] { background: #f8fafc; }
 button {
   border: none;
   border-radius: 8px;
@@ -59,25 +51,13 @@ button {
   font-weight: bold;
   cursor: pointer;
 }
-.row2col {
-  display: flex;
-  gap: 12px;
-}
-.col {
-  flex: 1;
-}
+.row2col { display: flex; gap: 12px; }
+.col { flex: 1; }
 .name-row {
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
+  display: flex; gap: 10px; align-items: flex-end;
 }
-.name-row select {
-  flex: 1;
-  height: 38px;
-}
-.name-row button {
-  flex: 0 0 110px;
-}
+.name-row select { flex: 1; height: 38px; }
+.name-row button { flex: 0 0 110px; }
 .rack-set {
   position: relative;
   border: 1.5px solid #e2e8f0;
@@ -86,30 +66,23 @@ button {
   margin-bottom: 15px;
 }
 .package-box {
-  display: flex;
-  align-items: center;
-  justify-content: start;
-  gap: 6px;
+  display: flex; align-items: center; justify-content: start; gap: 6px;
 }
 .pkg-input {
-  width: 60px;
-  text-align: center;
+  width: 60px; text-align: center;
   border: 1.5px solid #cbd5e1;
   border-radius: 6px;
-  height: 38px;
-  font-size: 14px;
+  height: 38px; font-size: 14px;
 }
 .footer {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 12px;
-  color: #94a3b8;
+  text-align: center; margin-top: 20px; font-size: 12px; color: #94a3b8;
 }
 </style>
 </head>
+
 <body>
 <div class="container">
-  <h3>📋 Warehouse Check (V2.6)</h3>
+  <h3>📋 Warehouse Check (V2.7)</h3>
 
   <div class="name-row">
     <div style="flex:1;">
@@ -152,7 +125,20 @@ button {
       <div class="rack-set">
         <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
         <label>Act Rack</label>
-        <input class="actRack" placeholder="เช่น R01-A">
+        <div class="row2col">
+          <div class="col">
+            <select class="rackGroup" onchange="updateRackSub(this)">
+              <option value="">--เลือก--</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+            </select>
+          </div>
+          <div class="col">
+            <select class="rackSub"></select>
+          </div>
+        </div>
 
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
           <div style="flex:1;">
@@ -177,21 +163,68 @@ button {
     </div>
   </div>
 
-  <div class="footer">
-    © 2025 Resonac Materials (Thailand) Co., Ltd.
-  </div>
+  <div class="footer">© 2025 Resonac Materials (Thailand) Co., Ltd.</div>
 </div>
 
 <script>
 const scriptURL = "https://script.google.com/macros/s/AKfycbx17uBD3jJO2wpVgYiSdc7shdthNMKrUXx4qxD3Fie8NV5w26uxE5l_7Kn9nZDdQn8g/exec";
 let currentItems = [];
 
+// 🧩 โครงสร้าง Act Rack
+const rackMap = {
+  A: ["A-A1","A-A2","A-A3","A-A4","A-A5","A-A6","A-A7","A-A8",
+      "A-B1","A-B2","A-B3","A-B4","A-B5","A-B6","A-B7","A-B8",
+      "A-C1","A-C2","A-C3","A-C4","A-C5","A-C6","A-C7","A-C8",
+      "A-D1","A-D2","A-D3","A-D4","A-D5","A-D6","A-D7","A-D8"],
+  B: ["B-A1","B-A2","B-A3","B-A4","B-A5","B-A6","B-A7","B-A8",
+      "B-B1","B-B2","B-B3","B-B4","B-B5","B-B6","B-B7","B-B8",
+      "B-C1","B-C2","B-C3","B-C4","B-C5","B-C6","B-C7","B-C8",
+      "B-D1","B-D2","B-D3","B-D4","B-D5","B-D6","B-D7","B-D8",
+      "B-A9","B-A10","B-A11","B-A12","B-A13","B-A14","B-A15","B-A16",
+      "B-B9","B-B10","B-B11","B-B12","B-B13","B-B14","B-B15","B-B16",
+      "B-C9","B-C10","B-C11","B-C12","B-C13","B-C14","B-C15","B-C16",
+      "B-D9","B-D10","B-D11","B-D12","B-D13","B-D14","B-D15","B-D16",
+      "B-A17","B-A18","B-A19","B-A20","B-A21","B-A22","B-A23","B-A24",
+      "B-B17","B-B18","B-B19","B-B20","B-B21","B-B22","B-B23","B-B24",
+      "B-C17","B-C18","B-C19","B-C20","B-C21","B-C22","B-C23","B-C24",
+      "B-D17","B-D18","B-D19","B-D20","B-D21","B-D22","B-D23","B-D24",
+      "B-A25","B-A26","B-A27","B-A28","B-B25","B-B26","B-B27","B-B28",
+      "B-C25","B-C26","B-C27","B-C28","B-D25","B-D26","B-D27","B-D28"],
+  C: ["C-A1","C-A2","C-A3","C-A4","C-A5","C-A6","C-A7","C-A8",
+      "C-B1","C-B2","C-B3","C-B4","C-B5","C-B6","C-B7","C-B8",
+      "C-C1","C-C2","C-C3","C-C4","C-C5","C-C6","C-C7","C-C8",
+      "C-D1","C-D2","C-D3","C-D4","C-D5","C-D6","C-D7","C-D8",
+      "C-A9","C-A10","C-A11","C-A12","C-A13","C-A14","C-A15","C-A16",
+      "C-B9","C-B10","C-B11","C-B12","C-B13","C-B14","C-B15","C-B16",
+      "C-C9","C-C10","C-C11","C-C12","C-C13","C-C14","C-C15","C-C16",
+      "C-D9","C-D10","C-D11","C-D12","C-D13","C-D14","C-D15","C-D16",
+      "C-A17","C-A18","C-A19","C-A20","C-A21","C-A22","C-A23","C-A24",
+      "C-B17","C-B18","C-B19","C-B20","C-B21","C-B22","C-B23","C-B24",
+      "C-C17","C-C18","C-C19","C-C20","C-C21","C-C22","C-C23","C-C24",
+      "C-D17","C-D18","C-D19","C-D20","C-D21","C-D22","C-D23","C-D24",
+      "C-A25","C-A26","C-A27","C-A28","C-A29","C-A30","C-A31","C-A32",
+      "C-B25","C-B26","C-B27","C-B28","C-B29","C-B30","C-B31","C-B32",
+      "C-C25","C-C26","C-C27","C-C28","C-C29","C-C30","C-C31","C-C32",
+      "C-D25","C-D26","C-D27","C-D28","C-D29","C-D30","C-D31","C-D32",
+      "C-A33","C-A34","C-A35","C-A36",
+      "C-B33","C-B34","C-B35","C-B36",
+      "C-C33","C-C34","C-C35","C-C36",
+      "C-D33","C-D34","C-D35","C-D36"],
+  D: ["D-A1","D-A2","D-A3","D-A4","D-A5","D-A6","D-A7",
+      "D-B1","D-B2","D-B3","D-B4","D-B5","D-B6","D-B7",
+      "D-A8","D-A9","D-A10","D-A11","D-A12","D-A13","D-A14",
+      "D-B8","D-B9","D-B10","D-B11","D-B12","D-B13","D-B14",
+      "D-A15","D-A16","D-A17","D-A18","D-A19","D-A20","D-A21",
+      "D-B15","D-B16","D-B17","D-B18","D-B19","D-B20","D-B21",
+      "D-A22","D-B22"]
+};
+
+// โหลดรายชื่อผู้ทำ
 async function loadNames() {
   try {
     const res = await fetch(`${scriptURL}?page=getNames`);
     const data = await res.json();
-    const select = document.getElementById("nameSelect");
-    select.innerHTML = '<option value="">-- เลือกชื่อผู้ทำ --</option>' + data.map(n => `<option>${n}</option>`).join('');
+    nameSelect.innerHTML = '<option value="">-- เลือกชื่อผู้ทำ --</option>' + data.map(n => `<option>${n}</option>`).join('');
   } catch {
     Swal.fire("❌", "โหลดรายชื่อผู้ทำไม่สำเร็จ", "error");
   }
@@ -199,20 +232,17 @@ async function loadNames() {
 loadNames();
 
 async function fetchItems() {
-  const name = document.getElementById("nameSelect").value;
+  const name = nameSelect.value;
   if (!name) return Swal.fire("⚠️", "กรุณาเลือกชื่อผู้ทำ", "warning");
-
   Swal.fire({ title: "กำลังดึงข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
   try {
     const res = await fetch(`${scriptURL}?page=getDataByName&name=${encodeURIComponent(name)}`);
     const rows = await res.json();
     Swal.close();
-
     if (!rows || rows.length === 0) return Swal.fire("ℹ️", "ไม่พบข้อมูลของผู้ทำคนนี้", "info");
-
     currentItems = rows;
     renderDropdown(rows);
-    document.getElementById("itemSection").style.display = "block";
+    itemSection.style.display = "block";
     showDetail();
   } catch {
     Swal.fire("❌", "ไม่สามารถดึงข้อมูลได้", "error");
@@ -220,7 +250,6 @@ async function fetchItems() {
 }
 
 function renderDropdown(rows) {
-  const itemSelect = document.getElementById("itemSelect");
   itemSelect.innerHTML = rows.map(r => {
     const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
     return `<option value="${r.File5digit}">${done} ${r.File5digit} (${r.Lot})</option>`;
@@ -228,7 +257,7 @@ function renderDropdown(rows) {
 }
 
 function showDetail() {
-  const file = document.getElementById("itemSelect").value;
+  const file = itemSelect.value;
   const row = currentItems.find(r => r.File5digit === file);
   if (!row) return;
   customer.value = row.Customer || "";
@@ -236,6 +265,12 @@ function showDetail() {
   lot.value = row.Lot || "";
   rack.value = row.Rack || "";
   sumQty.value = row["Sum of Qty"] || "";
+}
+
+function updateRackSub(select) {
+  const subSelect = select.closest(".rack-set").querySelector(".rackSub");
+  const group = select.value;
+  subSelect.innerHTML = group ? rackMap[group].map(v => `<option value="${v}">${v}</option>`).join('') : '';
 }
 
 function calcActQty(input) {
@@ -253,7 +288,18 @@ function addRackSet() {
   newSet.innerHTML = `
     <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
     <label>Act Rack</label>
-    <input class="actRack" placeholder="เช่น R01-A">
+    <div class='row2col'>
+      <div class='col'>
+        <select class='rackGroup' onchange='updateRackSub(this)'>
+          <option value=''>--เลือก--</option>
+          <option value='A'>A</option>
+          <option value='B'>B</option>
+          <option value='C'>C</option>
+          <option value='D'>D</option>
+        </select>
+      </div>
+      <div class='col'><select class='rackSub'></select></div>
+    </div>
     <div style='display:flex; align-items:center; justify-content:space-between; margin-top:8px;'>
       <div style='flex:1;'>
         <label>Package</label>
@@ -279,39 +325,46 @@ async function saveData() {
   const name = nameSelect.value;
   const file = file5digit.value;
   const sets = document.querySelectorAll(".rack-set");
-  if (!name || !file || sets.length === 0) {
-    Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบ", "warning");
-    return;
-  }
+  if (!name || !file || sets.length === 0) return Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบ", "warning");
 
   Swal.fire({ title: "กำลังบันทึกข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
   for (const s of sets) {
-    const actRack = s.querySelector(".actRack").value;
+    const group = s.querySelector(".rackGroup").value;
+    const sub = s.querySelector(".rackSub").value;
+    const actRack = group && sub ? sub : "";
     const actQty = s.querySelector(".actQty").value;
     const a = s.querySelector(".pkg-input.a").value;
     const b = s.querySelector(".pkg-input.b").value;
     const c = s.querySelector(".pkg-input.c").value;
     const actPackage = `${a}×${b}+${c}`;
     if (!actRack || !actQty) continue;
-
     await fetch(`${scriptURL}?page=updateRecord`, {
       method: "POST",
       body: new URLSearchParams({ name, file5digit: file, actRack, actQty, actPackage })
     });
   }
-
   Swal.fire("✅", "บันทึกข้อมูลสำเร็จแล้ว", "success");
   resetForm();
-  await fetchItems(); // refresh dropdown status
+  await fetchItems();
 }
 
 function resetForm() {
   document.getElementById("rackZone").innerHTML = `
-    <div class="rack-set">
-      <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+    <div class='rack-set'>
+      <button class='btn-delete' onclick='removeRackSet(this)'>🗑️</button>
       <label>Act Rack</label>
-      <input class="actRack" placeholder="เช่น R01-A">
+      <div class='row2col'>
+        <div class='col'>
+          <select class='rackGroup' onchange='updateRackSub(this)'>
+            <option value=''>--เลือก--</option>
+            <option value='A'>A</option>
+            <option value='B'>B</option>
+            <option value='C'>C</option>
+            <option value='D'>D</option>
+          </select>
+        </div>
+        <div class='col'><select class='rackSub'></select></div>
+      </div>
       <div style='display:flex; align-items:center; justify-content:space-between; margin-top:8px;'>
         <div style='flex:1;'>
           <label>Package</label>

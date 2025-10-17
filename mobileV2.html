@@ -30,7 +30,7 @@ input, select {
   border: 1.5px solid #cbd5e1;
   border-radius: 6px;
   font-size: 14px;
-  height: 38px;
+  height: 42px;
 }
 input[readonly] { background: #f8fafc; }
 button {
@@ -328,25 +328,32 @@ async function saveData() {
   if (!name || !file || sets.length === 0) return Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบ", "warning");
 
   Swal.fire({ title: "กำลังบันทึกข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
   for (const s of sets) {
     const group = s.querySelector(".rackGroup").value;
     const sub = s.querySelector(".rackSub").value;
     const actRack = group && sub ? sub : "";
     const actQty = s.querySelector(".actQty").value;
-    const a = s.querySelector(".pkg-input.a").value;
-    const b = s.querySelector(".pkg-input.b").value;
-    const c = s.querySelector(".pkg-input.c").value;
+
+    let a = s.querySelector(".pkg-input.a").value || 0;
+    let b = s.querySelector(".pkg-input.b").value || 0;
+    let c = s.querySelector(".pkg-input.c").value;
+    if (c === "" || c === undefined) c = 0;  // ✅ auto fill “0” ถ้าไม่ได้ใส่
+
     const actPackage = `${a}×${b}+${c}`;
+
     if (!actRack || !actQty) continue;
     await fetch(`${scriptURL}?page=updateRecord`, {
       method: "POST",
       body: new URLSearchParams({ name, file5digit: file, actRack, actQty, actPackage })
     });
   }
+
   Swal.fire("✅", "บันทึกข้อมูลสำเร็จแล้ว", "success");
   resetForm();
   await fetchItems();
 }
+
 
 function resetForm() {
   document.getElementById("rackZone").innerHTML = `

@@ -3,45 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📋 Warehouse Check (Mobile V2.2)</title>
+<title>📋 Warehouse Check (Mobile V2.3)</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <style>
 body {
   font-family: 'Inter', sans-serif;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  color: #1e293b; padding: 20px; min-height: 100vh;
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 20px;
+  min-height: 100vh;
 }
 .container {
-  max-width: 460px; margin: 0 auto; background: white;
-  padding: 24px; border-radius: 12px;
+  max-width: 480px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
-label { font-weight: 600; margin-top: 10px; }
+h3 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+label {
+  font-weight: 600;
+  font-size: 13.5px;
+}
 input, select {
-  width: 100%; padding: 8px;
-  border-radius: 6px; border: 1.5px solid #cbd5e1;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+}
+input[readonly] {
+  background: #f8fafc;
 }
 button {
-  margin-top: 15px; padding: 10px;
-  border: none; border-radius: 8px;
-  font-weight: 600; cursor: pointer; width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
-.btn-primary { background: #2563eb; color: white; }
-.btn-success { background: #059669; color: white; }
-.btn-secondary { background: #6b7280; color: white; }
+.btn-primary { background: #2563eb; color: white; width: 70%; font-size: 16px; }
+.btn-add { background: #10b981; color: white; width: 28%; font-size: 20px; }
+.btn-delete {
+  position: absolute;
+  top: 0; right: 0;
+  background: #ef4444; color: white;
+  border-radius: 0 8px 0 8px;
+  padding: 4px 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.rack-set {
+  position: relative;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 15px;
+}
+.package-box {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  gap: 6px;
+}
+.pkg-input {
+  width: 60px;
+  text-align: center;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  height: 32px;
+  font-size: 14px;
+}
 .footer {
-  text-align: center; margin-top: 20px;
-  font-size: 12px; color: #94a3b8;
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: #94a3b8;
 }
 </style>
 </head>
 <body>
 <div class="container">
-  <h3>📋 Warehouse Check (V2.2)</h3>
+  <h3>📋 Warehouse Check (V2.3)</h3>
 
   <label>ชื่อผู้ทำ</label>
   <select id="nameSelect"></select>
-  <button class="btn-primary" onclick="fetchItems()">🔍 ค้นหารายการ</button>
+  <button class="btn-primary w-100" onclick="fetchItems()">🔍 ค้นหารายการ</button>
 
   <div id="itemSection" style="display:none;">
     <label>เลือกรายการ</label>
@@ -50,29 +102,55 @@ button {
     <label>Customer</label>
     <input id="customer" readonly>
 
-    <label>File5digit</label>
-    <input id="file5digit" readonly>
+    <div style="display:flex; gap:10px;">
+      <div style="flex:1;">
+        <label>File</label>
+        <input id="file5digit" readonly>
+      </div>
+      <div style="flex:1;">
+        <label>Q'ty</label>
+        <input id="sumQty" readonly>
+      </div>
+    </div>
 
-    <label>Lot</label>
-    <input id="lot" readonly>
+    <div style="display:flex; gap:10px;">
+      <div style="flex:1;">
+        <label>Lot</label>
+        <input id="lot" readonly>
+      </div>
+      <div style="flex:1;">
+        <label>Rack</label>
+        <input id="rack" readonly>
+      </div>
+    </div>
 
-    <label>Rack</label>
-    <input id="rack" readonly>
+    <div id="rackZone">
+      <div class="rack-set">
+        <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+        <label>Act Rack</label>
+        <input class="actRack" placeholder="เช่น R01-A">
 
-    <label>Sum of Qty</label>
-    <input id="sumQty" readonly>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+          <div style="flex:1;">
+            <label>Package</label>
+            <div class="package-box">
+              <input type="number" class="pkg-input a" oninput="calcActQty(this)">×
+              <input type="number" class="pkg-input b" oninput="calcActQty(this)">+
+              <input type="number" class="pkg-input c" oninput="calcActQty(this)">
+            </div>
+          </div>
+          <div style="flex:1;">
+            <label>Act Q'ty</label>
+            <input class="actQty" readonly>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <label>Act_Package</label>
-    <input id="actPackage" placeholder="เช่น 20×24+0" oninput="calcActQty()">
-
-    <label>Act_Qty</label>
-    <input id="actQty" readonly placeholder="ระบบคำนวณให้อัตโนมัติ">
-
-    <label>Act_Rack</label>
-    <input id="actRack" placeholder="ระบุ Rack ที่ตรวจจริง">
-
-    <button class="btn-success" onclick="saveData()">💾 บันทึกข้อมูล</button>
-    <button class="btn-secondary" onclick="resetForm()">🔄 เริ่มใหม่</button>
+    <div style="display:flex; gap:10px; margin-top:15px;">
+      <button class="btn-add" onclick="addRackSet()">＋</button>
+      <button class="btn-primary" onclick="saveData()">💾 บันทึกข้อมูล</button>
+    </div>
   </div>
 
   <div class="footer">
@@ -84,7 +162,6 @@ button {
 const scriptURL = "https://script.google.com/macros/s/AKfycbx17uBD3jJO2wpVgYiSdc7shdthNMKrUXx4qxD3Fie8NV5w26uxE5l_7Kn9nZDdQn8g/exec";
 let currentItems = [];
 
-// 🧭 โหลดรายชื่อผู้ทำ
 async function loadNames() {
   try {
     const res = await fetch(`${scriptURL}?page=getNames`);
@@ -97,7 +174,6 @@ async function loadNames() {
 }
 loadNames();
 
-// 🔍 ดึงรายการตามชื่อ
 async function fetchItems() {
   const name = document.getElementById("nameSelect").value;
   if (!name) return Swal.fire("⚠️", "กรุณาเลือกชื่อผู้ทำ", "warning");
@@ -111,8 +187,6 @@ async function fetchItems() {
     if (!rows || rows.length === 0) return Swal.fire("ℹ️", "ไม่พบข้อมูลของผู้ทำคนนี้", "info");
 
     currentItems = rows;
-
-    // ✅ เพิ่มไอคอนสถานะใน dropdown
     const itemSelect = document.getElementById("itemSelect");
     itemSelect.innerHTML = rows.map(r => {
       const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
@@ -126,7 +200,6 @@ async function fetchItems() {
   }
 }
 
-// 📋 แสดงรายละเอียด
 function showDetail() {
   const file = document.getElementById("itemSelect").value;
   const row = currentItems.find(r => r.File5digit === file);
@@ -136,69 +209,72 @@ function showDetail() {
   lot.value = row.Lot || "";
   rack.value = row.Rack || "";
   sumQty.value = row["Sum of Qty"] || "";
-  actPackage.value = row.Act_Package || "";
-  actQty.value = row.Act_Qty || "";
-  actRack.value = row.Act_Rack || "";
 }
 
-// 🧮 คำนวณ Act_Qty จาก Act_Package
-function calcActQty() {
-  const input = document.getElementById("actPackage").value.trim();
-  const output = document.getElementById("actQty");
-  if (!input) { output.value = ""; return; }
-
-  const pattern = /^(\d+)[x×](\d+)(?:\+(\d+))?$/i;
-  const match = input.match(pattern);
-  if (match) {
-    const a = parseInt(match[1]);
-    const b = parseInt(match[2]);
-    const c = match[3] ? parseInt(match[3]) : 0;
-    output.value = (a * b) + c;
-  } else {
-    output.value = "";
-  }
+function calcActQty(input) {
+  const parent = input.closest(".rack-set");
+  const a = +parent.querySelector(".pkg-input.a").value || 0;
+  const b = +parent.querySelector(".pkg-input.b").value || 0;
+  const c = +parent.querySelector(".pkg-input.c").value || 0;
+  parent.querySelector(".actQty").value = (a * b) + c;
 }
 
-// 💾 บันทึกข้อมูล
+function addRackSet() {
+  const zone = document.getElementById("rackZone");
+  const newSet = document.createElement("div");
+  newSet.className = "rack-set";
+  newSet.innerHTML = `
+    <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+    <label>Act Rack</label>
+    <input class="actRack" placeholder="เช่น R01-A">
+    <div style='display:flex; align-items:center; justify-content:space-between; margin-top:8px;'>
+      <div style='flex:1;'>
+        <label>Package</label>
+        <div class='package-box'>
+          <input type='number' class='pkg-input a' oninput='calcActQty(this)'>×
+          <input type='number' class='pkg-input b' oninput='calcActQty(this)'>+
+          <input type='number' class='pkg-input c' oninput='calcActQty(this)'>
+        </div>
+      </div>
+      <div style='flex:1;'>
+        <label>Act Q'ty</label>
+        <input class='actQty' readonly>
+      </div>
+    </div>`;
+  zone.appendChild(newSet);
+}
+
+function removeRackSet(btn) {
+  btn.closest(".rack-set").remove();
+}
+
 async function saveData() {
-  const name = document.getElementById("nameSelect").value;
-  const file = document.getElementById("file5digit").value;
-  const actRack = document.getElementById("actRack").value;
-  const actQty = document.getElementById("actQty").value;
-  const actPackage = document.getElementById("actPackage").value;
-
-  if (!name || !file || !actPackage) {
+  const name = nameSelect.value;
+  const file = file5digit.value;
+  const sets = document.querySelectorAll(".rack-set");
+  if (!name || !file || sets.length === 0) {
     Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบ", "warning");
     return;
   }
 
-  Swal.fire({ title: "กำลังบันทึก...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  Swal.fire({ title: "กำลังบันทึกข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-  try {
-    const res = await fetch(`${scriptURL}?page=updateRecord`, {
+  for (const s of sets) {
+    const actRack = s.querySelector(".actRack").value;
+    const actQty = s.querySelector(".actQty").value;
+    const a = s.querySelector(".pkg-input.a").value;
+    const b = s.querySelector(".pkg-input.b").value;
+    const c = s.querySelector(".pkg-input.c").value;
+    const actPackage = `${a}×${b}+${c}`;
+    if (!actRack || !actQty) continue;
+
+    await fetch(`${scriptURL}?page=updateRecord`, {
       method: "POST",
       body: new URLSearchParams({ name, file5digit: file, actRack, actQty, actPackage })
     });
-    const json = await res.json();
-    Swal.fire(json.success ? "✅" : "❌", json.message, json.success ? "success" : "error");
-
-    if (json.success) {
-      // ✅ อัปเดต dropdown ให้แสดง “✅” ทันทีหลังบันทึก
-      const select = document.getElementById("itemSelect");
-      const option = select.options[select.selectedIndex];
-      option.textContent = `✅ ${file} (${lot.value})`;
-    }
-
-  } catch {
-    Swal.fire("❌", "ไม่สามารถบันทึกข้อมูลได้", "error");
   }
-}
 
-// 🔄 เริ่มใหม่
-function resetForm() {
-  document.getElementById("itemSection").style.display = "none";
-  document.getElementById("nameSelect").value = "";
-  currentItems = [];
+  Swal.fire("✅", "บันทึกข้อมูลสำเร็จแล้ว", "success");
 }
 </script>
 </body>

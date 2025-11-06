@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📋 Warehouse Check (V3.2)</title>
+<title>📋 Warehouse Check (V3.3 Mobile Optimized)</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
@@ -18,6 +18,7 @@ body {
   color: #1e293b;
   padding: 20px;
   min-height: 100vh;
+  margin: 0;
 }
 .container {
   max-width: 480px;
@@ -68,12 +69,12 @@ button {
   cursor: pointer;
 }
 
-.name-row { display: flex; gap: 10px; align-items: flex-end; }
+.name-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 .name-row select { flex: 1; height: 42px; }
 .name-row button { flex: 0 0 110px; height: 42px; }
 
-.row2col { display: flex; gap: 12px; }
-.col { flex: 1; }
+.row2col { display: flex; gap: 12px; flex-wrap: wrap; }
+.col { flex: 1; min-width: 120px; }
 
 .rack-set {
   position: relative;
@@ -81,6 +82,7 @@ button {
   border-radius: 10px;
   padding: 14px;
   margin-bottom: 15px;
+  background: #f9fafb;
 }
 
 .package-row {
@@ -112,12 +114,24 @@ button {
 
 .package-inputs span { font-weight: 600; }
 .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #94a3b8; }
+
+/* 📱 Responsive Mode */
+@media (max-width: 480px) {
+  body { padding: 10px; }
+  .container { padding: 16px; border-radius: 10px; }
+  input, select, button { height: 46px; font-size: 15px; }
+  .btn-primary { font-size: 15px; }
+  .btn-add { font-size: 22px; height: 46px; }
+  label { font-size: 14px; }
+  .package-row { flex-direction: column; }
+  .package-box, .actQty-box { flex: 1 1 100%; }
+}
 </style>
 </head>
 
 <body>
 <div class="container">
-  <div class="header-bar"><h3>📋 Warehouse Check (V3.2)</h3></div>
+  <div class="header-bar"><h3>📋 Warehouse Check (V3.3)</h3></div>
 
   <div class="name-row">
     <div style="flex:1;">
@@ -159,7 +173,6 @@ button {
           <div class="col"><select class="rackSub"></select></div>
         </div>
 
-        <!-- 🆕 เปลี่ยนเป็น Act Lot -->
         <div style="margin-top:10px;">
           <label>Act Lot</label>
           <input type="text" class="actLotInput">
@@ -241,7 +254,7 @@ function showDetail(){
   const row=currentItems.find(r=>r.File5digit===itemSelect.value);
   if(!row)return;
 
-  // 🧹 เคลียร์ข้อมูล rackZone ก่อนทุกครั้งที่เปลี่ยนรายการ
+  // 🧹 ล้าง rackZone เดิมทุกครั้งก่อนโหลดรายการใหม่
   document.getElementById("rackZone").innerHTML = `
     <div class="rack-set">
       <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
@@ -283,7 +296,7 @@ function showDetail(){
   customer.value=row.Customer||""; file5digit.value=row.File5digit||"";
   lot.value=row.Lot||""; rack.value=row.Rack||""; sumQty.value=row["Sum of Qty"]||"";
 
-  // 🆕 เติมค่า Act Lot อัตโนมัติจาก Lot หลัก
+  // 🆕 เติมค่า Act Lot จาก Lot หลักอัตโนมัติ
   document.querySelector(".actLotInput").value = row.Lot || "";
 }
 
@@ -311,16 +324,14 @@ function addRackSet(){
     if(s.classList.contains("rackSub"))s.innerHTML="";
     else s.value="";
   });
-  const rackGroup=newSet.querySelector(".rackGroup");
-  rackGroup.addEventListener("change",function(){updateRackSub(this);});
-  const delBtn=newSet.querySelector(".btn-delete");
-  delBtn.addEventListener("click",function(){removeRackSet(this);});
 
-  // 🆕 ตั้งค่า Act Lot จาก Lot ปัจจุบัน
+  // 🆕 Auto fill Act Lot
   newSet.querySelector(".actLotInput").value = document.getElementById("lot").value || "";
 
   zone.appendChild(newSet);
-  newSet.querySelector(".pkg-input.a").focus();
+
+  // 🎯 Auto Focus (มี delay เล็กน้อยให้ mobile ทำงานทัน)
+  setTimeout(()=>newSet.querySelector(".pkg-input.a").focus(),150);
 }
 
 function removeRackSet(btn){btn.closest(".rack-set").remove();}

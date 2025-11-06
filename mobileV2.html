@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📋 Warehouse Check (V3.0)</title>
+<title>📋 Warehouse Check (V3.2)</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
@@ -117,7 +117,7 @@ button {
 
 <body>
 <div class="container">
-  <div class="header-bar"><h3>📋 Warehouse Check (V3.0)</h3></div>
+  <div class="header-bar"><h3>📋 Warehouse Check (V3.2)</h3></div>
 
   <div class="name-row">
     <div style="flex:1;">
@@ -144,45 +144,44 @@ button {
 
     <div id="rackZone">
       <div class="rack-set">
-  <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+        <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+        <label>Act Rack</label>
+        <div class="row2col">
+          <div class="col">
+            <select class="rackGroup" onchange="updateRackSub(this)">
+              <option value="">--เลือก--</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+            </select>
+          </div>
+          <div class="col"><select class="rackSub"></select></div>
+        </div>
 
-  <label>Act Rack</label>
-  <div class="row2col">
-    <div class="col">
-      <select class="rackGroup" onchange="updateRackSub(this)">
-        <option value="">--เลือก--</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="D">D</option>
-      </select>
-    </div>
-    <div class="col"><select class="rackSub"></select></div>
-  </div>
+        <!-- 🆕 เปลี่ยนเป็น Act Lot -->
+        <div style="margin-top:10px;">
+          <label>Act Lot</label>
+          <input type="text" class="actLotInput">
+        </div>
 
-  <!-- 🆕 เพิ่มช่อง Lot -->
-  <div style="margin-top:10px;">
-    <label>Lot</label>
-    <input type="text" class="lotInput">
-  </div>
-
-  <div class="package-row">
-    <div class="package-box">
-      <label>Package</label>
-      <div class="package-inputs">
-        <input type="number" inputmode="numeric" class="pkg-input a" oninput="calcActQty(this)">
-        <span>×</span>
-        <input type="number" inputmode="numeric" class="pkg-input b" oninput="calcActQty(this)">
-        <span>+</span>
-        <input type="number" inputmode="numeric" class="pkg-input c" oninput="calcActQty(this)">
+        <div class="package-row">
+          <div class="package-box">
+            <label>Package</label>
+            <div class="package-inputs">
+              <input type="number" inputmode="numeric" class="pkg-input a" oninput="calcActQty(this)">
+              <span>×</span>
+              <input type="number" inputmode="numeric" class="pkg-input b" oninput="calcActQty(this)">
+              <span>+</span>
+              <input type="number" inputmode="numeric" class="pkg-input c" oninput="calcActQty(this)">
+            </div>
+          </div>
+          <div class="actQty-box">
+            <label>Act Q'ty</label>
+            <input class="actQty" readonly>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="actQty-box">
-      <label>Act Q'ty</label>
-      <input class="actQty" readonly>
-    </div>
-  </div>
-</div>
     </div>
 
     <div style="display:flex; gap:10px; margin-top:15px;">
@@ -237,17 +236,63 @@ function renderDropdown(rows){
     return `<option value="${r.File5digit}">${done} ${r.File5digit} (${r.Lot})</option>`;
   }).join('');
 }
+
 function showDetail(){
   const row=currentItems.find(r=>r.File5digit===itemSelect.value);
   if(!row)return;
+
+  // 🧹 เคลียร์ข้อมูล rackZone ก่อนทุกครั้งที่เปลี่ยนรายการ
+  document.getElementById("rackZone").innerHTML = `
+    <div class="rack-set">
+      <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+      <label>Act Rack</label>
+      <div class="row2col">
+        <div class="col">
+          <select class="rackGroup" onchange="updateRackSub(this)">
+            <option value="">--เลือก--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+          </select>
+        </div>
+        <div class="col"><select class="rackSub"></select></div>
+      </div>
+      <div style="margin-top:10px;">
+        <label>Act Lot</label>
+        <input type="text" class="actLotInput">
+      </div>
+      <div class="package-row">
+        <div class="package-box">
+          <label>Package</label>
+          <div class="package-inputs">
+            <input type="number" inputmode="numeric" class="pkg-input a" oninput="calcActQty(this)">
+            <span>×</span>
+            <input type="number" inputmode="numeric" class="pkg-input b" oninput="calcActQty(this)">
+            <span>+</span>
+            <input type="number" inputmode="numeric" class="pkg-input c" oninput="calcActQty(this)">
+          </div>
+        </div>
+        <div class="actQty-box">
+          <label>Act Q'ty</label>
+          <input class="actQty" readonly>
+        </div>
+      </div>
+    </div>`;
+
   customer.value=row.Customer||""; file5digit.value=row.File5digit||"";
   lot.value=row.Lot||""; rack.value=row.Rack||""; sumQty.value=row["Sum of Qty"]||"";
+
+  // 🆕 เติมค่า Act Lot อัตโนมัติจาก Lot หลัก
+  document.querySelector(".actLotInput").value = row.Lot || "";
 }
+
 function updateRackSub(select){
   const subSelect=select.closest(".rack-set").querySelector(".rackSub");
   const group=select.value;
   subSelect.innerHTML=group?rackMap[group].map(v=>`<option value="${v}">${v}</option>`).join(''):'';
 }
+
 function calcActQty(input){
   const p=input.closest(".rack-set");
   const a=+p.querySelector(".pkg-input.a").value||0;
@@ -270,11 +315,10 @@ function addRackSet(){
   rackGroup.addEventListener("change",function(){updateRackSub(this);});
   const delBtn=newSet.querySelector(".btn-delete");
   delBtn.addEventListener("click",function(){removeRackSet(this);});
-  
-// 🆕 ใส่ค่า Lot ปัจจุบันจากช่องหลัก
-newSet.querySelector(".lotInput").value = document.getElementById("lot").value || "";
 
-  
+  // 🆕 ตั้งค่า Act Lot จาก Lot ปัจจุบัน
+  newSet.querySelector(".actLotInput").value = document.getElementById("lot").value || "";
+
   zone.appendChild(newSet);
   newSet.querySelector(".pkg-input.a").focus();
 }
@@ -295,7 +339,7 @@ async function saveData(){
     const sub = s.querySelector(".rackSub").value;
     const actRack = group && sub ? sub : "";
     const actQty = s.querySelector(".actQty").value;
-    const actLot = s.querySelector(".lotInput").value || "";  // 🆕 เปลี่ยนชื่อให้ตรง Act_Lot
+    const actLot = s.querySelector(".actLotInput").value || "";
 
     let a = s.querySelector(".pkg-input.a").value || 0;
     let b = s.querySelector(".pkg-input.b").value || 0;
@@ -304,7 +348,6 @@ async function saveData(){
 
     if (!actRack || !actQty) continue;
 
-    // 🆕 เปลี่ยนจาก lot → actLot
     await fetch(`${scriptURL}?page=updateRecord`, {
       method: "POST",
       body: new URLSearchParams({
@@ -313,7 +356,7 @@ async function saveData(){
         actRack,
         actQty,
         actPackage,
-        actLot  // ✅ ส่งเป็นชื่อคอลัมน์ใหม่ Act_Lot
+        actLot
       })
     });
   }
@@ -328,7 +371,6 @@ async function saveData(){
     await fetchItems();
   });
 }
-
 </script>
 </body>
 </html>

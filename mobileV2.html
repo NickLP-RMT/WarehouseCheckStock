@@ -144,38 +144,45 @@ button {
 
     <div id="rackZone">
       <div class="rack-set">
-        <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
-        <label>Act Rack</label>
-        <div class="row2col">
-          <div class="col">
-            <select class="rackGroup" onchange="updateRackSub(this)">
-              <option value="">--เลือก--</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-            </select>
-          </div>
-          <div class="col"><select class="rackSub"></select></div>
-        </div>
+  <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
 
-        <div class="package-row">
-          <div class="package-box">
-            <label>Package</label>
-            <div class="package-inputs">
-              <input type="number" inputmode="numeric" class="pkg-input a" oninput="calcActQty(this)">
-              <span>×</span>
-              <input type="number" inputmode="numeric" class="pkg-input b" oninput="calcActQty(this)">
-              <span>+</span>
-              <input type="number" inputmode="numeric" class="pkg-input c" oninput="calcActQty(this)">
-            </div>
-          </div>
-          <div class="actQty-box">
-            <label>Act Q'ty</label>
-            <input class="actQty" readonly>
-          </div>
-        </div>
+  <label>Act Rack</label>
+  <div class="row2col">
+    <div class="col">
+      <select class="rackGroup" onchange="updateRackSub(this)">
+        <option value="">--เลือก--</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+      </select>
+    </div>
+    <div class="col"><select class="rackSub"></select></div>
+  </div>
+
+  <!-- 🆕 เพิ่มช่อง Lot -->
+  <div style="margin-top:10px;">
+    <label>Lot</label>
+    <input type="text" class="lotInput">
+  </div>
+
+  <div class="package-row">
+    <div class="package-box">
+      <label>Package</label>
+      <div class="package-inputs">
+        <input type="number" inputmode="numeric" class="pkg-input a" oninput="calcActQty(this)">
+        <span>×</span>
+        <input type="number" inputmode="numeric" class="pkg-input b" oninput="calcActQty(this)">
+        <span>+</span>
+        <input type="number" inputmode="numeric" class="pkg-input c" oninput="calcActQty(this)">
       </div>
+    </div>
+    <div class="actQty-box">
+      <label>Act Q'ty</label>
+      <input class="actQty" readonly>
+    </div>
+  </div>
+</div>
     </div>
 
     <div style="display:flex; gap:10px; margin-top:15px;">
@@ -263,7 +270,11 @@ function addRackSet(){
   rackGroup.addEventListener("change",function(){updateRackSub(this);});
   const delBtn=newSet.querySelector(".btn-delete");
   delBtn.addEventListener("click",function(){removeRackSet(this);});
+  
+// 🆕 ใส่ค่า Lot ปัจจุบันจากช่องหลัก
+newSet.querySelector(".lotInput").value = document.getElementById("lot").value || "";
 
+  
   zone.appendChild(newSet);
   newSet.querySelector(".pkg-input.a").focus();
 }
@@ -277,21 +288,31 @@ async function saveData(){
   if(!name||!file||sets.length===0)return Swal.fire("⚠️","กรุณากรอกข้อมูลให้ครบ","warning");
 
   Swal.fire({title:"กำลังบันทึกข้อมูล...",allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
-  for(const s of sets){
-    const group=s.querySelector(".rackGroup").value;
-    const sub=s.querySelector(".rackSub").value;
-    const actRack=group&&sub?sub:"";
-    const actQty=s.querySelector(".actQty").value;
-    let a=s.querySelector(".pkg-input.a").value||0;
-    let b=s.querySelector(".pkg-input.b").value||0;
-    let c=s.querySelector(".pkg-input.c").value||0;
-    const actPackage=`${a}×${b}+${c}`;
-    if(!actRack||!actQty)continue;
-    await fetch(`${scriptURL}?page=updateRecord`,{
-      method:"POST",
-      body:new URLSearchParams({name,file5digit:file,actRack,actQty,actPackage})
-    });
-  }
+for (const s of sets) {
+  const group = s.querySelector(".rackGroup").value;
+  const sub = s.querySelector(".rackSub").value;
+  const actRack = group && sub ? sub : "";
+  const actQty = s.querySelector(".actQty").value;
+  const lotVal = s.querySelector(".lotInput").value || "";  // 🆕 เพิ่ม
+
+  let a = s.querySelector(".pkg-input.a").value || 0;
+  let b = s.querySelector(".pkg-input.b").value || 0;
+  let c = s.querySelector(".pkg-input.c").value || 0;
+  const actPackage = `${a}×${b}+${c}`;
+  if (!actRack || !actQty) continue;
+
+  await fetch(`${scriptURL}?page=updateRecord`, {
+    method: "POST",
+    body: new URLSearchParams({
+      name,
+      file5digit: file,
+      actRack,
+      actQty,
+      actPackage,
+      lot: lotVal  // 🆕 ส่ง lot ไปด้วย
+    })
+  });
+}
 
   Swal.close();
   Swal.fire({

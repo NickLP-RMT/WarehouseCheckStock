@@ -222,13 +222,23 @@ const rackMap = {
 };
 
 async function loadNames() {
+  Swal.fire({
+    title: "กำลังโหลดรายชื่อผู้ทำ...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
   try {
     const res = await fetch(`${scriptURL}?page=getNames`);
     const data = await res.json();
     nameSelect.innerHTML = '<option value="">-- เลือกชื่อผู้ทำ --</option>' +
-      data.map(n=>`<option>${n}</option>`).join('');
-  } catch { Swal.fire("❌","โหลดรายชื่อผู้ทำไม่สำเร็จ","error"); }
+      data.map(n => `<option>${n}</option>`).join('');
+    Swal.close();
+  } catch {
+    Swal.fire("❌", "โหลดรายชื่อผู้ทำไม่สำเร็จ", "error");
+  }
 }
+
 loadNames();
 
 async function fetchItems() {
@@ -243,25 +253,28 @@ async function fetchItems() {
   } catch { Swal.fire("❌","ไม่สามารถดึงข้อมูลได้","error"); }
 }
 
-function renderDropdown(rows){
-  itemSelect.innerHTML=rows.map(r=>{
-    const done=r.Act_Qty&&r.Act_Qty!==""?"✅":"⚪️";
-    return `<option value="${r.File5digit}">${done} ${r.File5digit} (${r.Lot})</option>`;
+function renderDropdown(rows) {
+  itemSelect.innerHTML = rows.map(r => {
+    const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
+    // ✅ ใช้ค่าผสม File|Lot เพื่อให้ไม่ซ้ำกัน
+    const value = `${r.File5digit}|${r.Lot}`;
+    return `<option value="${value}">${done} ${r.File5digit} (${r.Lot})</option>`;
   }).join('');
 }
 
 function showDetail() {
-  const row = currentItems.find(r => r.File5digit === itemSelect.value);
+  const [fileCode, lotCode] = itemSelect.value.split('|');
+  const row = currentItems.find(r => r.File5digit === fileCode && r.Lot === lotCode);
   if (!row) return;
 
-  // 🧩 อัปเดตข้อมูลหลักก่อน (เพื่อให้ Lot ใหม่ถูกต้อง)
+  // ✅ อัปเดตค่าหลักก่อน
   customer.value = row.Customer || "";
   file5digit.value = row.File5digit || "";
   lot.value = row.Lot || "";
   rack.value = row.Rack || "";
   sumQty.value = row["Sum of Qty"] || "";
 
-  // 🧹 เคลียร์ rackZone เดิมทุกครั้ง
+  // 🧹 เคลียร์ rackZone เดิม
   document.getElementById("rackZone").innerHTML = `
     <div class="rack-set">
       <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
@@ -278,12 +291,10 @@ function showDetail() {
         </div>
         <div class="col"><select class="rackSub"></select></div>
       </div>
-
       <div style="margin-top:10px;">
         <label>Act Lot</label>
         <input type="text" class="actLotInput">
       </div>
-
       <div class="package-row">
         <div class="package-box">
           <label>Package</label>
@@ -302,10 +313,9 @@ function showDetail() {
       </div>
     </div>`;
 
-  // ✅ เติมค่า Act Lot อัตโนมัติจาก Lot ล่าสุด
+  // 🆕 เติมค่า Act Lot จาก Lot ปัจจุบัน
   document.querySelector(".actLotInput").value = row.Lot || "";
 }
-
 
 function updateRackSub(select){
   const subSelect=select.closest(".rack-set").querySelector(".rackSub");

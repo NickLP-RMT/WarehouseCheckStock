@@ -250,11 +250,18 @@ function renderDropdown(rows){
   }).join('');
 }
 
-function showDetail(){
-  const row=currentItems.find(r=>r.File5digit===itemSelect.value);
-  if(!row)return;
+function showDetail() {
+  const row = currentItems.find(r => r.File5digit === itemSelect.value);
+  if (!row) return;
 
-  // 🧹 ล้าง rackZone เดิมทุกครั้งก่อนโหลดรายการใหม่
+  // 🧩 อัปเดตข้อมูลหลักก่อน (เพื่อให้ Lot ใหม่ถูกต้อง)
+  customer.value = row.Customer || "";
+  file5digit.value = row.File5digit || "";
+  lot.value = row.Lot || "";
+  rack.value = row.Rack || "";
+  sumQty.value = row["Sum of Qty"] || "";
+
+  // 🧹 เคลียร์ rackZone เดิมทุกครั้ง
   document.getElementById("rackZone").innerHTML = `
     <div class="rack-set">
       <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
@@ -271,10 +278,12 @@ function showDetail(){
         </div>
         <div class="col"><select class="rackSub"></select></div>
       </div>
+
       <div style="margin-top:10px;">
         <label>Act Lot</label>
         <input type="text" class="actLotInput">
       </div>
+
       <div class="package-row">
         <div class="package-box">
           <label>Package</label>
@@ -293,12 +302,10 @@ function showDetail(){
       </div>
     </div>`;
 
-  customer.value=row.Customer||""; file5digit.value=row.File5digit||"";
-  lot.value=row.Lot||""; rack.value=row.Rack||""; sumQty.value=row["Sum of Qty"]||"";
-
-  // 🆕 เติมค่า Act Lot จาก Lot หลักอัตโนมัติ
+  // ✅ เติมค่า Act Lot อัตโนมัติจาก Lot ล่าสุด
   document.querySelector(".actLotInput").value = row.Lot || "";
 }
+
 
 function updateRackSub(select){
   const subSelect=select.closest(".rack-set").querySelector(".rackSub");

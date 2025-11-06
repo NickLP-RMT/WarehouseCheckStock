@@ -282,48 +282,53 @@ newSet.querySelector(".lotInput").value = document.getElementById("lot").value |
 function removeRackSet(btn){btn.closest(".rack-set").remove();}
 
 async function saveData(){
-  const name=nameSelect.value;
-  const file=file5digit.value;
-  const sets=document.querySelectorAll(".rack-set");
-  if(!name||!file||sets.length===0)return Swal.fire("⚠️","กรุณากรอกข้อมูลให้ครบ","warning");
+  const name = nameSelect.value;
+  const file = file5digit.value;
+  const sets = document.querySelectorAll(".rack-set");
+  if(!name || !file || sets.length === 0) 
+    return Swal.fire("⚠️","กรุณากรอกข้อมูลให้ครบ","warning");
 
   Swal.fire({title:"กำลังบันทึกข้อมูล...",allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
-for (const s of sets) {
-  const group = s.querySelector(".rackGroup").value;
-  const sub = s.querySelector(".rackSub").value;
-  const actRack = group && sub ? sub : "";
-  const actQty = s.querySelector(".actQty").value;
-  const lotVal = s.querySelector(".lotInput").value || "";  // 🆕 เพิ่ม
 
-  let a = s.querySelector(".pkg-input.a").value || 0;
-  let b = s.querySelector(".pkg-input.b").value || 0;
-  let c = s.querySelector(".pkg-input.c").value || 0;
-  const actPackage = `${a}×${b}+${c}`;
-  if (!actRack || !actQty) continue;
+  for (const s of sets) {
+    const group = s.querySelector(".rackGroup").value;
+    const sub = s.querySelector(".rackSub").value;
+    const actRack = group && sub ? sub : "";
+    const actQty = s.querySelector(".actQty").value;
+    const actLot = s.querySelector(".lotInput").value || "";  // 🆕 เปลี่ยนชื่อให้ตรง Act_Lot
 
-  await fetch(`${scriptURL}?page=updateRecord`, {
-    method: "POST",
-    body: new URLSearchParams({
-      name,
-      file5digit: file,
-      actRack,
-      actQty,
-      actPackage,
-      lot: lotVal  // 🆕 ส่ง lot ไปด้วย
-    })
-  });
-}
+    let a = s.querySelector(".pkg-input.a").value || 0;
+    let b = s.querySelector(".pkg-input.b").value || 0;
+    let c = s.querySelector(".pkg-input.c").value || 0;
+    const actPackage = `${a}×${b}+${c}`;
+
+    if (!actRack || !actQty) continue;
+
+    // 🆕 เปลี่ยนจาก lot → actLot
+    await fetch(`${scriptURL}?page=updateRecord`, {
+      method: "POST",
+      body: new URLSearchParams({
+        name,
+        file5digit: file,
+        actRack,
+        actQty,
+        actPackage,
+        actLot  // ✅ ส่งเป็นชื่อคอลัมน์ใหม่ Act_Lot
+      })
+    });
+  }
 
   Swal.close();
   Swal.fire({
-    icon:"success",
-    title:"บันทึกข้อมูลสำเร็จแล้ว",
-    confirmButtonText:"OK"
-  }).then(async ()=>{
-    Swal.fire({title:"กำลังดึงข้อมูล...",allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+    icon: "success",
+    title: "บันทึกข้อมูลสำเร็จแล้ว",
+    confirmButtonText: "OK"
+  }).then(async () => {
+    Swal.fire({title: "กำลังดึงข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading()});
     await fetchItems();
   });
 }
+
 </script>
 </body>
 </html>

@@ -264,15 +264,23 @@ function renderDropdown(rows) {
 
 function showDetail() {
   const [fileCode, lotCode] = itemSelect.value.split('|');
-  const row = currentItems.find(r => r.File5digit === fileCode && r.Lot === lotCode);
-  if (!row) return;
+  if (!fileCode || !lotCode) return;
 
-  // ✅ อัปเดตค่าหลักก่อน
-  customer.value = row.Customer || "";
-  file5digit.value = row.File5digit || "";
-  lot.value = row.Lot || "";
-  rack.value = row.Rack || "";
-  sumQty.value = row["Sum of Qty"] || "";
+  // ใช้การค้นหาแบบยืดหยุ่น เพื่อป้องกัน key สะกดไม่ตรง
+  const row = currentItems.find(r => {
+    const fileVal = (r.File5digit || r["File5digit "] || "").trim();
+    const lotVal  = (r.Lot || r["Lot "] || "").trim();
+    return fileVal === fileCode && lotVal === lotCode;
+  });
+
+  if (!row) return Swal.fire("⚠️","ไม่พบข้อมูลของรายการนี้","warning");
+
+  // ✅ อัปเดตข้อมูลหลัก
+  customer.value = (row.Customer || row["Customer "] || "").trim();
+  file5digit.value = (row.File5digit || row["File5digit "] || "").trim();
+  lot.value = (row.Lot || row["Lot "] || "").trim();
+  rack.value = (row.Rack || row["Rack "] || "").trim();
+  sumQty.value = row["Sum of Qty"] || row["SumOfQty"] || "";
 
   // 🧹 เคลียร์ rackZone เดิม
   document.getElementById("rackZone").innerHTML = `
@@ -314,8 +322,9 @@ function showDetail() {
     </div>`;
 
   // 🆕 เติมค่า Act Lot จาก Lot ปัจจุบัน
-  document.querySelector(".actLotInput").value = row.Lot || "";
+  document.querySelector(".actLotInput").value = lot.value;
 }
+
 
 function updateRackSub(select){
   const subSelect=select.closest(".rack-set").querySelector(".rackSub");

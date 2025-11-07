@@ -430,15 +430,42 @@ if (!file || sets.length === 0)
   }
 
   Swal.close();
+Swal.fire({
+  icon: "success",
+  title: "บันทึกข้อมูลสำเร็จแล้ว",
+  confirmButtonText: "OK"
+}).then(async () => {
   Swal.fire({
-    icon: "success",
-    title: "บันทึกข้อมูลสำเร็จแล้ว",
-    confirmButtonText: "OK"
-  }).then(async () => {
-    Swal.fire({title: "กำลังดึงข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-    await fetchItems();
+    title: "กำลังดึงข้อมูล...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
   });
+
+  // 🧹 ล้างข้อมูลหลังบันทึก
+  clearForm();
+
+  await fetchItems();
+});
 }
+  function clearForm() {
+  // เคลียร์ค่าทั้งหมดใน input
+  document.querySelectorAll("input").forEach(el => {
+    if (!el.readOnly) el.value = "";
+  });
+
+  // รีเซ็ต dropdown ของ rackSet
+  document.querySelectorAll(".rackGroup, .rackSub").forEach(s => s.value = "");
+
+  // เคลียร์จำนวน Act Q'ty
+  document.querySelectorAll(".actQty").forEach(q => q.value = "");
+
+  // ล้างค่าใน dropdown รายการ
+  itemSelect.value = "";
+
+  // ปิด section รายการ (ให้ผู้ใช้ค้นหาใหม่)
+  document.getElementById("itemSection").style.display = "none";
+}
+
 </script>
 </body>
 </html>

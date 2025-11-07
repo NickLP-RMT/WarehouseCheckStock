@@ -449,7 +449,7 @@ async function saveData() {
   const itemValue = itemSelect.value;
   const sets = document.querySelectorAll(".rack-set");
 
-  // ✅ ถ้ายังไม่เลือกรายการ ไม่ต้องตรวจช่องอื่น
+  // ✅ ต้องเลือกรายการก่อนเท่านั้นถึงจะตรวจ
   if (!itemValue) {
     return Swal.fire({
       icon: "warning",
@@ -458,15 +458,42 @@ async function saveData() {
     });
   }
 
-  // ✅ ถ้าผู้ใช้เลือกแล้ว แต่ยังไม่มีข้อมูลในฟอร์ม
-  if (!file || sets.length === 0) {
-    return Swal.fire({
-      icon: "warning",
-      title: "⚠️ กรุณากรอกข้อมูลให้ครบ",
-      confirmButtonText: "ตกลง"
-    });
+  // ✅ ตรวจแต่ละ rack-set ก่อน
+  for (const s of sets) {
+    const group = s.querySelector(".rackGroup").value.trim();
+    const sub = s.querySelector(".rackSub").value.trim();
+    const actRack = group && sub ? sub : "";
+    const actLot = s.querySelector(".actLotInput").value.trim();
+    let a = s.querySelector(".pkg-input.a").value.trim();
+    let b = s.querySelector(".pkg-input.b").value.trim();
+    let c = s.querySelector(".pkg-input.c").value.trim();
+    const actQty = s.querySelector(".actQty").value.trim();
+
+    if (c === "") c = "0"; // ให้ช่อง + เป็น 0 อัตโนมัติ
+
+    // ❌ ถ้ายังไม่กรอกครบทุกช่อง
+    if (!actRack || !a || !b || !actLot || !actQty) {
+      return Swal.fire({
+        icon: "warning",
+        title: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
+        text: "(ยกเว้นช่อง +)",
+        confirmButtonText: "ตกลง",
+        allowOutsideClick: false
+      });
+    }
+
+    // ❌ ถ้า Act Q'ty <= 0
+    if (parseInt(actQty) <= 0) {
+      return Swal.fire({
+        icon: "warning",
+        title: "Act Q'ty ต้องมากกว่า 0",
+        confirmButtonText: "ตกลง",
+        allowOutsideClick: false
+      });
+    }
   }
 
+  // ✅ ผ่านทุกการตรวจ → แสดงยืนยัน
   const confirm = await Swal.fire({
     title: "ยืนยันการบันทึกข้อมูล?",
     text: "คุณต้องการบันทึกข้อมูลที่กรอกหรือไม่",
@@ -478,13 +505,13 @@ async function saveData() {
 
   if (!confirm.isConfirmed) return;
 
+  // ✅ เริ่มบันทึก
   Swal.fire({
     title: "กำลังบันทึกข้อมูล...",
     allowOutsideClick: false,
     didOpen: () => Swal.showLoading()
   });
 
-  // 🔍 ตรวจและบันทึกข้อมูลแต่ละ rack-set
   for (const s of sets) {
     const group = s.querySelector(".rackGroup").value.trim();
     const sub = s.querySelector(".rackSub").value.trim();
@@ -494,34 +521,7 @@ async function saveData() {
     let b = s.querySelector(".pkg-input.b").value.trim();
     let c = s.querySelector(".pkg-input.c").value.trim();
     const actQty = s.querySelector(".actQty").value.trim();
-
-    // ✅ ถ้า C ว่าง ให้เป็น 0
     if (c === "") c = "0";
-
-    // ✅ ตรวจสอบความครบถ้วนของข้อมูล (หลังจากเลือกแล้วเท่านั้น)
-    if (!actRack || !a || !b || !actLot || !actQty) {
-      Swal.close();
-      await Swal.fire({
-        icon: "warning",
-        title: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
-        text: "(ยกเว้นช่อง +)",
-        confirmButtonText: "ตกลง",
-        allowOutsideClick: false
-      });
-      return;
-    }
-
-    // ✅ ตรวจสอบว่า Act Q'ty ต้องมากกว่า 0
-    if (parseInt(actQty) <= 0) {
-      Swal.close();
-      await Swal.fire({
-        icon: "warning",
-        title: "Act Q'ty ต้องมากกว่า 0",
-        confirmButtonText: "ตกลง",
-        allowOutsideClick: false
-      });
-      return;
-    }
 
     const actPackage = `${a}×${b}+${c}`;
 

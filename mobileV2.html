@@ -465,7 +465,11 @@ async function saveData() {
 
   if (!confirm.isConfirmed) return;
 
-  Swal.fire({ title: "กำลังบันทึกข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  Swal.fire({ 
+    title: "กำลังบันทึกข้อมูล...", 
+    allowOutsideClick: false, 
+    didOpen: () => Swal.showLoading() 
+  });
 
   for (const s of sets) {
     const group = s.querySelector(".rackGroup").value.trim();
@@ -480,9 +484,9 @@ async function saveData() {
     // ✅ ถ้า C ว่าง ให้เป็น 0
     if (c === "") c = "0";
 
-    // ✅ ตรวจสอบความครบถ้วน
+    // ✅ ตรวจสอบความครบถ้วนของข้อมูล
     if (!actRack || !a || !b || !actLot || !actQty) {
-      Swal.close();
+      Swal.close(); // ปิด loading ก่อน
       await Swal.fire({
         icon: "warning",
         title: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
@@ -491,7 +495,7 @@ async function saveData() {
         allowOutsideClick: false,
         allowEscapeKey: false
       });
-      return Swal.close();
+      return; // ❌ หยุดทำงานตรงนี้เลย
     }
 
     // ✅ ตรวจสอบว่าจำนวนต้องมากกว่า 0
@@ -504,7 +508,7 @@ async function saveData() {
         allowOutsideClick: false,
         allowEscapeKey: false
       });
-      return Swal.close();
+      return;
     }
 
     const actPackage = `${a}×${b}+${c}`;
@@ -523,6 +527,7 @@ async function saveData() {
     });
   }
 
+  // ✅ ปิด loading ก่อนแสดง popup สำเร็จ
   Swal.close();
 
   await Swal.fire({
@@ -531,10 +536,16 @@ async function saveData() {
     confirmButtonText: "OK"
   });
 
-  Swal.fire({ title: "กำลังดึงข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  // 🔄 โหลดข้อมูลใหม่
+  Swal.fire({ 
+    title: "กำลังดึงข้อมูล...", 
+    allowOutsideClick: false, 
+    didOpen: () => Swal.showLoading() 
+  });
   clearForm();
   await fetchItems();
 }
+
 
 
 function clearForm(){

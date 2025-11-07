@@ -449,67 +449,91 @@ async function saveData() {
   const sets = document.querySelectorAll(".rack-set");
   const itemValue = itemSelect.value;
 
+  // 🔹 ตรวจสอบชื่อผู้ทำและรายการ
   if (!name) return Swal.fire("⚠️", "กรุณาเลือกชื่อผู้ทำ", "warning");
   if (!itemValue) return Swal.fire("⚠️", "กรุณาเลือกรายการ File No.", "warning");
   if (!file || sets.length === 0) return Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบ", "warning");
 
-  Swal.fire({
+  const confirm = await Swal.fire({
     title: "ยืนยันการบันทึกข้อมูล?",
-    text: "คุณต้องการบันทึกข้อมูลที่แก้ไขหรือไม่",
+    text: "คุณต้องการบันทึกข้อมูลที่กรอกหรือไม่",
     icon: "question",
     showCancelButton: true,
     confirmButtonText: "บันทึก",
     cancelButtonText: "ยกเลิก"
-  }).then(async (result) => {
-    if (!result.isConfirmed) return;
+  });
 
-    Swal.fire({ title: "กำลังบันทึกข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  if (!confirm.isConfirmed) return;
 
-for (const s of sets) {
-  const group = s.querySelector(".rackGroup").value.trim();
-  const sub = s.querySelector(".rackSub").value.trim();
-  const actRack = group && sub ? sub : "";
-  const actLot = s.querySelector(".actLotInput").value.trim();
-  let a = s.querySelector(".pkg-input.a").value.trim();
-  let b = s.querySelector(".pkg-input.b").value.trim();
-  let c = s.querySelector(".pkg-input.c").value.trim();
-  const actQty = s.querySelector(".actQty").value.trim();
+  Swal.fire({ title: "กำลังบันทึกข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-  // ✅ ถ้า C ว่าง ให้เป็น 0
-  if (c === "") c = "0";
+  for (const s of sets) {
+    const group = s.querySelector(".rackGroup").value.trim();
+    const sub = s.querySelector(".rackSub").value.trim();
+    const actRack = group && sub ? sub : "";
+    const actLot = s.querySelector(".actLotInput").value.trim();
+    let a = s.querySelector(".pkg-input.a").value.trim();
+    let b = s.querySelector(".pkg-input.b").value.trim();
+    let c = s.querySelector(".pkg-input.c").value.trim();
+    const actQty = s.querySelector(".actQty").value.trim();
 
-  // ✅ ตรวจสอบความครบถ้วนของข้อมูล
-  if (!actRack || !a || !b || !actLot || !actQty) {
-    Swal.close(); // 🧹 ปิด loading ก่อน
-    await Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบทุกช่อง (ยกเว้นช่อง +)", "warning");
-    return; // ❌ ออกจากฟังก์ชันทันที
+    // ✅ ถ้า C ว่าง ให้เป็น 0
+    if (c === "") c = "0";
+
+    // ✅ ตรวจสอบความครบถ้วน
+    if (!actRack || !a || !b || !actLot || !actQty) {
+      Swal.close();
+      await Swal.fire({
+        icon: "warning",
+        title: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
+        text: "(ยกเว้นช่อง +)",
+        confirmButtonText: "ตกลง",
+        allowOutsideClick: false,
+        allowEscapeKey: false
+      });
+      return Swal.close();
+    }
+
+    // ✅ ตรวจสอบว่าจำนวนต้องมากกว่า 0
+    if (parseInt(actQty) <= 0) {
+      Swal.close();
+      await Swal.fire({
+        icon: "warning",
+        title: "Act Q'ty ต้องมากกว่า 0",
+        confirmButtonText: "ตกลง",
+        allowOutsideClick: false,
+        allowEscapeKey: false
+      });
+      return Swal.close();
+    }
+
+    const actPackage = `${a}×${b}+${c}`;
+
+    await fetch(`${scriptURL}?page=updateRecord`, {
+      method: "POST",
+      body: new URLSearchParams({
+        name,
+        file5digit: file,
+        lot: lot.value,
+        actRack,
+        actLot,
+        actQty,
+        actPackage
+      })
+    });
   }
 
-  const actPackage = `${a}×${b}+${c}`;
+  Swal.close();
 
-  await fetch(`${scriptURL}?page=updateRecord`, {
-    method: "POST",
-    body: new URLSearchParams({
-      name,
-      file5digit: file,
-      lot: lot.value,
-      actRack,
-      actLot,
-      actQty,
-      actPackage
-    })
+  await Swal.fire({
+    icon: "success",
+    title: "บันทึกข้อมูลสำเร็จแล้ว",
+    confirmButtonText: "OK"
   });
-}
 
-
-    Swal.close();
-    Swal.fire({ icon: "success", title: "บันทึกข้อมูลสำเร็จแล้ว", confirmButtonText: "OK" })
-      .then(async () => {
-        Swal.fire({ title: "กำลังดึงข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        clearForm();
-        await fetchItems();
-      });
-  });
+  Swal.fire({ title: "กำลังดึงข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  clearForm();
+  await fetchItems();
 }
 
 

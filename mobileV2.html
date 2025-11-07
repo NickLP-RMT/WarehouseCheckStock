@@ -445,14 +445,27 @@ function toggleEdit(btn){
 
 async function saveData() {
   const name = nameSelect.value;
-  const file = file5digit.value;
-  const sets = document.querySelectorAll(".rack-set");
+  const file = file5digit.value.trim();
   const itemValue = itemSelect.value;
+  const sets = document.querySelectorAll(".rack-set");
 
-  // 🔹 ตรวจสอบชื่อผู้ทำและรายการ
-  if (!name) return Swal.fire("⚠️", "กรุณาเลือกชื่อผู้ทำ", "warning");
-  if (!itemValue) return Swal.fire("⚠️", "กรุณาเลือกรายการ File No.", "warning");
-  if (!file || sets.length === 0) return Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบ", "warning");
+  // ✅ ถ้ายังไม่เลือกรายการ ไม่ต้องตรวจช่องอื่น
+  if (!itemValue) {
+    return Swal.fire({
+      icon: "warning",
+      title: "⚠️ กรุณาเลือกรายการก่อนบันทึกข้อมูล",
+      confirmButtonText: "ตกลง"
+    });
+  }
+
+  // ✅ ถ้าผู้ใช้เลือกแล้ว แต่ยังไม่มีข้อมูลในฟอร์ม
+  if (!file || sets.length === 0) {
+    return Swal.fire({
+      icon: "warning",
+      title: "⚠️ กรุณากรอกข้อมูลให้ครบ",
+      confirmButtonText: "ตกลง"
+    });
+  }
 
   const confirm = await Swal.fire({
     title: "ยืนยันการบันทึกข้อมูล?",
@@ -465,12 +478,13 @@ async function saveData() {
 
   if (!confirm.isConfirmed) return;
 
-  Swal.fire({ 
-    title: "กำลังบันทึกข้อมูล...", 
-    allowOutsideClick: false, 
-    didOpen: () => Swal.showLoading() 
+  Swal.fire({
+    title: "กำลังบันทึกข้อมูล...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
   });
 
+  // 🔍 ตรวจและบันทึกข้อมูลแต่ละ rack-set
   for (const s of sets) {
     const group = s.querySelector(".rackGroup").value.trim();
     const sub = s.querySelector(".rackSub").value.trim();
@@ -484,29 +498,27 @@ async function saveData() {
     // ✅ ถ้า C ว่าง ให้เป็น 0
     if (c === "") c = "0";
 
-    // ✅ ตรวจสอบความครบถ้วนของข้อมูล
+    // ✅ ตรวจสอบความครบถ้วนของข้อมูล (หลังจากเลือกแล้วเท่านั้น)
     if (!actRack || !a || !b || !actLot || !actQty) {
-      Swal.close(); // ปิด loading ก่อน
+      Swal.close();
       await Swal.fire({
         icon: "warning",
         title: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
         text: "(ยกเว้นช่อง +)",
         confirmButtonText: "ตกลง",
-        allowOutsideClick: false,
-        allowEscapeKey: false
+        allowOutsideClick: false
       });
-      return; // ❌ หยุดทำงานตรงนี้เลย
+      return;
     }
 
-    // ✅ ตรวจสอบว่าจำนวนต้องมากกว่า 0
+    // ✅ ตรวจสอบว่า Act Q'ty ต้องมากกว่า 0
     if (parseInt(actQty) <= 0) {
       Swal.close();
       await Swal.fire({
         icon: "warning",
         title: "Act Q'ty ต้องมากกว่า 0",
         confirmButtonText: "ตกลง",
-        allowOutsideClick: false,
-        allowEscapeKey: false
+        allowOutsideClick: false
       });
       return;
     }
@@ -527,7 +539,6 @@ async function saveData() {
     });
   }
 
-  // ✅ ปิด loading ก่อนแสดง popup สำเร็จ
   Swal.close();
 
   await Swal.fire({
@@ -536,17 +547,14 @@ async function saveData() {
     confirmButtonText: "OK"
   });
 
-  // 🔄 โหลดข้อมูลใหม่
-  Swal.fire({ 
-    title: "กำลังดึงข้อมูล...", 
-    allowOutsideClick: false, 
-    didOpen: () => Swal.showLoading() 
+  Swal.fire({
+    title: "กำลังดึงข้อมูล...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
   });
   clearForm();
   await fetchItems();
 }
-
-
 
 function clearForm(){
   document.querySelectorAll("input").forEach(el=>{

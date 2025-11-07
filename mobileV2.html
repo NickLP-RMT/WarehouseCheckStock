@@ -218,7 +218,7 @@ button {
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbyzIzz2ALMERwdj1iuJakShVgreB0mWOjnk9XtoQ5Td8kSOQAitzTZMX18vzfVijuui/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbwYV_cHqxPEA_cxjeYpVjKahzuU8tVyKLk6fD0mUrD8Rbs1_hsmJstWDkzLkRQKSSbp/exec";
 let currentItems = [];
 
 // 🧩 Rack Map
@@ -474,10 +474,19 @@ async function saveData(){
       const actPackage=`${a}×${b}+${c}`;
       if(!actRack||!actQty)continue;
 
-      await fetch(`${scriptURL}?page=updateRecord`,{
-        method:"POST",
-        body:new URLSearchParams({name,file5digit:file,actRack,actQty,actPackage,actLot})
-      });
+await fetch(`${scriptURL}?page=updateRecord`,{
+  method:"POST",
+  body:new URLSearchParams({
+    name,
+    file5digit: file,
+    lot: lot.value,     // 🟢 เพิ่มบรรทัดนี้
+    actRack,
+    actQty,
+    actPackage,
+    actLot
+  })
+});
+
     }
 
     Swal.close();

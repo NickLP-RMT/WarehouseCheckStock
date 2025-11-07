@@ -254,12 +254,18 @@ async function fetchItems() {
 }
 
 function renderDropdown(rows) {
-  itemSelect.innerHTML = rows.map(r => {
+  // 🆕 เพิ่ม default option แรก
+  let html = `<option value="">-- เลือกรายการ File No. --</option>`;
+
+  // เติมรายการจริง
+  html += rows.map(r => {
     const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
-    // ✅ ใช้ค่าผสม File|Lot เพื่อให้ไม่ซ้ำกัน
     const value = `${r.File5digit}|${r.Lot}`;
     return `<option value="${value}">${done} ${r.File5digit} (${r.Lot})</option>`;
   }).join('');
+
+  itemSelect.innerHTML = html;
+  itemSelect.selectedIndex = 0; // ให้ default อยู่บนสุดเสมอ
 }
 
 function showDetail() {
@@ -382,8 +388,17 @@ async function saveData(){
   const name = nameSelect.value;
   const file = file5digit.value;
   const sets = document.querySelectorAll(".rack-set");
-  if(!name || !file || sets.length === 0) 
-    return Swal.fire("⚠️","กรุณากรอกข้อมูลให้ครบ","warning");
+ const itemValue = itemSelect.value;
+
+if (!name) 
+  return Swal.fire("⚠️","กรุณาเลือกชื่อผู้ทำ","warning");
+
+if (!itemValue) 
+  return Swal.fire("⚠️","กรุณาเลือกรายการ File No.","warning");
+
+if (!file || sets.length === 0)
+  return Swal.fire("⚠️","กรุณากรอกข้อมูลให้ครบ","warning");
+
 
   Swal.fire({title:"กำลังบันทึกข้อมูล...",allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
 

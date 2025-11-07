@@ -137,6 +137,21 @@ button {
   cursor: pointer;
 }
 
+  /* 🔹 ให้ช่องที่เป็น read-only แยกสีพื้นหลังชัดเจน */
+input[readonly], select:disabled {
+  background-color: #f1f5f9 !important;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* 🔹 เมื่อปลดล็อก (edit mode) ให้กลับเป็นสีขาว */
+input.editable, select.editable {
+  background-color: #ffffff !important;
+  color: #1e293b;
+  cursor: text;
+}
+
+
 </style>
 </head>
 
@@ -428,20 +443,27 @@ function addRackSet(){
 }
 function removeRackSet(btn){btn.closest(".rack-set").remove();}
 
-// ✅ ปรับ toggleEdit: แค่ปลดล็อกช่องให้แก้ไขได้
-function toggleEdit(btn){
-  const rack=btn.closest(".rack-set");
-  const isLocked=btn.dataset.editing==="false";
-  btn.dataset.editing=isLocked?"true":"false";
-  btn.textContent=isLocked?"🔒":"✏️";
-  btn.style.background=isLocked?"#10b981":"#3b82f6";
+// ✅ toggleEdit: ปลดล็อก/ล็อกช่อง + เปลี่ยนสีพื้นหลัง
+function toggleEdit(btn) {
+  const rack = btn.closest(".rack-set");
+  const isEditing = btn.dataset.editing === "false";
 
-  rack.querySelectorAll("input").forEach(el=>{
-    if(el.classList.contains("actQty"))return;
-    el.readOnly=!isLocked;
+  btn.dataset.editing = isEditing ? "true" : "false";
+  btn.textContent = isEditing ? "🔒" : "✏️";
+  btn.style.background = isEditing ? "#10b981" : "#3b82f6";
+
+  rack.querySelectorAll("input").forEach(el => {
+    if (el.classList.contains("actQty")) return; // Act Q'ty ห้ามแก้
+    el.readOnly = !isEditing;
+    el.classList.toggle("editable", isEditing); // เพิ่ม/ลบคลาส editable
   });
-  rack.querySelectorAll("select").forEach(el=>el.disabled=!isLocked);
+
+  rack.querySelectorAll("select").forEach(el => {
+    el.disabled = !isEditing;
+    el.classList.toggle("editable", isEditing);
+  });
 }
+
 
 async function saveData() {
   const name = nameSelect.value;

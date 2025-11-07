@@ -345,7 +345,9 @@ function showDetail() {
     sumQty.value=getVal("Sum of Qty") || getVal("SumOfQty") || "";
 
     const actRack=getVal("Act_Rack")||"";
-    const actLot=getVal("Act_Lot")||getVal("Lot")||"";
+    const rawActLot = getVal("Act_Lot");     // ค่าจากชีตจริง
+    const actLot = rawActLot || getVal("Lot") || "";
+    const actLotReadOnly = rawActLot ? "readonly" : ""; // ✅ ถ้ามีค่าจริงในชีตเท่านั้นค่อยล็อก
     const actPkg=getVal("Act_Package")||"";
     const actQty=getVal("Act_Qty")||"";
 
@@ -372,7 +374,7 @@ function showDetail() {
 
         <div style="margin-top:10px;">
           <label>Act Lot</label>
-          <input type="text" class="actLotInput" value="${actLot}" ${actLot?'readonly':''}>
+          <input type="text" class="actLotInput" value="${actLot}" ${actLotReadOnly}>
         </div>
 
         <div class="package-row">

@@ -465,40 +465,42 @@ async function saveData() {
 
     Swal.fire({ title: "กำลังบันทึกข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-    for (const s of sets) {
-      const group = s.querySelector(".rackGroup").value.trim();
-      const sub = s.querySelector(".rackSub").value.trim();
-      const actRack = group && sub ? sub : "";
-      const actLot = s.querySelector(".actLotInput").value.trim();
-      let a = s.querySelector(".pkg-input.a").value.trim();
-      let b = s.querySelector(".pkg-input.b").value.trim();
-      let c = s.querySelector(".pkg-input.c").value.trim();
-      const actQty = s.querySelector(".actQty").value.trim();
+for (const s of sets) {
+  const group = s.querySelector(".rackGroup").value.trim();
+  const sub = s.querySelector(".rackSub").value.trim();
+  const actRack = group && sub ? sub : "";
+  const actLot = s.querySelector(".actLotInput").value.trim();
+  let a = s.querySelector(".pkg-input.a").value.trim();
+  let b = s.querySelector(".pkg-input.b").value.trim();
+  let c = s.querySelector(".pkg-input.c").value.trim();
+  const actQty = s.querySelector(".actQty").value.trim();
 
-      // ✅ ถ้า C ว่าง ให้เป็น 0
-      if (c === "") c = "0";
+  // ✅ ถ้า C ว่าง ให้เป็น 0
+  if (c === "") c = "0";
 
-      // ✅ ตรวจสอบความครบถ้วนของข้อมูล
-      if (!actRack || !a || !b || !actLot || !actQty) {
-        Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบทุกช่อง (ยกเว้นช่อง +)", "warning");
-        return; // ❌ หยุดบันทึกทันที
-      }
+  // ✅ ตรวจสอบความครบถ้วนของข้อมูล
+  if (!actRack || !a || !b || !actLot || !actQty) {
+    Swal.close(); // 🧹 ปิด loading ก่อน
+    await Swal.fire("⚠️", "กรุณากรอกข้อมูลให้ครบทุกช่อง (ยกเว้นช่อง +)", "warning");
+    return; // ❌ ออกจากฟังก์ชันทันที
+  }
 
-      const actPackage = `${a}×${b}+${c}`;
+  const actPackage = `${a}×${b}+${c}`;
 
-      await fetch(`${scriptURL}?page=updateRecord`, {
-        method: "POST",
-        body: new URLSearchParams({
-          name,
-          file5digit: file,
-          lot: lot.value,
-          actRack,
-          actLot,
-          actQty,
-          actPackage
-        })
-      });
-    }
+  await fetch(`${scriptURL}?page=updateRecord`, {
+    method: "POST",
+    body: new URLSearchParams({
+      name,
+      file5digit: file,
+      lot: lot.value,
+      actRack,
+      actLot,
+      actQty,
+      actPackage
+    })
+  });
+}
+
 
     Swal.close();
     Swal.fire({ icon: "success", title: "บันทึกข้อมูลสำเร็จแล้ว", confirmButtonText: "OK" })

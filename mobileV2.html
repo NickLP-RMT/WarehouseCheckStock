@@ -271,8 +271,62 @@ function renderDropdown(rows) {
 
 function showDetail() {
   try {
-    const [fileCode, lotCode] = itemSelect.value.split('|');
+    const value = itemSelect.value;
+
+    // 🧹 ถ้าเป็นค่า default (-- เลือกรายการ File No. --) → ล้างข้อมูลทั้งหมด
+    if (!value) {
+      customer.value = "";
+      file5digit.value = "";
+      lot.value = "";
+      sumQty.value = "";
+      rack.value = "";
+      document.getElementById("rackZone").innerHTML = `
+        <div class="rack-set">
+          <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+          <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+          <label>Act Rack</label>
+          <div class="row2col">
+            <div class="col">
+              <select class="rackGroup" onchange="updateRackSub(this)">
+                <option value="">--เลือก--</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
+            </div>
+            <div class="col"><select class="rackSub"></select></div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Act Lot</label>
+            <input type="text" class="actLotInput">
+          </div>
+
+          <div class="package-row">
+            <div class="package-box">
+              <label>Package</label>
+              <div class="package-inputs">
+                <input type="number" inputmode="numeric" class="pkg-input a" oninput="calcActQty(this)">
+                <span>×</span>
+                <input type="number" inputmode="numeric" class="pkg-input b" oninput="calcActQty(this)">
+                <span>+</span>
+                <input type="number" inputmode="numeric" class="pkg-input c" oninput="calcActQty(this)">
+              </div>
+            </div>
+            <div class="actQty-box">
+              <label>Act Q'ty</label>
+              <input class="actQty" readonly>
+            </div>
+          </div>
+        </div>`;
+      return; // หยุดที่นี่เลย
+    }
+
+    // 🧠 ถ้าเลือก File จริง → ทำงานต่อด้านล่างเหมือนเดิม
+    const [fileCode, lotCode] = value.split('|');
     if (!fileCode || !lotCode) return;
+
     const row = currentItems.find(r => {
       const keys = Object.keys(r);
       const fileKey = keys.find(k => k.trim().toLowerCase() === "file5digit");

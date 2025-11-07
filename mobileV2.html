@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📋 Warehouse Check (V3.3 Mobile Optimized)</title>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <style>
 :root {
   --pkg-a: 38px;
@@ -47,8 +46,18 @@ input, select {
   height: 42px;
   padding: 0 10px;
   box-sizing: border-box;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
-input[readonly] { background: #f8fafc; }
+input[readonly], select:disabled {
+  background-color: #f1f5f9 !important;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+input.editable, select.editable {
+  background-color: #ffffff !important;
+  color: #1e293b;
+  cursor: text;
+}
 
 button {
   border: none;
@@ -59,15 +68,6 @@ button {
 }
 .btn-primary { background: #2563eb; color: white; font-size: 14px; }
 .btn-add { background: #10b981; color: white; font-size: 20px; }
-.btn-delete {
-  position: absolute;
-  top: 0; right: 0;
-  background: #ef4444; color: white;
-  border-radius: 0 8px 0 8px;
-  padding: 4px 10px;
-  font-weight: bold;
-  cursor: pointer;
-}
 
 .name-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 .name-row select { flex: 1; height: 42px; }
@@ -77,13 +77,31 @@ button {
 .col { flex: 1; min-width: 120px; }
 
 .rack-set {
-  position: relative;
   border: 1.5px solid #e2e8f0;
   border-radius: 10px;
   padding: 14px;
   margin-bottom: 15px;
   background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: -4px;
+}
+.btn-edit, .btn-delete {
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  border: none;
+}
+.btn-edit { background: #3b82f6; }
+.btn-delete { background: #ef4444; }
 
 .package-row {
   display: flex;
@@ -126,32 +144,6 @@ button {
   .package-row { flex-direction: column; }
   .package-box, .actQty-box { flex: 1 1 100%; }
 }
-  .btn-edit {
-  position: absolute;
-  top: 0; right: 44px;
-  background: #3b82f6;
-  color: white;
-  border-radius: 0 8px 0 8px;
-  padding: 4px 10px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-  /* 🔹 ให้ช่องที่เป็น read-only แยกสีพื้นหลังชัดเจน */
-input[readonly], select:disabled {
-  background-color: #f1f5f9 !important;
-  color: #6b7280;
-  cursor: not-allowed;
-}
-
-/* 🔹 เมื่อปลดล็อก (edit mode) ให้กลับเป็นสีขาว */
-input.editable, select.editable {
-  background-color: #ffffff !important;
-  color: #1e293b;
-  cursor: text;
-}
-
-
 </style>
 </head>
 
@@ -184,8 +176,10 @@ input.editable, select.editable {
 
     <div id="rackZone">
       <div class="rack-set">
-        <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
-        <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">✏️</button>
+        <div class="action-buttons">
+          <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+          <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+        </div>
         <label>Act Rack</label>
         <div class="row2col">
           <div class="col">
@@ -229,6 +223,7 @@ input.editable, select.editable {
       <button class="btn-primary" style="flex:1;" onclick="saveData()">💾 บันทึกข้อมูล</button>
     </div>
   </div>
+
   <div class="footer">© 2025 Resonac Materials (Thailand) Co., Ltd.</div>
 </div>
 
@@ -297,44 +292,48 @@ function showDetail() {
       rack.value = "";
       document.getElementById("rackZone").innerHTML = `
         <div class="rack-set">
-          <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
-          <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
-          <label>Act Rack</label>
-          <div class="row2col">
-            <div class="col">
-              <select class="rackGroup" onchange="updateRackSub(this)">
-                <option value="">--เลือก--</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-              </select>
-            </div>
-            <div class="col"><select class="rackSub"></select></div>
-          </div>
+  <div class="action-buttons">
+    <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+    <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+  </div>
 
-          <div style="margin-top:10px;">
-            <label>Act Lot</label>
-            <input type="text" class="actLotInput">
-          </div>
+  <label>Act Rack</label>
+  <div class="row2col">
+    <div class="col">
+      <select class="rackGroup" onchange="updateRackSub(this)">
+        <option value="">--เลือก--</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+      </select>
+    </div>
+    <div class="col"><select class="rackSub"></select></div>
+  </div>
 
-          <div class="package-row">
-            <div class="package-box">
-              <label>Package</label>
-              <div class="package-inputs">
-                <input type="number" inputmode="numeric" class="pkg-input a" oninput="calcActQty(this)">
-                <span>×</span>
-                <input type="number" inputmode="numeric" class="pkg-input b" oninput="calcActQty(this)">
-                <span>+</span>
-                <input type="number" inputmode="numeric" class="pkg-input c" oninput="calcActQty(this)">
-              </div>
-            </div>
-            <div class="actQty-box">
-              <label>Act Q'ty</label>
-              <input class="actQty" readonly>
-            </div>
-          </div>
-        </div>`;
+  <div style="margin-top:10px;">
+    <label>Act Lot</label>
+    <input type="text" class="actLotInput">
+  </div>
+
+  <div class="package-row">
+    <div class="package-box">
+      <label>Package</label>
+      <div class="package-inputs">
+        <input type="number" class="pkg-input a" oninput="calcActQty(this)">
+        <span>×</span>
+        <input type="number" class="pkg-input b" oninput="calcActQty(this)">
+        <span>+</span>
+        <input type="number" class="pkg-input c" oninput="calcActQty(this)">
+      </div>
+    </div>
+    <div class="actQty-box">
+      <label>Act Q'ty</label>
+      <input class="actQty" readonly>
+    </div>
+  </div>
+</div>
+`;
       return; // หยุดที่นี่เลย
     }
 

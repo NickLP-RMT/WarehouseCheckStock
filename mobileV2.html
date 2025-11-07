@@ -126,6 +126,17 @@ button {
   .package-row { flex-direction: column; }
   .package-box, .actQty-box { flex: 1 1 100%; }
 }
+  .btn-edit {
+  position: absolute;
+  top: 0; right: 44px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 0 8px 0 8px;
+  padding: 4px 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
 </style>
 </head>
 
@@ -159,6 +170,7 @@ button {
     <div id="rackZone">
       <div class="rack-set">
         <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+        <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">✏️</button>
         <label>Act Rack</label>
         <div class="row2col">
           <div class="col">
@@ -299,47 +311,57 @@ function showDetail() {
     rack.value = getVal("Rack");
     sumQty.value = getVal("Sum of Qty") || getVal("SumOfQty") || "";
 
-    // 🧹 รีเซ็ต rackZone ใหม่
-    document.getElementById("rackZone").innerHTML = `
-      <div class="rack-set">
-        <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
-        <label>Act Rack</label>
-        <div class="row2col">
-          <div class="col">
-            <select class="rackGroup" onchange="updateRackSub(this)">
-              <option value="">--เลือก--</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-            </select>
-          </div>
-          <div class="col"><select class="rackSub"></select></div>
-        </div>
-        <div style="margin-top:10px;">
-          <label>Act Lot</label>
-          <input type="text" class="actLotInput">
-        </div>
-        <div class="package-row">
-          <div class="package-box">
-            <label>Package</label>
-            <div class="package-inputs">
-              <input type="number" inputmode="numeric" class="pkg-input a" oninput="calcActQty(this)">
-              <span>×</span>
-              <input type="number" inputmode="numeric" class="pkg-input b" oninput="calcActQty(this)">
-              <span>+</span>
-              <input type="number" inputmode="numeric" class="pkg-input c" oninput="calcActQty(this)">
-            </div>
-          </div>
-          <div class="actQty-box">
-            <label>Act Q'ty</label>
-            <input class="actQty" readonly>
-          </div>
-        </div>
-      </div>`;
+// 🧹 รีเซ็ต rackZone ใหม่
+const actRack = getVal("Act_Rack") || "";
+const actLot  = getVal("Act_Lot")  || getVal("Lot") || "";
+const actPkg  = getVal("Act_Package") || "";
+const actQty  = getVal("Act_Qty") || "";
 
-    // 🆕 ให้ Act Lot แสดงตาม Lot ปัจจุบัน
-    document.querySelector(".actLotInput").value = getVal("Lot") || "";
+document.getElementById("rackZone").innerHTML = `
+  <div class="rack-set">
+    <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+    <button class="btn-edit" onclick="toggleEdit(this)">✏️</button>
+
+    <label>Act Rack</label>
+    <div class="row2col">
+      <div class="col">
+        <select class="rackGroup" onchange="updateRackSub(this)" ${actRack ? 'disabled' : ''}>
+          <option value="">--เลือก--</option>
+          <option value="A" ${actRack.startsWith("A")?'selected':''}>A</option>
+          <option value="B" ${actRack.startsWith("B")?'selected':''}>B</option>
+          <option value="C" ${actRack.startsWith("C")?'selected':''}>C</option>
+          <option value="D" ${actRack.startsWith("D")?'selected':''}>D</option>
+        </select>
+      </div>
+      <div class="col">
+        <select class="rackSub" ${actRack ? 'disabled' : ''}>
+          ${actRack ? `<option value="${actRack}" selected>${actRack}</option>` : ""}
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <label>Act Lot</label>
+      <input type="text" class="actLotInput" value="${actLot}" ${actLot ? 'readonly' : ''}>
+    </div>
+
+    <div class="package-row">
+      <div class="package-box">
+        <label>Package</label>
+        <div class="package-inputs">
+          <input type="number" inputmode="numeric" class="pkg-input a" oninput="calcActQty(this)" ${actPkg ? 'readonly' : ''} value="${actPkg.split('×')[0]||''}">
+          <span>×</span>
+          <input type="number" inputmode="numeric" class="pkg-input b" oninput="calcActQty(this)" ${actPkg ? 'readonly' : ''} value="${(actPkg.split('×')[1]||'').split('+')[0]||''}">
+          <span>+</span>
+          <input type="number" inputmode="numeric" class="pkg-input c" oninput="calcActQty(this)" ${actPkg ? 'readonly' : ''} value="${(actPkg.split('+')[1]||'')}">
+        </div>
+      </div>
+      <div class="actQty-box">
+        <label>Act Q'ty</label>
+        <input class="actQty" readonly value="${actQty}">
+      </div>
+    </div>
+  </div>`;
 
   } catch (err) {
     console.error("❌ showDetail error:", err);
@@ -383,6 +405,47 @@ function addRackSet(){
 }
 
 function removeRackSet(btn){btn.closest(".rack-set").remove();}
+function toggleEdit(btn) {
+  const rack = btn.closest(".rack-set");
+  const isEditing = btn.dataset.editing === "true";
+
+  // Toggle ปุ่ม
+  btn.dataset.editing = (!isEditing).toString();
+  btn.textContent = isEditing ? "✏️" : "💾";
+  btn.style.background = isEditing ? "#3b82f6" : "#10b981";
+
+  // toggle readonly / disabled
+  rack.querySelectorAll("input").forEach(el => {
+    if (el.classList.contains("actQty")) return; // actQty readonly เสมอ
+    el.readOnly = isEditing;
+  });
+  rack.querySelectorAll("select").forEach(el => {
+    el.disabled = isEditing;
+  });
+
+  // ถ้าเป็นการ “บันทึกหลังแก้ไข”
+  if (isEditing === false) {
+   Swal.fire({
+  title: "ยืนยันการแก้ไข?",
+  text: "คุณต้องการบันทึกข้อมูลที่แก้ไขหรือไม่",
+  icon: "question",
+  showCancelButton: true,
+  confirmButtonText: "บันทึก",
+  cancelButtonText: "ยกเลิก"
+}).then(result => {
+  if (result.isConfirmed) {
+    // 🟢 ใส่ที่นี่!
+    Swal.fire("✅", "บันทึกการแก้ไขสำเร็จ", "success");
+
+    saveData(); // ใช้ฟังก์ชันบันทึกเดิม
+  } else {
+    toggleEdit(btn); // กลับไป readonly
+  }
+});
+
+  }
+}
+
 
 async function saveData(){
   const name = nameSelect.value;

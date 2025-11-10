@@ -7,9 +7,9 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
 :root {
-  --pkg-a: 55px;
-  --pkg-b: 55px;
-  --pkg-c: 55px;
+  --pkg-a: 65px;
+  --pkg-b: 65px;
+  --pkg-c: 65px;
 }
 body {
   font-family: 'Inter', sans-serif;
@@ -77,15 +77,20 @@ button {
 .col { flex: 1; min-width: 120px; }
 
 .rack-set {
-  border: 1.5px solid #e2e8f0;
-  border-radius: 10px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
   padding: 14px;
   margin-bottom: 15px;
-  background: #f9fafb;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
+.rack-set:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15);
+}
+
 .action-buttons {
   display: flex;
   justify-content: flex-end;

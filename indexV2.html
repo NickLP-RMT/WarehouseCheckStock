@@ -257,21 +257,21 @@ function renderGroupedTable(data) {
 
     // 🔹 รายละเอียดแต่ละแถว
     groupRows.forEach((row, idx) => {
-      const sumQty = toNum(row.SumOfQty);
-      const actQty = toNum(row.Act_Qty);
-      const delta = actQty - sumQty;
-      const deltaText = delta === 0 ? "0" : (delta > 0 ? `+${delta}` : `${delta}`);
-      const deltaClass = delta !== 0 ? "delta-warning" : "";
+  const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
+  const actQty = toNum(row.Act_Qty);
+  const delta = actQty - sumQty;
+  const deltaText = delta === 0 ? "0" : (delta > 0 ? `+${delta}` : `${delta}`);
+  const deltaClass = delta !== 0 ? "delta-warning" : "";
 
-      const tds = headers.map(h => {
-        if (h === "Delta +/-") return `<td>${deltaText}</td>`;
-        // ซ่อนค่าซ้ำใน Name, File5digit, Lot (ยกเว้นแถวแรก)
-        if (idx > 0 && (h === "Name" || h === "File5digit" || h === "Lot")) return "<td></td>";
-        return `<td>${row[h] ?? ""}</td>`;
-      }).join("");
+  const tds = headers.map(h => {
+    if (h === "Delta +/-") return `<td>${deltaText}</td>`;
+    if (idx > 0 && (h === "Name" || h === "File5digit" || h === "Lot")) return "<td></td>";
+    return `<td>${row[h] ?? ""}</td>`;
+  }).join("");
 
-      body.innerHTML += `<tr class="table-detail ${deltaClass}">${tds}</tr>`;
-    });
+  body.innerHTML += `<tr class="table-detail ${deltaClass}">${tds}</tr>`;
+});
+
   }
 }
 

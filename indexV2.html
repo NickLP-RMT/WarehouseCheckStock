@@ -230,7 +230,7 @@ function renderGroupedTable(data) {
     const [file, lot] = key.split("_");
     const groupRows = grouped[key];
 
-    // ✅ แสดงหัวกลุ่มเพียง 1 บรรทัด
+    // 🔸 แสดงหัวกลุ่มเพียง 1 บรรทัด
     body.innerHTML += `
       <tr class="table-group">
         <td colspan="${headers.length}">
@@ -239,9 +239,13 @@ function renderGroupedTable(data) {
       </tr>
     `;
 
-    // 🔹 แสดงข้อมูลรายละเอียดของกลุ่ม
-    groupRows.forEach((row) => {
-      const tds = headers.map(h => `<td>${row[h] || ""}</td>`).join("");
+    // 🔸 แสดงรายละเอียด — ช่อง File5digit / Lot เว้นว่างในแถวถัดไป
+    groupRows.forEach((row, idx) => {
+      const tds = headers.map(h => {
+        // เคลียร์ค่าซ้ำในคอลัมน์ File5digit และ Lot ยกเว้นแถวแรก
+        if (idx > 0 && (h === "File5digit" || h === "Lot")) return "<td></td>";
+        return `<td>${row[h] || ""}</td>`;
+      }).join("");
       body.innerHTML += `<tr class="table-detail">${tds}</tr>`;
     });
   }

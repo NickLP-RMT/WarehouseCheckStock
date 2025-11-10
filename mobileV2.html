@@ -233,7 +233,7 @@ button {
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbxABkSEccCScM_3mI9DlujrkXy8infDGbu4_Xe4hz_hOzsYeg9-ejqovU_6OdW10kkr/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbwBdxGb7KQfCzS9EuAHGnTLxH05fKmARywauVUQdm2O2yqrAPU08NjmgAKO43AyColN/exec";
 let currentItems = [];
 
 // 🧩 Rack Map
@@ -496,7 +496,66 @@ function addRackSet(){
   zone.appendChild(newSet);
   setTimeout(()=>newSet.querySelector(".pkg-input.a").focus(),150);
 }
-function removeRackSet(btn){btn.closest(".rack-set").remove();}
+  // 🗑️ ลบ Rack-Set ทั้งในหน้าเว็บและ Google Sheet
+async function removeRackSet(btn) {
+  const rack = btn.closest(".rack-set");
+  const actRack = rack.querySelector(".rackSub").value.trim();
+  const file = file5digit.value.trim();
+  const lotVal = lot.value.trim();
+  const name = nameSelect.value.trim();
+
+  // ✅ ถ้ายังไม่เคยบันทึก (ไม่มี actRack) → แค่ลบจากหน้าจอ
+  if (!actRack) {
+    rack.remove();
+    return;
+  }
+
+  // 🟨 ยืนยันก่อนลบ
+  const confirm = await Swal.fire({
+    title: "ยืนยันการลบ?",
+    text: `ต้องการลบ Rack ${actRack} ของ ${file} (${lotVal}) หรือไม่`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบ",
+    cancelButtonText: "ยกเลิก"
+  });
+  if (!confirm.isConfirmed) return;
+
+  // 🔄 แสดงโหลดระหว่างลบ
+  Swal.fire({
+    title: "กำลังลบข้อมูล...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  try {
+    // 🔗 เรียก Google Apps Script เพื่อลบข้อมูลจากชีต
+    const res = await fetch(`${scriptURL}?page=deleteRecord`, {
+      method: "POST",
+      body: new URLSearchParams({
+        name,
+        file5digit: file,
+        lot: lotVal,
+        actRack
+      })
+    });
+
+    const result = await res.json();
+    Swal.close();
+
+    if (result.success) {
+      rack.remove(); // ✅ ลบจากหน้าจอด้วย
+      Swal.fire("✅", "ลบข้อมูลเรียบร้อยแล้ว", "success");
+    } else {
+      Swal.fire("⚠️", result.message || "ไม่สามารถลบข้อมูลได้", "warning");
+    }
+  } catch (err) {
+    Swal.close();
+    Swal.fire("❌", "เกิดข้อผิดพลาดระหว่างลบข้อมูล", "error");
+    console.error(err);
+  }
+}
+
 
 // ✅ toggleEdit: ปลดล็อก/ล็อกช่อง + เปลี่ยนสีพื้นหลัง
 function toggleEdit(btn) {

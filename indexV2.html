@@ -32,14 +32,15 @@
     table { font-size: 14px; }
 
     /* 🔹 เพิ่มสไตล์หัวกลุ่ม */
-    .table-group {
-      background-color: #e2e8f0 !important;
-      color: #1e293b;
-      font-weight: 600;
-    }
-    .table-detail:hover {
-      background-color: #f1f5f9;
-    }
+.table-group {
+  background-color: #dbeafe !important;
+  color: #1e3a8a;
+  font-weight: 600;
+  border-top: 2px solid #93c5fd;
+}
+.table-detail:hover {
+  background-color: #f1f5f9;
+}
   </style>
 </head>
 <body>
@@ -202,47 +203,50 @@
   }
 
   // 📊 Render grouped table layout (File5digit + Lot)
-  function renderGroupedTable(data) {
-    const head = document.getElementById("tableHead");
-    const body = document.getElementById("tableBody");
-    body.innerHTML = "";
+function renderGroupedTable(data) {
+  const head = document.getElementById("tableHead");
+  const body = document.getElementById("tableBody");
+  body.innerHTML = "";
 
-    if (!data || data.length === 0) {
-      head.innerHTML = "";
-      body.innerHTML = "<tr><td colspan='10' class='text-center text-muted'>No data found</td></tr>";
-      return;
-    }
-
-    const headers = Object.keys(data[0]);
-    head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
-
-    const grouped = {};
-    data.forEach(r => {
-      const key = `${r.File5digit}_${r.Lot}`;
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(r);
-    });
-
-    for (const key in grouped) {
-      const [file, lot] = key.split("_");
-      const groupRows = grouped[key];
-
-      // 🔹 หัวกลุ่ม
-      body.innerHTML += `
-        <tr class="table-group">
-          <td colspan="${headers.length}">
-            📁 <b>${file}</b> / <b>${lot}</b>
-          </td>
-        </tr>
-      `;
-
-      // 🔹 รายละเอียดในกลุ่ม
-      groupRows.forEach(row => {
-        const tds = headers.map(h => `<td>${row[h] || ""}</td>`).join("");
-        body.innerHTML += `<tr class="table-detail">${tds}</tr>`;
-      });
-    }
+  if (!data || data.length === 0) {
+    head.innerHTML = "";
+    body.innerHTML = "<tr><td colspan='10' class='text-center text-muted'>No data found</td></tr>";
+    return;
   }
+
+  const headers = Object.keys(data[0]);
+  head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
+
+  // 🔹 จัดกลุ่มตาม File5digit + Lot
+  const grouped = {};
+  data.forEach(r => {
+    const key = `${r.File5digit}_${r.Lot}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(r);
+  });
+
+  // 🔹 แสดงข้อมูลทีละกลุ่ม
+  for (const key in grouped) {
+    const [file, lot] = key.split("_");
+    const groupRows = grouped[key];
+
+    // ✅ แสดงหัวกลุ่มเพียง 1 บรรทัด
+    body.innerHTML += `
+      <tr class="table-group">
+        <td colspan="${headers.length}">
+          📦 <b>${file}</b> / <b>${lot}</b>
+        </td>
+      </tr>
+    `;
+
+    // 🔹 แสดงข้อมูลรายละเอียดของกลุ่ม
+    groupRows.forEach((row) => {
+      const tds = headers.map(h => `<td>${row[h] || ""}</td>`).join("");
+      body.innerHTML += `<tr class="table-detail">${tds}</tr>`;
+    });
+  }
+}
+
 
   // 📤 Export Excel
   function exportExcel() {

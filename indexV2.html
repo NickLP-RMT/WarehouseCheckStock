@@ -31,16 +31,27 @@
     .progress { height: 22px; margin-top: 10px; display: none; }
     table { font-size: 14px; }
 
-    /* 🔹 เพิ่มสไตล์หัวกลุ่ม */
+
+/* แถวหัวกลุ่ม */
 .table-group {
   background-color: #dbeafe !important;
   color: #1e3a8a;
   font-weight: 600;
   border-top: 2px solid #93c5fd;
 }
+
+/* แถวรายละเอียด */
 .table-detail:hover {
   background-color: #f1f5f9;
 }
+
+/* แถวที่ Delta ไม่เท่ากับ 0 */
+.delta-warning {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+  font-weight: 600;
+}
+
   </style>
 </head>
 <body>
@@ -214,10 +225,13 @@ function renderGroupedTable(data) {
     return;
   }
 
+  // ✅ สร้างหัวตาราง พร้อมเพิ่มคอลัมน์ Delta +/-
   const headers = Object.keys(data[0]);
+  const insertIndex = headers.indexOf("Act_Package") + 1;
+  headers.splice(insertIndex, 0, "Delta +/-");
   head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
 
-  // 🔹 จัดกลุ่มตาม File5digit + Lot
+  // 🔹 Group by File5digit + Lot
   const grouped = {};
   data.forEach(r => {
     const key = `${r.File5digit}_${r.Lot}`;
@@ -225,12 +239,12 @@ function renderGroupedTable(data) {
     grouped[key].push(r);
   });
 
-  // 🔹 แสดงข้อมูลทีละกลุ่ม
+  // 🔹 Render grouped rows
   for (const key in grouped) {
     const [file, lot] = key.split("_");
     const groupRows = grouped[key];
 
-    // 🔸 แสดงหัวกลุ่มเพียง 1 บรรทัด
+    // Header row for each group
     body.innerHTML += `
       <tr class="table-group">
         <td colspan="${headers.length}">
@@ -239,14 +253,23 @@ function renderGroupedTable(data) {
       </tr>
     `;
 
-    // 🔸 แสดงรายละเอียด — ช่อง File5digit / Lot เว้นว่างในแถวถัดไป
+    // Detail rows
     groupRows.forEach((row, idx) => {
+      // คำนวณ Delta
+      const sumQty = parseFloat(row.SumOfQty || 0);
+      const actQty = parseFloat(row.Act_Qty || 0);
+      const delta = actQty - sumQty;
+      const deltaText = delta === 0 ? "0" : (delta > 0 ? `+${delta}` : `${delta}`);
+      const deltaClass = delta !== 0 ? "delta-warning" : "";
+
       const tds = headers.map(h => {
-        // เคลียร์ค่าซ้ำในคอลัมน์ File5digit และ Lot ยกเว้นแถวแรก
-        if (idx > 0 && (h === "File5digit" || h === "Lot")) return "<td></td>";
+        if (h === "Delta +/-") return `<td>${deltaText}</td>`;
+        // ซ่อนค่าซ้ำใน Name, File5digit, Lot (ยกเว้นแถวแรก)
+        if (idx > 0 && (h === "Name" || h === "File5digit" || h === "Lot")) return "<td></td>";
         return `<td>${row[h] || ""}</td>`;
       }).join("");
-      body.innerHTML += `<tr class="table-detail">${tds}</tr>`;
+
+      body.innerHTML += `<tr class="table-detail ${deltaClass}">${tds}</tr>`;
     });
   }
 }

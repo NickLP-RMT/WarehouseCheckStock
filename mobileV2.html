@@ -7,9 +7,9 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
 :root {
-  --pkg-a: 38px;
-  --pkg-b: 38px;
-  --pkg-c: 38px;
+  --pkg-a: 55px;
+  --pkg-b: 55px;
+  --pkg-c: 55px;
 }
 body {
   font-family: 'Inter', sans-serif;
@@ -328,11 +328,14 @@ function showDetail() {
             <div class="package-box">
               <label>Package</label>
               <div class="package-inputs">
-                <input type="number" class="pkg-input a" oninput="calcActQty(this)">
+                <input type="text" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
+
                 <span>×</span>
-                <input type="number" class="pkg-input b" oninput="calcActQty(this)">
+                <input type="text" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
+
                 <span>+</span>
-                <input type="number" class="pkg-input c" oninput="calcActQty(this)">
+               <input type="text" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
+
               </div>
             </div>
             <div class="actQty-box">
@@ -633,6 +636,11 @@ function clearForm(){
   itemSelect.value="";
   document.getElementById("itemSection").style.display="none";
 }
+
+  function validateNumber(el) {
+  el.value = el.value.replace(/[^0-9]/g, ''); // ลบทุกตัวที่ไม่ใช่เลข
+}
+
 </script>
 
 </body>

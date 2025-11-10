@@ -270,20 +270,31 @@ async function fetchItems() {
 
 function renderDropdown(rows) {
   let html = `<option value="">-- เลือกรายการ File No. --</option>`;
-  html += rows.map(r => {
+  
+  // ✅ รวม File+Lot ที่ซ้ำกันให้เหลือเพียง 1 รายการ
+  const uniqueMap = {};
+  rows.forEach(r => {
+    const key = `${r.File5digit}|${r.Lot}`;
+    if (!uniqueMap[key]) uniqueMap[key] = r;
+  });
+
+  const uniqueRows = Object.values(uniqueMap);
+
+  html += uniqueRows.map(r => {
     const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
     const value = `${r.File5digit}|${r.Lot}`;
     return `<option value="${value}">${done} ${r.File5digit} (${r.Lot})</option>`;
   }).join('');
+
   itemSelect.innerHTML = html;
-  itemSelect.selectedIndex = 0;
 }
+
 
 function showDetail() {
   try {
     const value = itemSelect.value;
 
-    // 🧹 ถ้าเป็นค่า default (-- เลือกรายการ File No. --) → ล้างข้อมูลทั้งหมด
+    // 🧹 ถ้าไม่ได้เลือกรายการ → ล้างข้อมูล
     if (!value) {
       customer.value = "";
       file5digit.value = "";
@@ -292,127 +303,164 @@ function showDetail() {
       rack.value = "";
       document.getElementById("rackZone").innerHTML = `
         <div class="rack-set">
-  <div class="action-buttons">
-    <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
-    <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
-  </div>
-
-  <label>Act Rack</label>
-  <div class="row2col">
-    <div class="col">
-      <select class="rackGroup" onchange="updateRackSub(this)">
-        <option value="">--เลือก--</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="D">D</option>
-      </select>
-    </div>
-    <div class="col"><select class="rackSub"></select></div>
-  </div>
-
-  <div style="margin-top:10px;">
-    <label>Act Lot</label>
-    <input type="text" class="actLotInput">
-  </div>
-
-  <div class="package-row">
-    <div class="package-box">
-      <label>Package</label>
-      <div class="package-inputs">
-        <input type="number" class="pkg-input a" oninput="calcActQty(this)">
-        <span>×</span>
-        <input type="number" class="pkg-input b" oninput="calcActQty(this)">
-        <span>+</span>
-        <input type="number" class="pkg-input c" oninput="calcActQty(this)">
-      </div>
-    </div>
-    <div class="actQty-box">
-      <label>Act Q'ty</label>
-      <input class="actQty" readonly>
-    </div>
-  </div>
-</div>
-`;
-      return; // หยุดที่นี่เลย
+          <div class="action-buttons">
+            <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+            <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+          </div>
+          <label>Act Rack</label>
+          <div class="row2col">
+            <div class="col">
+              <select class="rackGroup" onchange="updateRackSub(this)">
+                <option value="">--เลือก--</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
+            </div>
+            <div class="col"><select class="rackSub"></select></div>
+          </div>
+          <div style="margin-top:10px;">
+            <label>Act Lot</label>
+            <input type="text" class="actLotInput">
+          </div>
+          <div class="package-row">
+            <div class="package-box">
+              <label>Package</label>
+              <div class="package-inputs">
+                <input type="number" class="pkg-input a" oninput="calcActQty(this)">
+                <span>×</span>
+                <input type="number" class="pkg-input b" oninput="calcActQty(this)">
+                <span>+</span>
+                <input type="number" class="pkg-input c" oninput="calcActQty(this)">
+              </div>
+            </div>
+            <div class="actQty-box">
+              <label>Act Q'ty</label>
+              <input class="actQty" readonly>
+            </div>
+          </div>
+        </div>`;
+      return;
     }
 
-    // 🧠 ถ้าเลือก File จริง → ทำงานต่อด้านล่างเหมือนเดิม
+    // 🧠 ถ้ามีการเลือก File จริง
     const [fileCode, lotCode] = value.split('|');
     if (!fileCode || !lotCode) return;
 
-    const row = currentItems.find(r => {
+    // ✅ ดึงทุกแถวที่ File + Lot ตรงกัน (อาจมีหลาย rack-set)
+    const selectedRows = currentItems.filter(r => {
       const keys = Object.keys(r);
       const fileKey = keys.find(k => k.trim().toLowerCase() === "file5digit");
       const lotKey  = keys.find(k => k.trim().toLowerCase() === "lot");
       return (r[fileKey]+"").trim()===fileCode.trim() && (r[lotKey]+"").trim()===lotCode.trim();
     });
-    if (!row) return Swal.fire("⚠️", "ไม่พบข้อมูลของรายการนี้", "warning");
+
+    if (selectedRows.length === 0)
+      return Swal.fire("⚠️", "ไม่พบข้อมูลของรายการนี้", "warning");
+
+    // 🏷️ ใช้ข้อมูลแถวแรกเป็นข้อมูลหลัก (Customer / File / Lot / Qty)
+    const base = selectedRows[0];
     const getVal = key => {
-      const found = Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase());
-      return found ? row[found] : "";
+      const found = Object.keys(base).find(k => k.trim().toLowerCase() === key.toLowerCase());
+      return found ? base[found] : "";
     };
-    customer.value=getVal("Customer");
-    file5digit.value=getVal("File5digit");
-    lot.value=getVal("Lot");
-    rack.value=getVal("Rack");
-    sumQty.value=getVal("Sum of Qty") || getVal("SumOfQty") || "";
 
-    const actRack=getVal("Act_Rack")||"";
-    const rawActLot = getVal("Act_Lot");     // ค่าจากชีตจริง
-    const actLot = rawActLot || getVal("Lot") || "";
-    const actLotReadOnly = rawActLot ? "readonly" : ""; // ✅ ถ้ามีค่าจริงในชีตเท่านั้นค่อยล็อก
-    const actPkg=getVal("Act_Package")||"";
-    const actQty=getVal("Act_Qty")||"";
+    customer.value = getVal("Customer");
+    file5digit.value = getVal("File5digit");
+    lot.value = getVal("Lot");
+    rack.value = getVal("Rack");
+    sumQty.value = getVal("Sum of Qty") || getVal("SumOfQty") || "";
 
-    document.getElementById("rackZone").innerHTML=`
-      <div class="rack-set">
-        <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
-        <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+    // 🧱 สร้าง rack-set ทั้งหมดตามจำนวนแถว
+    let htmlRack = "";
+    selectedRows.forEach(row => {
+      const actRack = row.Act_Rack || "";
+      const rawActLot = row.Act_Lot;
+      const actLot = rawActLot || row.Lot || "";
+      const actPkg = row.Act_Package || "";
+      const actQty = row.Act_Qty || "";
 
-        <label>Act Rack</label>
-        <div class="row2col">
-          <div class="col">
-            <select class="rackGroup" onchange="updateRackSub(this)" ${actRack?'disabled':''}>
-              <option value="">--เลือก--</option>
-              <option value="A" ${actRack.startsWith("A")?'selected':''}>A</option>
-              <option value="B" ${actRack.startsWith("B")?'selected':''}>B</option>
-              <option value="C" ${actRack.startsWith("C")?'selected':''}>C</option>
-              <option value="D" ${actRack.startsWith("D")?'selected':''}>D</option>
-            </select>
+      htmlRack += `
+        <div class="rack-set">
+          <div class="action-buttons">
+            <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+            <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
           </div>
-          <div class="col"><select class="rackSub" ${actRack?'disabled':''}>
-            ${actRack?`<option value="${actRack}" selected>${actRack}</option>`:""}
-          </select></div>
-        </div>
 
-        <div style="margin-top:10px;">
-          <label>Act Lot</label>
-          <input type="text" class="actLotInput" value="${actLot}" ${actLotReadOnly}>
-        </div>
-
-        <div class="package-row">
-          <div class="package-box">
-            <label>Package</label>
-            <div class="package-inputs">
-              <input type="number" class="pkg-input a" oninput="calcActQty(this)" ${actPkg?'readonly':''} value="${actPkg.split('×')[0]||''}">
-              <span>×</span>
-              <input type="number" class="pkg-input b" oninput="calcActQty(this)" ${actPkg?'readonly':''} value="${(actPkg.split('×')[1]||'').split('+')[0]||''}">
-              <span>+</span>
-              <input type="number" class="pkg-input c" oninput="calcActQty(this)" ${actPkg?'readonly':''} value="${(actPkg.split('+')[1]||'')}">
+          <label>Act Rack</label>
+          <div class="row2col">
+            <div class="col">
+              <select class="rackGroup" onchange="updateRackSub(this)" ${actRack ? 'disabled' : ''}>
+                <option value="">--เลือก--</option>
+                <option value="A" ${actRack.startsWith("A") ? "selected" : ""}>A</option>
+                <option value="B" ${actRack.startsWith("B") ? "selected" : ""}>B</option>
+                <option value="C" ${actRack.startsWith("C") ? "selected" : ""}>C</option>
+                <option value="D" ${actRack.startsWith("D") ? "selected" : ""}>D</option>
+              </select>
+            </div>
+            <div class="col">
+              <select class="rackSub" ${actRack ? 'disabled' : ''}>
+                ${actRack ? `<option value="${actRack}" selected>${actRack}</option>` : ""}
+              </select>
             </div>
           </div>
-          <div class="actQty-box">
-            <label>Act Q'ty</label>
-            <input class="actQty" readonly value="${actQty}">
+
+          <div style="margin-top:10px;">
+            <label>Act Lot</label>
+            <input type="text" class="actLotInput" value="${actLot}" ${rawActLot ? "readonly" : ""}>
           </div>
-        </div>
-      </div>`;
+
+          <div class="package-row">
+            <div class="package-box">
+              <label>Package</label>
+              <div class="package-inputs">
+                <input type="number" class="pkg-input a" oninput="calcActQty(this)" value="${actPkg.split('×')[0]||''}" ${actPkg ? 'readonly' : ''}>
+                <span>×</span>
+                <input type="number" class="pkg-input b" oninput="calcActQty(this)" value="${(actPkg.split('×')[1]||'').split('+')[0]||''}" ${actPkg ? 'readonly' : ''}>
+                <span>+</span>
+                <input type="number" class="pkg-input c" oninput="calcActQty(this)" value="${(actPkg.split('+')[1]||'')}" ${actPkg ? 'readonly' : ''}>
+              </div>
+            </div>
+            <div class="actQty-box">
+              <label>Act Q'ty</label>
+              <input class="actQty" readonly value="${actQty}">
+            </div>
+          </div>
+        </div>`;
+    });
+
+    // ถ้ายังไม่มี rack-set ให้มีอย่างน้อย 1 ชุด
+    if (!htmlRack) {
+      htmlRack = `
+        <div class="rack-set">
+          <div class="action-buttons">
+            <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+            <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+          </div>
+          <label>Act Rack</label>
+          <div class="row2col">
+            <div class="col"><select class="rackGroup" onchange="updateRackSub(this)"></select></div>
+            <div class="col"><select class="rackSub"></select></div>
+          </div>
+          <div><label>Act Lot</label><input class="actLotInput" value="${lotCode}"></div>
+          <div class="package-row">
+            <div class="package-box"><label>Package</label><div class="package-inputs">
+              <input class="pkg-input a"><span>×</span><input class="pkg-input b"><span>+</span><input class="pkg-input c">
+            </div></div>
+            <div class="actQty-box"><label>Act Q'ty</label><input class="actQty" readonly></div>
+          </div>
+        </div>`;
+    }
+
+    document.getElementById("rackZone").innerHTML = htmlRack;
+
   } catch (err) {
     console.error("❌ showDetail error:", err);
-    Swal.fire("❌", "ไม่สามารถดึงข้อมูลได้", "error");
+    Swal.fire("❌", "ไม่สามารถโหลดรายละเอียดได้", "error");
   }
 }
+
 
 function updateRackSub(select){
   const subSelect=select.closest(".rack-set").querySelector(".rackSub");

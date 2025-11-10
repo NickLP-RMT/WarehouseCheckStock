@@ -45,24 +45,25 @@
   background-color: #f1f5f9;
 }
 
-/* แถวที่ Delta ไม่เท่ากับ 0 */
-.delta-warning {
-  background-color: #fee2e2 !important;
-  color: #b91c1c !important;
-  font-weight: 600;
-}
 /* ✅ Delta เป็นบวก */
 .delta-positive {
-  color: #15803d !important;      /* เขียวเข้ม */
-  background-color: #dcfce7 !important; /* เขียวอ่อน */
+  color: #15803d !important;                /* เขียวเข้ม */
+  background-color: #dcfce7 !important;     /* เขียวอ่อน */
   font-weight: 600;
 }
 
 /* ❌ Delta เป็นลบ */
 .delta-negative {
-  color: #b91c1c !important;      /* แดงเข้ม */
-  background-color: #fee2e2 !important; /* แดงอ่อน */
+  color: #b91c1c !important;                /* แดงเข้ม */
+  background-color: #fee2e2 !important;     /* แดงอ่อน */
   font-weight: 600;
+}
+
+/* 🔹 Delta เป็นศูนย์ */
+.delta-zero {
+  color: #334155 !important;                /* เทาเข้ม */
+  background-color: #f1f5f9 !important;     /* เทาอ่อน */
+  font-weight: 500;
 }
 
   </style>
@@ -273,13 +274,20 @@ function renderGroupedTable(data) {
       const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
       const actQty = toNum(row.Act_Qty);
       const delta = actQty - sumQty;
-      const deltaText = delta === 0 ? "0" : (delta > 0 ? `+${delta}` : `${delta}`);
 
-      // 🎨 ตั้งคลาสสีตามค่า Delta
-      const deltaClass = delta > 0 ? "delta-positive" : (delta < 0 ? "delta-negative" : "");
+      // 📊 กำหนดค่าไอคอนและสี
+      let deltaText = "0", deltaClass = "delta-zero";
+      if (delta > 0) {
+        deltaText = `▲ +${delta}`;
+        deltaClass = "delta-positive";
+      } else if (delta < 0) {
+        deltaText = `▼ ${delta}`;
+        deltaClass = "delta-negative";
+      }
 
+      // ✅ สร้างแต่ละแถว
       const tds = headers.map(h => {
-        if (h === "Delta +/-") return `<td class="${deltaClass}">${deltaText}</td>`;
+        if (h === "Delta +/-") return `<td class="${deltaClass} text-center">${deltaText}</td>`;
         if (idx > 0 && (h === "Name" || h === "File5digit" || h === "Lot")) return "<td></td>";
         return `<td>${row[h] ?? ""}</td>`;
       }).join("");
@@ -288,6 +296,7 @@ function renderGroupedTable(data) {
     });
   }
 }
+
 
 
   // 📤 Export Excel

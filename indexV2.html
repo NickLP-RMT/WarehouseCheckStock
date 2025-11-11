@@ -412,9 +412,9 @@ async function exportExcel() {
     });
   });
 
-  // ✅ สร้างชีตและไฟล์
-  const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
+  // ✅ สร้าง Workbook และ Worksheet อย่างถูกลำดับ
   const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
   XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
 
   // ✅ ปรับความกว้างอัตโนมัติ
@@ -431,10 +431,12 @@ async function exportExcel() {
   const formattedDate = now.toISOString().split("T")[0];
   const fileName = `WarehouseData_${formattedDate}.xlsx`;
 
+  // ✅ เขียนและบันทึกไฟล์
   XLSX.writeFile(wb, fileName);
 
   Swal.fire("✅", "ส่งออกไฟล์ Excel เรียงตาม File5digit + Lot สำเร็จ", "success");
 }
+
   </script>
 </body>
 </html>

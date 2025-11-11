@@ -365,15 +365,63 @@ function renderGroupedTable(data) {
   }
 }
 
-
-  // 📤 Export Excel
-  function exportExcel() {
-    if (allData.length === 0) return Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
-    const ws = XLSX.utils.json_to_sheet(allData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Data");
-    XLSX.writeFile(wb, "WarehouseData_Export.xlsx");
+// 📤 Export Excel (มี Delta +/-)
+function exportExcel() {
+  if (allData.length === 0) {
+    Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
+    return;
   }
+
+  // ✅ ฟังก์ชันช่วยแปลงเป็นตัวเลข
+  const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
+
+  // ✅ เตรียมข้อมูลเรียงคอลัมน์
+  const exportData = allData.map(row => {
+    const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
+    const actQty = toNum(row.Act_Qty);
+    const hasActData = row.Act_Rack || row.Act_Lot || row.Act_Qty || row.Act_Package;
+    const delta = hasActData ? actQty - sumQty : ""; // ถ้าไม่มีข้อมูลไม่คำนวณ
+
+    return {
+      Customer: row.Customer || "",
+      Name: row.Name || "",
+      File5digit: row.File5digit || "",
+      Lot: row.Lot || "",
+      Rack: row.Rack || "",
+      "Sum of Qty": sumQty || "",
+      Act_Rack: row.Act_Rack || "",
+      Act_Lot: row.Act_Lot || "",
+      Act_Qty: row.Act_Qty || "",
+      Act_Package: row.Act_Package || "",
+      "Delta +/-": delta === "" ? "" : delta > 0 ? `+${delta}` : delta,
+      Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
+    };
+  });
+
+  // ✅ สร้างชีต Excel
+  const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
+
+  // ✅ ปรับความกว้างคอลัมน์อัตโนมัติ
+  const colWidths = Object.keys(exportData[0]).map(key => ({
+    wch: Math.max(
+      key.length,
+      ...exportData.map(r => (r[key] ? r[key].toString().length : 0))
+    ) + 2
+  }));
+  ws["!cols"] = colWidths;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
+
+  // ✅ ชื่อไฟล์แบบมีวันที่
+  const now = new Date();
+  const formattedDate = now.toISOString().split("T")[0]; // YYYY-MM-DD
+  const fileName = `WarehouseData_Export_${formattedDate}.xlsx`;
+
+  XLSX.writeFile(wb, fileName);
+  Swal.fire("✅", "ส่งออกไฟล์ Excel เรียบร้อยแล้ว", "success");
+}
+
   </script>
 </body>
 </html>

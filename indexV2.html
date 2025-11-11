@@ -236,16 +236,20 @@ async function searchData() {
       return `${y}-${m}-${d}`;
     };
 
-    const filtered = data.filter(row => {
-      const ts = row.Timestamp || "";
-      const date = parseDate(ts);
-      const file5Match = !file5 || (row.File5digit || "").toLowerCase().includes(file5);
-      const lotMatch = !lot || (row.Lot || "").toLowerCase().includes(lot);
-      const dateMatch = (!start || date >= start) && (!end || date <= end);
-      return dateMatch && file5Match && lotMatch;
-    });
+const filtered = data.filter(row => {
+  const ts = row.Timestamp || "";
+  const date = parseDate(ts);
+  const file5Match = !file5 || (row.File5digit || "").toLowerCase().includes(file5);
+  const lotMatch = !lot || (row.Lot || "").toLowerCase().includes(lot);
+  const dateMatch = (!start || date >= start) && (!end || date <= end);
+  return dateMatch && file5Match && lotMatch;
+});
 
-    renderGroupedTable(filtered);
+
+renderGroupedTable(filtered);
+
+// ✅ เพิ่มบรรทัดนี้ไว้ตรงนี้
+allData = filtered;
 
     // ✅ แสดงผลลัพธ์ใต้หัวข้อ Data Result
     if (filtered.length > 0) {

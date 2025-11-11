@@ -13,60 +13,53 @@
     body { overflow-x: hidden; background-color: #f8fafc; }
     .navbar { background: #1e293b; color: white; }
     .navbar-time { font-size: 16px; color: #e2e8f0; font-weight: 500; }
+
     .sidebar {
-      width: 260px; height: 100vh; position: fixed;
-      left: 0; top: 56px; background: #1e293b; color: white; padding: 15px;
+      width: 260px; height: 100vh;
+      position: fixed; left: 0; top: 56px;
+      background: #1e293b; color: white; padding: 15px;
       overflow-y: auto;
     }
-    .menu-btn {
-      background: none; border: none; color: white;
-      width: 100%; text-align: left; font-size: 16px;
-      padding: 10px; border-radius: 6px; margin-bottom: 5px;
-    }
-    .menu-btn:hover, .menu-btn.active { background-color: #334155; }
-    .collapse-content {
-      background-color: #243043; border-radius: 8px; padding: 10px; margin-bottom: 10px;
-    }
+
     .content { margin-left: 260px; padding: 80px 30px; transition: all 0.3s ease; }
     .progress { height: 22px; margin-top: 10px; display: none; }
     table { font-size: 14px; }
 
+    /* 🎨 Tabs */
+    .nav-tabs { border-bottom: 1px solid #475569; margin-bottom: 15px; }
+    .nav-tabs .nav-link {
+      color: #cbd5e1; border: none; border-radius: 0; background: transparent;
+    }
+    .nav-tabs .nav-link.active {
+      background-color: #334155; color: #ffffff; font-weight: 600;
+    }
+    .nav-tabs .nav-link:hover {
+      background-color: #475569; color: #fff;
+    }
 
-/* แถวหัวกลุ่ม */
-.table-group {
-  background-color: #dbeafe !important;
-  color: #1e3a8a;
-  font-weight: 600;
-  border-top: 2px solid #93c5fd;
-}
+    .collapse-content {
+      background-color: #243043;
+      border-radius: 8px; padding: 10px; margin-bottom: 10px;
+    }
 
-/* แถวรายละเอียด */
-.table-detail:hover {
-  background-color: #f1f5f9;
-}
+    /* กลุ่ม */
+    .table-group {
+      background-color: #dbeafe !important;
+      color: #1e3a8a; font-weight: 600; border-top: 2px solid #93c5fd;
+    }
 
-/* ✅ Delta เป็นบวก */
-.delta-positive {
-  color: #15803d !important;                /* เขียวเข้ม */
-  background-color: #dcfce7 !important;     /* เขียวอ่อน */
-  font-weight: 600;
-}
+    .table-detail:hover { background-color: #f1f5f9; }
 
-/* ❌ Delta เป็นลบ */
-.delta-negative {
-  color: #b91c1c !important;                /* แดงเข้ม */
-  background-color: #fee2e2 !important;     /* แดงอ่อน */
-  font-weight: 600;
-}
-
-/* 🔹 Delta เป็นศูนย์ */
-.delta-zero {
-  color: #334155 !important;                /* เทาเข้ม */
-  background-color: #f1f5f9 !important;     /* เทาอ่อน */
-  font-weight: 500;
-}
-
-
+    /* ✅ Delta */
+    .delta-positive {
+      color: #15803d !important; background-color: #dcfce7 !important; font-weight: 600;
+    }
+    .delta-negative {
+      color: #b91c1c !important; background-color: #fee2e2 !important; font-weight: 600;
+    }
+    .delta-zero {
+      color: #334155 !important; background-color: #f1f5f9 !important; font-weight: 500;
+    }
   </style>
 </head>
 <body>
@@ -75,36 +68,51 @@
     <div class="navbar-time" id="currentDateTime">--/--/---- --:--:--</div>
   </nav>
 
+  <!-- 🧭 Sidebar with Tabs -->
   <div class="sidebar">
-    <!-- 📤 Upload Excel -->
-    <button class="menu-btn" data-bs-toggle="collapse" data-bs-target="#importSection">📤 Upload Excel</button>
-    <div class="collapse collapse-content show" id="importSection">
-      <input type="file" id="fileInput" class="form-control mb-3" accept=".xlsx,.csv">
-      <button class="btn btn-success w-100 mb-2" onclick="uploadToSheet()">Upload to Database</button>
-      <div class="progress"><div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width:0%">0%</div></div>
-      <button class="btn btn-danger w-100 mt-3" onclick="deleteAll()">🗑 Delete Data from Database</button>
+    <ul class="nav nav-tabs nav-justified" id="sidebarTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#searchTab" type="button" role="tab">🔍 Search</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#uploadTab" type="button" role="tab">📤 Upload Excel</button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="sidebarTabContent">
+      <!-- 🔍 Search Tab -->
+      <div class="tab-pane fade show active" id="searchTab" role="tabpanel">
+        <div class="collapse-content">
+          <label>Start Date</label>
+          <input type="date" id="startDate" class="form-control mb-2">
+
+          <label>End Date</label>
+          <input type="date" id="endDate" class="form-control mb-3">
+
+          <label>File5digit</label>
+          <input type="text" id="searchFile5" class="form-control mb-2" placeholder="เช่น F0576">
+
+          <label>Lot</label>
+          <input type="text" id="searchLot" class="form-control mb-3" placeholder="เช่น 23100280">
+
+          <button class="btn btn-primary w-100 mb-2" onclick="searchData()">Search</button>
+          <button class="btn btn-secondary w-100 mb-2" onclick="clearFilters()">Clear Filter</button>
+          <button class="btn btn-outline-success w-100" onclick="exportExcel()">Export Excel</button>
+        </div>
+      </div>
+
+      <!-- 📤 Upload Tab -->
+      <div class="tab-pane fade" id="uploadTab" role="tabpanel">
+        <div class="collapse-content">
+          <input type="file" id="fileInput" class="form-control mb-3" accept=".xlsx,.csv">
+          <button class="btn btn-success w-100 mb-2" onclick="uploadToSheet()">Upload to Database</button>
+          <div class="progress">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width:0%">0%</div>
+          </div>
+          <button class="btn btn-danger w-100 mt-3" onclick="deleteAll()">🗑 Delete Data from Database</button>
+        </div>
+      </div>
     </div>
-
-  <!-- 🔍 Search -->
-<button class="menu-btn" data-bs-toggle="collapse" data-bs-target="#searchSection">🔍 Search Data</button>
-<div class="collapse collapse-content" id="searchSection">
-  <label>Start Date</label>
-  <input type="date" id="startDate" class="form-control mb-2">
-
-  <label>End Date</label>
-  <input type="date" id="endDate" class="form-control mb-3">
-
-  <label>File5digit</label>
-  <input type="text" id="searchFile5" class="form-control mb-2" placeholder="เช่น F0576">
-
-  <label>Lot</label>
-  <input type="text" id="searchLot" class="form-control mb-3" placeholder="เช่น 23100280">
-
-  <button class="btn btn-primary w-100 mb-2" onclick="searchData()">Search</button>
-  <button class="btn btn-secondary w-100 mb-2" onclick="clearFilters()">Clear Filter</button>
-  <button class="btn btn-outline-success w-100" onclick="exportExcel()">Export Excel</button>
-</div>
-
   </div>
 
   <div class="content">
@@ -113,265 +121,202 @@
 
     <div class="table-responsive mt-3">
       <table class="table table-striped" id="dataTable">
-        <thead class="table-dark">
-          <tr id="tableHead"></tr>
-        </thead>
+        <thead class="table-dark"><tr id="tableHead"></tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
   <script>
   const scriptURL = "https://script.google.com/macros/s/AKfycbwBdxGb7KQfCzS9EuAHGnTLxH05fKmARywauVUQdm2O2yqrAPU08NjmgAKO43AyColN/exec";
   let allData = [];
 
-// 🕒 แปลงเวลา UTC ให้แสดงตามเวลาไทย โดยไม่บวกเพิ่มเอง
-function convertToBangkokTime(utcString) {
-  if (!utcString) return "";
-  const date = new Date(utcString);
-  return date.toLocaleString("th-TH", {
-    timeZone: "Asia/Bangkok",  // ← ใช้ timezone ตรงนี้แทนการบวก 7 ชม.
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false
-  }).replace(",", "");
-}
+  // 🕒 เวลาไทย
+  function convertToBangkokTime(utcString) {
+    if (!utcString) return "";
+    const date = new Date(utcString);
+    return date.toLocaleString("th-TH", {
+      timeZone: "Asia/Bangkok",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false
+    }).replace(",", "");
+  }
 
-
+  // 🕓 อัปเดตเวลา Navbar
   function updateDateTime() {
     const now = new Date();
-    const formatted = now.toLocaleString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const formatted = now.toLocaleString('th-TH', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
     document.getElementById('currentDateTime').textContent = formatted;
   }
   setInterval(updateDateTime, 1000); updateDateTime();
 
-  // 📤 Upload Excel + Progress Bar
+  // 📤 Upload Excel
   async function uploadToSheet() {
     const file = document.getElementById("fileInput").files[0];
-    if (!file) { Swal.fire("⚠️", "Please select a file!", "warning"); return; }
+    if (!file) return Swal.fire("⚠️", "Please select a file!", "warning");
 
     const progress = document.querySelector(".progress");
     const bar = document.getElementById("progressBar");
     progress.style.display = "block";
-    bar.style.width = "0%";
-    bar.innerText = "0%";
+    bar.style.width = "0%"; bar.innerText = "0%";
 
     Swal.fire({ title: "Uploading...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = async e => {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }).slice(1);
-      const total = rows.length;
-
-      const payload = [];
-      for (let i = 0; i < total; i++) {
-        const r = rows[i];
-        payload.push({
-          Customer: r[0] || "",
-          Name: r[1] || "",
-          File5digit: r[2] || "",
-          Lot: r[3] || "",
-          Rack: r[4] || "",
-          SumOfQty: r[5] || ""
-        });
-
-        const percent = Math.round(((i + 1) / total) * 100);
-        bar.style.width = percent + "%";
-        bar.innerText = percent + "%";
-        await new Promise(r => setTimeout(r, 5)); // เพื่อให้ progress แสดงผล smooth
-      }
+      const payload = rows.map(r => ({
+        Customer: r[0] || "", Name: r[1] || "", File5digit: r[2] || "",
+        Lot: r[3] || "", Rack: r[4] || "", SumOfQty: r[5] || ""
+      }));
 
       try {
         const res = await fetch(`${scriptURL}?page=uploadData`, {
-          method: "POST",
-          body: JSON.stringify(payload)
+          method: "POST", body: JSON.stringify(payload)
         });
         const json = await res.json();
         Swal.fire("✅", json.message, "success");
         document.getElementById("resultText").textContent = json.message;
+        bar.style.width = "100%"; bar.innerText = "100%";
         bar.classList.remove("bg-info"); bar.classList.add("bg-success");
-      } catch (err) {
+      } catch {
         Swal.fire("❌", "Error uploading data", "error");
       }
     };
     reader.readAsArrayBuffer(file);
   }
 
-  // 🔥 Delete All Data
+  // 🗑 Delete All
   async function deleteAll() {
     const confirm = await Swal.fire({
-      title: "⚠️ ลบข้อมูลทั้งหมด?",
-      text: "การลบนี้จะล้างข้อมูลทุกแถวในชีต WarehouseData",
+      title: "⚠️ ลบข้อมูลทั้งหมด?", text: "การลบนี้จะล้างข้อมูลทุกแถวในชีต WarehouseData",
       icon: "warning", showCancelButton: true,
       confirmButtonText: "ใช่, ลบเลย", cancelButtonText: "ยกเลิก"
     });
     if (!confirm.isConfirmed) return;
-
     Swal.fire({ title: "กำลังลบข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     try {
       const res = await fetch(`${scriptURL}?page=deleteAll`, { method: "POST" });
       const json = await res.json();
       Swal.fire(json.success ? "✅" : "❌", json.message, json.success ? "success" : "error");
-    } catch {
-      Swal.fire("❌", "เกิดข้อผิดพลาดระหว่างลบข้อมูล", "error");
-    }
+    } catch { Swal.fire("❌", "เกิดข้อผิดพลาดระหว่างลบข้อมูล", "error"); }
   }
 
   // 🔍 Search
-async function searchData() {
-  const start = document.getElementById("startDate").value;
-  const end = document.getElementById("endDate").value;
-  const file5 = document.getElementById("searchFile5").value.trim().toLowerCase();
-  const lot = document.getElementById("searchLot").value.trim().toLowerCase();
+  async function searchData() {
+    const start = document.getElementById("startDate").value;
+    const end = document.getElementById("endDate").value;
+    const file5 = document.getElementById("searchFile5").value.trim().toLowerCase();
+    const lot = document.getElementById("searchLot").value.trim().toLowerCase();
 
-  Swal.fire({ title: "กำลังค้นหา...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({ title: "กำลังค้นหา...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-  try {
-    const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
-    const data = await res.json();
-    Swal.close();
+    try {
+      const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
+      const data = await res.json();
+      Swal.close();
 
-    allData = data;
+      allData = data;
+      const parseDate = ts => {
+        if (!ts) return "";
+        const [d, m, y] = ts.split(" ")[0].split("/");
+        return `${y}-${m}-${d}`;
+      };
 
-    // ✅ ฟังก์ชันช่วยแปลงวันที่จาก timestamp
-    const parseDate = ts => {
-      if (!ts) return "";
-      const [d, m, y] = ts.split(" ")[0].split("/");
-      return `${y}-${m}-${d}`;
-    };
+      const filtered = data.filter(row => {
+        const ts = row.Timestamp || "";
+        const date = parseDate(ts);
+        const file5Match = !file5 || (row.File5digit || "").toLowerCase().includes(file5);
+        const lotMatch = !lot || (row.Lot || "").toLowerCase().includes(lot);
+        const dateMatch = (!start || date >= start) && (!end || date <= end);
+        return dateMatch && file5Match && lotMatch;
+      });
 
-    // ✅ เงื่อนไขกรองข้อมูล
-    const filtered = data.filter(row => {
-      const ts = row.Timestamp || "";
-      const date = parseDate(ts);
-      const file5Match = !file5 || (row.File5digit || "").toLowerCase().includes(file5);
-      const lotMatch = !lot || (row.Lot || "").toLowerCase().includes(lot);
-      const dateMatch = (!start || date >= start) && (!end || date <= end);
-      return dateMatch && file5Match && lotMatch;
-    });
-
-    renderGroupedTable(filtered);
-    Swal.fire("✅", `พบข้อมูล ${filtered.length} แถว`, "success");
-  } catch (err) {
-    Swal.fire("❌", "Error fetching data", "error");
+      renderGroupedTable(filtered);
+      Swal.fire("✅", `พบข้อมูล ${filtered.length} แถว`, "success");
+    } catch { Swal.fire("❌", "Error fetching data", "error"); }
   }
-}
-// 🧹 Clear Filter
-function clearFilters() {
-  document.getElementById("startDate").value = "";
-  document.getElementById("endDate").value = "";
-  document.getElementById("searchFile5").value = "";
-  document.getElementById("searchLot").value = "";
-  Swal.fire("🧹", "เคลียร์ช่องค้นหาทั้งหมดเรียบร้อย", "success");
-}
 
+  // 🧹 Clear Filter
+  function clearFilters() {
+    document.getElementById("startDate").value = "";
+    document.getElementById("endDate").value = "";
+    document.getElementById("searchFile5").value = "";
+    document.getElementById("searchLot").value = "";
+    Swal.fire("🧹", "เคลียร์ช่องค้นหาทั้งหมดเรียบร้อย", "success");
+  }
+
+  // 📊 Render Table
   function renderGroupedTable(data) {
-  const head = document.getElementById("tableHead");
-  const body = document.getElementById("tableBody");
-  body.innerHTML = "";
+    const head = document.getElementById("tableHead");
+    const body = document.getElementById("tableBody");
+    body.innerHTML = "";
 
-  if (!data || data.length === 0) {
-    head.innerHTML = "";
-    body.innerHTML = "<tr><td colspan='10' class='text-center text-muted'>No data found</td></tr>";
-    return;
-  }
+    if (!data || data.length === 0) {
+      head.innerHTML = "";
+      body.innerHTML = "<tr><td colspan='10' class='text-center text-muted'>No data found</td></tr>";
+      return;
+    }
 
-  // ✅ สร้างหัวตาราง + แทรกคอลัมน์ Delta +/-
-  const headers = Object.keys(data[0]);
-  const insertIndex = headers.indexOf("Act_Package") + 1;
-  if (!headers.includes("Delta +/-")) headers.splice(insertIndex, 0, "Delta +/-");
-  head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
+    const headers = Object.keys(data[0]);
+    const insertIndex = headers.indexOf("Act_Package") + 1;
+    if (!headers.includes("Delta +/-")) headers.splice(insertIndex, 0, "Delta +/-");
+    head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
 
-  // ✅ จัดกลุ่มตาม File5digit + Lot
-  const grouped = {};
-  data.forEach(r => {
-    const key = `${r.File5digit}_${r.Lot}`;
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(r);
-  });
-
-  const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
-
-  // ✅ วนกลุ่ม
-  for (const key in grouped) {
-    const [file, lot] = key.split("_");
-    const groupRows = grouped[key];
-    let totalDelta = 0; // เก็บผลรวม Delta ของแต่ละกลุ่ม
-
-    // 🔹 แถวหัวกลุ่ม
-    body.innerHTML += `
-      <tr class="table-group">
-        <td colspan="${headers.length}">
-          📦 <b>${file}</b> / <b>${lot}</b>
-        </td>
-      </tr>
-    `;
-
-    // 🔹 รายละเอียดแต่ละแถว
-    groupRows.forEach((row, idx) => {
-      const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
-      const actQty = toNum(row.Act_Qty);
-      const delta = actQty - sumQty;
-      totalDelta += delta; // บวก Delta สะสม
-
-      let deltaText = "0", deltaClass = "delta-zero";
-      if (delta > 0) {
-        deltaText = `▲ +${delta}`;
-        deltaClass = "delta-positive";
-      } else if (delta < 0) {
-        deltaText = `▼ ${delta}`;
-        deltaClass = "delta-negative";
-      }
-
-const tds = headers.map(h => {
-  if (h === "Delta +/-") return `<td class="${deltaClass} text-center">${deltaText}</td>`;
-  if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
-  if (idx > 0 && (h === "Name" || h === "File5digit" || h === "Lot")) return "<td></td>";
-  return `<td>${row[h] ?? ""}</td>`;
-}).join("");
-
-
-      body.innerHTML += `<tr class="table-detail">${tds}</tr>`;
+    const grouped = {};
+    data.forEach(r => {
+      const key = `${r.File5digit}_${r.Lot}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(r);
     });
 
-    // 🔹 แถว Total ของกลุ่ม
-    const totalText =
-      totalDelta === 0
-        ? "0"
-        : totalDelta > 0
-        ? `▲ +${totalDelta}`
-        : `▼ ${totalDelta}`;
+    const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
 
-    const totalClass =
-      totalDelta > 0
-        ? "delta-positive"
-        : totalDelta < 0
-        ? "delta-negative"
-        : "delta-zero";
+    for (const key in grouped) {
+      const [file, lot] = key.split("_");
+      const groupRows = grouped[key];
+      let totalDelta = 0;
 
-    body.innerHTML += `
-      <tr class="${totalClass}" style="font-weight:700;">
-        <td colspan="${headers.length - 1}" class="text-end pe-3">รวมทั้งหมด:</td>
-        <td class="text-center">${totalText}</td>
-      </tr>
-    `;
+      body.innerHTML += `<tr class="table-group"><td colspan="${headers.length}">📦 <b>${file}</b> / <b>${lot}</b></td></tr>`;
+
+      groupRows.forEach((row, idx) => {
+        const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
+        const actQty = toNum(row.Act_Qty);
+        const delta = actQty - sumQty;
+        totalDelta += delta;
+
+        let deltaText = "0", deltaClass = "delta-zero";
+        if (delta > 0) { deltaText = `▲ +${delta}`; deltaClass = "delta-positive"; }
+        else if (delta < 0) { deltaText = `▼ ${delta}`; deltaClass = "delta-negative"; }
+
+        const tds = headers.map(h => {
+          if (h === "Delta +/-") return `<td class="${deltaClass} text-center">${deltaText}</td>`;
+          if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
+          if (idx > 0 && (h === "Name" || h === "File5digit" || h === "Lot")) return "<td></td>";
+          return `<td>${row[h] ?? ""}</td>`;
+        }).join("");
+
+        body.innerHTML += `<tr class="table-detail">${tds}</tr>`;
+      });
+
+      const totalText = totalDelta === 0 ? "0" : totalDelta > 0 ? `▲ +${totalDelta}` : `▼ ${totalDelta}`;
+      const totalClass = totalDelta > 0 ? "delta-positive" : totalDelta < 0 ? "delta-negative" : "delta-zero";
+      body.innerHTML += `<tr class="${totalClass}" style="font-weight:700;"><td colspan="${headers.length - 1}" class="text-end pe-3">รวมทั้งหมด:</td><td class="text-center">${totalText}</td></tr>`;
+    }
   }
-}
-
 
   // 📤 Export Excel
   function exportExcel() {
-    if (allData.length === 0) { Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info"); return; }
+    if (allData.length === 0) return Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
     const ws = XLSX.utils.json_to_sheet(allData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Data");

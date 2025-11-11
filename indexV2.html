@@ -378,11 +378,12 @@ async function exportExcel() {
   const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
 
   // ✅ เรียงข้อมูลตาม File5digit และ Lot ก่อน
-  const sortedData = [...allData].sort((a, b) => {
-    const f1 = (a.File5digit || "").localeCompare(b.File5digit || "");
-    const l1 = (a.Lot || "").localeCompare(b.Lot || "");
-    return f1 !== 0 ? f1 : l1;
-  });
+ const sortedData = [...allData].sort((a, b) => {
+  const f1 = String(a.File5digit || "").localeCompare(String(b.File5digit || ""));
+  const l1 = String(a.Lot || "").localeCompare(String(b.Lot || ""));
+  return f1 !== 0 ? f1 : l1;
+});
+
 
   const exportData = [];
 

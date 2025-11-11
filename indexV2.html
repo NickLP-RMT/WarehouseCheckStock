@@ -91,6 +91,10 @@
       <label>Start Date</label>
       <input type="date" id="startDate" class="form-control mb-2">
       <label>End Date</label>
+      <label>File5digit</label>
+      <input type="text" id="searchFile5" class="form-control mb-2" placeholder="เช่น F0576">
+      <label>Lot</label>
+      <input type="text" id="searchLot" class="form-control mb-3" placeholder="เช่น 23100280">
       <input type="date" id="endDate" class="form-control mb-3">
       <button class="btn btn-primary w-100 mb-2" onclick="searchData()">Search</button>
       <button class="btn btn-outline-success w-100" onclick="exportExcel()">Export Excel</button>
@@ -218,32 +222,44 @@ function convertToBangkokTime(utcString) {
   }
 
   // 🔍 Search
-  async function searchData() {
-    const start = document.getElementById("startDate").value;
-    const end = document.getElementById("endDate").value;
+async function searchData() {
+  const start = document.getElementById("startDate").value;
+  const end = document.getElementById("endDate").value;
+  const file5 = document.getElementById("searchFile5").value.trim().toLowerCase();
+  const lot = document.getElementById("searchLot").value.trim().toLowerCase();
 
-    Swal.fire({ title: "กำลังค้นหา...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  Swal.fire({ title: "กำลังค้นหา...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-    try {
-      const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
-      const data = await res.json();
-      Swal.close();
+  try {
+    const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
+    const data = await res.json();
+    Swal.close();
 
-      allData = data;
-      const filtered = data.filter(row => {
-        const ts = row.Timestamp || "";
-        if (!ts) return false;
-        const [d, m, y] = ts.split(" ")[0].split("/");
-        const date = `${y}-${m}-${d}`;
-        return (!start || date >= start) && (!end || date <= end);
-      });
+    allData = data;
 
-      renderGroupedTable(filtered);
-      Swal.fire("✅", `พบข้อมูล ${filtered.length} แถว`, "success");
-    } catch (err) {
-      Swal.fire("❌", "Error fetching data", "error");
-    }
+    // ✅ ฟังก์ชันช่วยแปลงวันที่จาก timestamp
+    const parseDate = ts => {
+      if (!ts) return "";
+      const [d, m, y] = ts.split(" ")[0].split("/");
+      return `${y}-${m}-${d}`;
+    };
+
+    // ✅ เงื่อนไขกรองข้อมูล
+    const filtered = data.filter(row => {
+      const ts = row.Timestamp || "";
+      const date = parseDate(ts);
+      const file5Match = !file5 || (row.File5digit || "").toLowerCase().includes(file5);
+      const lotMatch = !lot || (row.Lot || "").toLowerCase().includes(lot);
+      const dateMatch = (!start || date >= start) && (!end || date <= end);
+      return dateMatch && file5Match && lotMatch;
+    });
+
+    renderGroupedTable(filtered);
+    Swal.fire("✅", `พบข้อมูล ${filtered.length} แถว`, "success");
+  } catch (err) {
+    Swal.fire("❌", "Error fetching data", "error");
   }
+}
 
   function renderGroupedTable(data) {
   const head = document.getElementById("tableHead");

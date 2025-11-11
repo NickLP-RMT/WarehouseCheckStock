@@ -255,64 +255,86 @@
     Swal.fire("🧹", "เคลียร์ช่องค้นหาทั้งหมดเรียบร้อย", "success");
   }
 
-  // 📊 Render Table
-  function renderGroupedTable(data) {
-    const head = document.getElementById("tableHead");
-    const body = document.getElementById("tableBody");
-    body.innerHTML = "";
+ // 📊 Render Table
+function renderGroupedTable(data) {
+  const head = document.getElementById("tableHead");
+  const body = document.getElementById("tableBody");
+  body.innerHTML = "";
 
-    if (!data || data.length === 0) {
-      head.innerHTML = "";
-      body.innerHTML = "<tr><td colspan='10' class='text-center text-muted'>No data found</td></tr>";
-      return;
-    }
+  if (!data || data.length === 0) {
+    head.innerHTML = "";
+    body.innerHTML = "<tr><td colspan='10' class='text-center text-muted'>No data found</td></tr>";
+    return;
+  }
 
-    const headers = Object.keys(data[0]);
-    const insertIndex = headers.indexOf("Act_Package") + 1;
-    if (!headers.includes("Delta +/-")) headers.splice(insertIndex, 0, "Delta +/-");
-    head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
+  const headers = Object.keys(data[0]);
+  const insertIndex = headers.indexOf("Act_Package") + 1;
+  if (!headers.includes("Delta +/-")) headers.splice(insertIndex, 0, "Delta +/-");
+  head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
 
-    const grouped = {};
-    data.forEach(r => {
-      const key = `${r.File5digit}_${r.Lot}`;
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(r);
+  const grouped = {};
+  data.forEach(r => {
+    const key = `${r.File5digit}_${r.Lot}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(r);
+  });
+
+  const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
+
+  for (const key in grouped) {
+    const [file, lot] = key.split("_");
+    const groupRows = grouped[key];
+    let totalDelta = 0;
+
+    body.innerHTML += `<tr class="table-group"><td colspan="${headers.length}">📦 <b>${file}</b> / <b>${lot}</b></td></tr>`;
+
+    // ✅ ตรวจว่าทุกแถวในกลุ่มนี้ยังไม่กรอกข้อมูล Act_* เลยหรือไม่
+    const hasActData = groupRows.some(r =>
+      r.Act_Rack || r.Act_Lot || r.Act_Qty || r.Act_Package
+    );
+
+    groupRows.forEach((row, idx) => {
+      const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
+      const actQty = toNum(row.Act_Qty);
+      const delta = actQty - sumQty;
+      totalDelta += delta;
+
+      let deltaText = "0", deltaClass = "delta-zero";
+      if (delta > 0) { deltaText = `▲ +${delta}`; deltaClass = "delta-positive"; }
+      else if (delta < 0) { deltaText = `▼ ${delta}`; deltaClass = "delta-negative"; }
+
+      const tds = headers.map(h => {
+        if (h === "Delta +/-") return `<td class="${deltaClass} text-center">${deltaText}</td>`;
+        if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
+        if (idx > 0 && (h === "Name" || h === "File5digit" || h === "Lot")) return "<td></td>";
+        return `<td>${row[h] ?? ""}</td>`;
+      }).join("");
+
+      body.innerHTML += `<tr class="table-detail">${tds}</tr>`;
     });
 
-    const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
-
-    for (const key in grouped) {
-      const [file, lot] = key.split("_");
-      const groupRows = grouped[key];
-      let totalDelta = 0;
-
-      body.innerHTML += `<tr class="table-group"><td colspan="${headers.length}">📦 <b>${file}</b> / <b>${lot}</b></td></tr>`;
-
-      groupRows.forEach((row, idx) => {
-        const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
-        const actQty = toNum(row.Act_Qty);
-        const delta = actQty - sumQty;
-        totalDelta += delta;
-
-        let deltaText = "0", deltaClass = "delta-zero";
-        if (delta > 0) { deltaText = `▲ +${delta}`; deltaClass = "delta-positive"; }
-        else if (delta < 0) { deltaText = `▼ ${delta}`; deltaClass = "delta-negative"; }
-
-        const tds = headers.map(h => {
-          if (h === "Delta +/-") return `<td class="${deltaClass} text-center">${deltaText}</td>`;
-          if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
-          if (idx > 0 && (h === "Name" || h === "File5digit" || h === "Lot")) return "<td></td>";
-          return `<td>${row[h] ?? ""}</td>`;
-        }).join("");
-
-        body.innerHTML += `<tr class="table-detail">${tds}</tr>`;
-      });
-
-      const totalText = totalDelta === 0 ? "0" : totalDelta > 0 ? `▲ +${totalDelta}` : `▼ ${totalDelta}`;
-      const totalClass = totalDelta > 0 ? "delta-positive" : totalDelta < 0 ? "delta-negative" : "delta-zero";
-      body.innerHTML += `<tr class="${totalClass}" style="font-weight:700;"><td colspan="${headers.length - 1}" class="text-end pe-3">รวมทั้งหมด:</td><td class="text-center">${totalText}</td></tr>`;
+    // ✅ บรรทัดสรุป
+    if (!hasActData) {
+      // ถ้ายังไม่กรอก Act_ ใด ๆ เลย
+      body.innerHTML += `
+        <tr class="delta-zero" style="font-weight:700; background-color:#f3f4f6;">
+          <td colspan="${headers.length}" class="text-center text-muted">🕒 ยังไม่ Check Stock</td>
+        </tr>`;
+    } else {
+      // กรอกแล้ว แสดงผลรวมตามเดิม
+      const totalText =
+        totalDelta === 0 ? "0" : totalDelta > 0 ? `▲ +${totalDelta}` : `▼ ${totalDelta}`;
+      const totalClass =
+        totalDelta > 0 ? "delta-positive" : totalDelta < 0 ? "delta-negative" : "delta-zero";
+      body.innerHTML += `
+        <tr class="${totalClass}" style="font-weight:700;">
+          <td colspan="${headers.length - 1}" class="text-end pe-3">รวมทั้งหมด:</td>
+          <td class="text-center">${totalText}</td>
+        </tr>`;
     }
   }
+}
+
 
   // 📤 Export Excel
   function exportExcel() {

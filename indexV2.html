@@ -439,7 +439,7 @@ const hh = String(now.getHours()).padStart(2, "0");
 const min = String(now.getMinutes()).padStart(2, "0");
 const ss = String(now.getSeconds()).padStart(2, "0");
 
-const formattedDateTime = `${yyyy}-${mm}-${dd}_${hh}-${min}-${ss}`;
+const formattedDateTime = `${yyyy}-${mm}-${dd}_${hh}${min}${ss}`;
 const fileName = `WarehouseData_${formattedDateTime}.xlsx`;
 
 

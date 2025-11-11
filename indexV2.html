@@ -212,39 +212,57 @@
   }
 
   // 🔍 Search
-  async function searchData() {
-    const start = document.getElementById("startDate").value;
-    const end = document.getElementById("endDate").value;
-    const file5 = document.getElementById("searchFile5").value.trim().toLowerCase();
-    const lot = document.getElementById("searchLot").value.trim().toLowerCase();
+async function searchData() {
+  const resultText = document.getElementById("resultText");
+  resultText.textContent = ""; // 🧹 เคลียร์ข้อความเก่า
 
-    Swal.fire({ title: "กำลังค้นหา...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  const start = document.getElementById("startDate").value;
+  const end = document.getElementById("endDate").value;
+  const file5 = document.getElementById("searchFile5").value.trim().toLowerCase();
+  const lot = document.getElementById("searchLot").value.trim().toLowerCase();
 
-    try {
-      const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
-      const data = await res.json();
-      Swal.close();
+  Swal.fire({ title: "กำลังค้นหา...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-      allData = data;
-      const parseDate = ts => {
-        if (!ts) return "";
-        const [d, m, y] = ts.split(" ")[0].split("/");
-        return `${y}-${m}-${d}`;
-      };
+  try {
+    const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
+    const data = await res.json();
+    Swal.close();
 
-      const filtered = data.filter(row => {
-        const ts = row.Timestamp || "";
-        const date = parseDate(ts);
-        const file5Match = !file5 || (row.File5digit || "").toLowerCase().includes(file5);
-        const lotMatch = !lot || (row.Lot || "").toLowerCase().includes(lot);
-        const dateMatch = (!start || date >= start) && (!end || date <= end);
-        return dateMatch && file5Match && lotMatch;
-      });
+    allData = data;
 
-      renderGroupedTable(filtered);
-      Swal.fire("✅", `พบข้อมูล ${filtered.length} แถว`, "success");
-    } catch { Swal.fire("❌", "Error fetching data", "error"); }
+    const parseDate = ts => {
+      if (!ts) return "";
+      const [d, m, y] = ts.split(" ")[0].split("/");
+      return `${y}-${m}-${d}`;
+    };
+
+    const filtered = data.filter(row => {
+      const ts = row.Timestamp || "";
+      const date = parseDate(ts);
+      const file5Match = !file5 || (row.File5digit || "").toLowerCase().includes(file5);
+      const lotMatch = !lot || (row.Lot || "").toLowerCase().includes(lot);
+      const dateMatch = (!start || date >= start) && (!end || date <= end);
+      return dateMatch && file5Match && lotMatch;
+    });
+
+    renderGroupedTable(filtered);
+
+    // ✅ แสดงผลลัพธ์ใต้หัวข้อ Data Result
+    if (filtered.length > 0) {
+      resultText.innerHTML = `🔎 พบข้อมูล <b>${filtered.length}</b> แถวจากฐานข้อมูล`;
+      resultText.classList.remove("text-secondary");
+      resultText.classList.add("text-success");
+    } else {
+      resultText.innerHTML = `❌ ไม่พบข้อมูลตามเงื่อนไขการค้นหา`;
+      resultText.classList.remove("text-success");
+      resultText.classList.add("text-danger");
+    }
+
+  } catch (err) {
+    Swal.fire("❌", "Error fetching data", "error");
   }
+}
+
 
   // 🧹 Clear Filter
   function clearFilters() {

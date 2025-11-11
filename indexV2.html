@@ -66,6 +66,7 @@
   font-weight: 500;
 }
 
+
   </style>
 </head>
 <body>
@@ -227,8 +228,7 @@
     }
   }
 
-  // 📊 Render grouped table layout (File5digit + Lot)
-function renderGroupedTable(data) {
+  function renderGroupedTable(data) {
   const head = document.getElementById("tableHead");
   const body = document.getElementById("tableBody");
   body.innerHTML = "";
@@ -259,6 +259,7 @@ function renderGroupedTable(data) {
   for (const key in grouped) {
     const [file, lot] = key.split("_");
     const groupRows = grouped[key];
+    let totalDelta = 0; // เก็บผลรวม Delta ของแต่ละกลุ่ม
 
     // 🔹 แถวหัวกลุ่ม
     body.innerHTML += `
@@ -274,8 +275,8 @@ function renderGroupedTable(data) {
       const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
       const actQty = toNum(row.Act_Qty);
       const delta = actQty - sumQty;
+      totalDelta += delta; // บวก Delta สะสม
 
-      // 📊 กำหนดค่าไอคอนและสี
       let deltaText = "0", deltaClass = "delta-zero";
       if (delta > 0) {
         deltaText = `▲ +${delta}`;
@@ -285,7 +286,6 @@ function renderGroupedTable(data) {
         deltaClass = "delta-negative";
       }
 
-      // ✅ สร้างแต่ละแถว
       const tds = headers.map(h => {
         if (h === "Delta +/-") return `<td class="${deltaClass} text-center">${deltaText}</td>`;
         if (idx > 0 && (h === "Name" || h === "File5digit" || h === "Lot")) return "<td></td>";
@@ -294,9 +294,30 @@ function renderGroupedTable(data) {
 
       body.innerHTML += `<tr class="table-detail">${tds}</tr>`;
     });
+
+    // 🔹 แถว Total ของกลุ่ม
+    const totalText =
+      totalDelta === 0
+        ? "0"
+        : totalDelta > 0
+        ? `▲ +${totalDelta}`
+        : `▼ ${totalDelta}`;
+
+    const totalClass =
+      totalDelta > 0
+        ? "delta-positive"
+        : totalDelta < 0
+        ? "delta-negative"
+        : "delta-zero";
+
+    body.innerHTML += `
+      <tr class="${totalClass}" style="font-weight:700;">
+        <td colspan="${headers.length - 1}" class="text-end pe-3">รวมทั้งหมด:</td>
+        <td class="text-center">${totalText}</td>
+      </tr>
+    `;
   }
 }
-
 
 
   // 📤 Export Excel

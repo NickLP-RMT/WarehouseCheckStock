@@ -117,12 +117,12 @@
   const scriptURL = "https://script.google.com/macros/s/AKfycbwBdxGb7KQfCzS9EuAHGnTLxH05fKmARywauVUQdm2O2yqrAPU08NjmgAKO43AyColN/exec";
   let allData = [];
 
-    // 🕒 ฟังก์ชันแปลงเวลา UTC -> Asia/Bangkok
+// 🕒 แปลงเวลา UTC ให้แสดงตามเวลาไทย โดยไม่บวกเพิ่มเอง
 function convertToBangkokTime(utcString) {
   if (!utcString) return "";
   const date = new Date(utcString);
-  date.setHours(date.getHours() + 7);
   return date.toLocaleString("th-TH", {
+    timeZone: "Asia/Bangkok",  // ← ใช้ timezone ตรงนี้แทนการบวก 7 ชม.
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -130,7 +130,7 @@ function convertToBangkokTime(utcString) {
     minute: "2-digit",
     second: "2-digit",
     hour12: false
-  }).replace(",", ""); // ❌ ลบเครื่องหมายจุลภาคออก
+  }).replace(",", "");
 }
 
 

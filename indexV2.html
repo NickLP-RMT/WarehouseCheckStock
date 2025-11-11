@@ -456,10 +456,12 @@ async function exportExcel() {
     exportData.push({});
   }
 
-  // ✅ สร้างชีต
+  // ✅ สร้างชีตและ workbook
   const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
 
-  // ✅ ปรับความกว้าง
+  // ✅ ปรับความกว้างคอลัมน์
   const colWidths = Object.keys(exportData[0]).map(key => ({
     wch: Math.max(
       key.length,
@@ -473,12 +475,12 @@ async function exportExcel() {
   const formattedDate = now.toISOString().split("T")[0];
   const fileName = `WarehouseData_Grouped_${formattedDate}.xlsx`;
 
-  XLSX.writeFile(wb = XLSX.utils.book_new());
-  XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
+  // ✅ เขียนและบันทึกไฟล์
   XLSX.writeFile(wb, fileName);
 
   Swal.fire("✅", "ส่งออกไฟล์ Excel แบบ Group สำเร็จ", "success");
 }
+
 
   </script>
 </body>

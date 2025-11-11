@@ -365,7 +365,7 @@ function renderGroupedTable(data) {
   }
 }
 
-// 📤 Export Excel แบบ Flat List พร้อมคำนวณ Delta และแสดงสัญลักษณ์ ▲▼
+// 📤 Export Excel แบบ Flat List พร้อมจัดเรียงตาม File5digit + Lot
 async function exportExcel() {
   if (allData.length === 0) {
     Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
@@ -373,9 +373,17 @@ async function exportExcel() {
   }
 
   const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
+
+  // ✅ เรียงข้อมูลตาม File5digit และ Lot ก่อน
+  const sortedData = [...allData].sort((a, b) => {
+    const f1 = (a.File5digit || "").localeCompare(b.File5digit || "");
+    const l1 = (a.Lot || "").localeCompare(b.Lot || "");
+    return f1 !== 0 ? f1 : l1;
+  });
+
   const exportData = [];
 
-  allData.forEach(r => {
+  sortedData.forEach(r => {
     const sumQty = toNum(r["Sum of Qty"] || r.SumOfQty);
     const actQty = toNum(r.Act_Qty);
     const hasActData = r.Act_Rack || r.Act_Lot || r.Act_Qty || r.Act_Package;
@@ -404,12 +412,12 @@ async function exportExcel() {
     });
   });
 
-  // ✅ สร้างชีตและ workbook
+  // ✅ สร้างชีตและไฟล์
   const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
 
-  // ✅ ปรับความกว้างคอลัมน์ให้อ่านง่าย
+  // ✅ ปรับความกว้างอัตโนมัติ
   const colWidths = Object.keys(exportData[0]).map(key => ({
     wch: Math.max(
       key.length,
@@ -418,17 +426,15 @@ async function exportExcel() {
   }));
   ws["!cols"] = colWidths;
 
-  // ✅ ตั้งชื่อไฟล์ตามวันที่
+  // ✅ ตั้งชื่อไฟล์
   const now = new Date();
   const formattedDate = now.toISOString().split("T")[0];
   const fileName = `WarehouseData_${formattedDate}.xlsx`;
 
-  // ✅ เขียนและบันทึกไฟล์
   XLSX.writeFile(wb, fileName);
 
-  Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ (Flat List)", "success");
+  Swal.fire("✅", "ส่งออกไฟล์ Excel เรียงตาม File5digit + Lot สำเร็จ", "success");
 }
-
   </script>
 </body>
 </html>

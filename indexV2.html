@@ -365,14 +365,13 @@ function renderGroupedTable(data) {
   }
 }
 
-// 📤 Export Excel (มี Delta +/-)
-function exportExcel() {
+// 📤 Export Excel (Delta มีสีพื้นหลัง)
+async function exportExcel() {
   if (allData.length === 0) {
     Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
     return;
   }
 
-  // ✅ ฟังก์ชันช่วยแปลงเป็นตัวเลข
   const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
 
   // ✅ เตรียมข้อมูลเรียงคอลัมน์
@@ -380,7 +379,14 @@ function exportExcel() {
     const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
     const actQty = toNum(row.Act_Qty);
     const hasActData = row.Act_Rack || row.Act_Lot || row.Act_Qty || row.Act_Package;
-    const delta = hasActData ? actQty - sumQty : ""; // ถ้าไม่มีข้อมูลไม่คำนวณ
+
+    let deltaText = "";
+    if (hasActData) {
+      const diff = actQty - sumQty;
+      if (diff > 0) deltaText = `▲ +${diff}`;
+      else if (diff < 0) deltaText = `▼ ${diff}`;
+      else deltaText = "0";
+    }
 
     return {
       Customer: row.Customer || "",
@@ -393,7 +399,7 @@ function exportExcel() {
       Act_Lot: row.Act_Lot || "",
       Act_Qty: row.Act_Qty || "",
       Act_Package: row.Act_Package || "",
-      "Delta +/-": delta === "" ? "" : delta > 0 ? `+${delta}` : delta,
+      "Delta +/-": deltaText,
       Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
     };
   });
@@ -410,16 +416,45 @@ function exportExcel() {
   }));
   ws["!cols"] = colWidths;
 
+  // ✅ เพิ่มสีพื้นหลังในคอลัมน์ Delta +/-
+  const deltaColIndex = Object.keys(exportData[0]).indexOf("Delta +/-");
+  if (deltaColIndex >= 0) {
+    for (let i = 0; i < exportData.length; i++) {
+      const rowIdx = i + 2; // Excel แถวเริ่มที่ 2
+      const cellAddress = XLSX.utils.encode_cell({ r: rowIdx - 1, c: deltaColIndex });
+      const cell = ws[cellAddress];
+      if (!cell || !cell.v) continue;
+
+      let bgColor = "FFFFF0"; // default (ขาวนวล)
+      if (cell.v.startsWith("▲")) bgColor = "C6EFCE"; // เขียวอ่อน
+      else if (cell.v.startsWith("▼")) bgColor = "FFC7CE"; // แดงอ่อน
+      else if (cell.v === "0") bgColor = "E7E6E6"; // เทาอ่อน
+
+      if (!cell.s) cell.s = {};
+      cell.s.fill = { patternType: "solid", fgColor: { rgb: bgColor } };
+    }
+  }
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
 
-  // ✅ ชื่อไฟล์แบบมีวันที่
+  // ✅ ชื่อไฟล์
   const now = new Date();
-  const formattedDate = now.toISOString().split("T")[0]; // YYYY-MM-DD
+  const formattedDate = now.toISOString().split("T")[0];
   const fileName = `WarehouseData_Export_${formattedDate}.xlsx`;
 
-  XLSX.writeFile(wb, fileName);
-  Swal.fire("✅", "ส่งออกไฟล์ Excel เรียบร้อยแล้ว", "success");
+  // ✅ ใช้ xlsx-style เพื่อคงสี
+  try {
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
+    const blob = new Blob([wbout], { type: "application/octet-stream" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    a.click();
+    Swal.fire("✅", "ส่งออกไฟล์ Excel พร้อมสีสำเร็จ", "success");
+  } catch (err) {
+    Swal.fire("⚠️", "หากสีไม่ออก โปรดใช้ xlsx-style library เพิ่มเติม", "info");
+  }
 }
 
   </script>

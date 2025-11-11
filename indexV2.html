@@ -117,6 +117,23 @@
   const scriptURL = "https://script.google.com/macros/s/AKfycbwBdxGb7KQfCzS9EuAHGnTLxH05fKmARywauVUQdm2O2yqrAPU08NjmgAKO43AyColN/exec";
   let allData = [];
 
+    // 🕒 ฟังก์ชันแปลงเวลา UTC -> Asia/Bangkok
+function convertToBangkokTime(utcString) {
+  if (!utcString) return "";
+  const date = new Date(utcString);
+  date.setHours(date.getHours() + 7);
+  return date.toLocaleString("th-TH", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).replace(",", ""); // ❌ ลบเครื่องหมายจุลภาคออก
+}
+
+
   function updateDateTime() {
     const now = new Date();
     const formatted = now.toLocaleString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -286,11 +303,13 @@
         deltaClass = "delta-negative";
       }
 
-      const tds = headers.map(h => {
-        if (h === "Delta +/-") return `<td class="${deltaClass} text-center">${deltaText}</td>`;
-        if (idx > 0 && (h === "Name" || h === "File5digit" || h === "Lot")) return "<td></td>";
-        return `<td>${row[h] ?? ""}</td>`;
-      }).join("");
+const tds = headers.map(h => {
+  if (h === "Delta +/-") return `<td class="${deltaClass} text-center">${deltaText}</td>`;
+  if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
+  if (idx > 0 && (h === "Name" || h === "File5digit" || h === "Lot")) return "<td></td>";
+  return `<td>${row[h] ?? ""}</td>`;
+}).join("");
+
 
       body.innerHTML += `<tr class="table-detail">${tds}</tr>`;
     });

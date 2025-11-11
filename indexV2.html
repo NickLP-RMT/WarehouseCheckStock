@@ -365,7 +365,7 @@ function renderGroupedTable(data) {
   }
 }
 
-// 📤 Export Excel แบบ Group ตาม File5digit / Lot พร้อม Delta และสี
+// 📤 Export Excel แบบ Flat List พร้อมคำนวณ Delta และแสดงสัญลักษณ์ ▲▼
 async function exportExcel() {
   if (allData.length === 0) {
     Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
@@ -373,95 +373,43 @@ async function exportExcel() {
   }
 
   const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
-  const grouped = {};
-
-  // ✅ แบ่งกลุ่ม
-  allData.forEach(r => {
-    const key = `${r.File5digit}_${r.Lot}`;
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(r);
-  });
-
   const exportData = [];
 
-  // ✅ วนแต่ละกลุ่ม
-  for (const key in grouped) {
-    const [file, lot] = key.split("_");
-    const rows = grouped[key];
-    let totalDelta = 0;
-    let hasAct = false;
+  allData.forEach(r => {
+    const sumQty = toNum(r["Sum of Qty"] || r.SumOfQty);
+    const actQty = toNum(r.Act_Qty);
+    const hasActData = r.Act_Rack || r.Act_Lot || r.Act_Qty || r.Act_Package;
 
-    // 🔹 หัวกลุ่ม
-    exportData.push({
-      "File5digit / Lot": `📦 ${file} / ${lot}`,
-      Customer: "", Name: "", Rack: "", "Sum of Qty": "",
-      Act_Rack: "", Act_Lot: "", Act_Qty: "", Act_Package: "",
-      "Delta +/-": "", Timestamp: ""
-    });
-
-    // 🔹 รายการภายในกลุ่ม
-    rows.forEach(r => {
-      const sumQty = toNum(r["Sum of Qty"] || r.SumOfQty);
-      const actQty = toNum(r.Act_Qty);
-      const hasActData = r.Act_Rack || r.Act_Lot || r.Act_Qty || r.Act_Package;
-      let delta = "";
-      if (hasActData) {
-        const diff = actQty - sumQty;
-        totalDelta += diff;
-        hasAct = true;
-        if (diff > 0) delta = `▲ +${diff}`;
-        else if (diff < 0) delta = `▼ ${diff}`;
-        else delta = "0";
-      }
-
-      exportData.push({
-        "File5digit / Lot": "",
-        Customer: r.Customer || "",
-        Name: r.Name || "",
-        Rack: r.Rack || "",
-        "Sum of Qty": sumQty || "",
-        Act_Rack: r.Act_Rack || "",
-        Act_Lot: r.Act_Lot || "",
-        Act_Qty: r.Act_Qty || "",
-        Act_Package: r.Act_Package || "",
-        "Delta +/-": delta,
-        Timestamp: r.Timestamp ? convertToBangkokTime(r.Timestamp) : ""
-      });
-    });
-
-    // 🔹 แถวสรุปกลุ่ม
-    let totalText = hasAct
-      ? totalDelta === 0
-        ? "0"
-        : totalDelta > 0
-        ? `▲ +${totalDelta}`
-        : `▼ ${totalDelta}`
-      : "🕒 ยังไม่ Check Stock";
+    let delta = "";
+    if (hasActData) {
+      const diff = actQty - sumQty;
+      if (diff > 0) delta = `▲ +${diff}`;
+      else if (diff < 0) delta = `▼ ${diff}`;
+      else delta = "0";
+    }
 
     exportData.push({
-      "File5digit / Lot": hasAct ? "รวมทั้งหมด:" : "",
-      Customer: "",
-      Name: "",
-      Rack: "",
-      "Sum of Qty": "",
-      Act_Rack: "",
-      Act_Lot: "",
-      Act_Qty: "",
-      Act_Package: "",
-      "Delta +/-": totalText,
-      Timestamp: ""
+      Customer: r.Customer || "",
+      Name: r.Name || "",
+      File5digit: r.File5digit || "",
+      Lot: r.Lot || "",
+      Rack: r.Rack || "",
+      "Sum of Qty": sumQty || "",
+      Act_Rack: r.Act_Rack || "",
+      Act_Lot: r.Act_Lot || "",
+      Act_Qty: r.Act_Qty || "",
+      Act_Package: r.Act_Package || "",
+      "Delta +/-": delta,
+      Timestamp: r.Timestamp ? convertToBangkokTime(r.Timestamp) : ""
     });
-
-    // เว้น 1 บรรทัด
-    exportData.push({});
-  }
+  });
 
   // ✅ สร้างชีตและ workbook
   const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
 
-  // ✅ ปรับความกว้างคอลัมน์
+  // ✅ ปรับความกว้างคอลัมน์ให้อ่านง่าย
   const colWidths = Object.keys(exportData[0]).map(key => ({
     wch: Math.max(
       key.length,
@@ -470,17 +418,16 @@ async function exportExcel() {
   }));
   ws["!cols"] = colWidths;
 
-  // ✅ ตั้งชื่อไฟล์
+  // ✅ ตั้งชื่อไฟล์ตามวันที่
   const now = new Date();
   const formattedDate = now.toISOString().split("T")[0];
-  const fileName = `WarehouseData_Grouped_${formattedDate}.xlsx`;
+  const fileName = `WarehouseData_${formattedDate}.xlsx`;
 
   // ✅ เขียนและบันทึกไฟล์
   XLSX.writeFile(wb, fileName);
 
-  Swal.fire("✅", "ส่งออกไฟล์ Excel แบบ Group สำเร็จ", "success");
+  Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ (Flat List)", "success");
 }
-
 
   </script>
 </body>

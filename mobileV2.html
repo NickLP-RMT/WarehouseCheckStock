@@ -274,9 +274,9 @@ async function fetchItems() {
 }
 
 function renderDropdown(rows) {
-  let html = `<option value="">-- เลือกรายการ File No. --</option>`;
-  
-  // ✅ รวม File+Lot ที่ซ้ำกันให้เหลือเพียง 1 รายการ
+  let html = `<option value="">-- เลือกรายการ --</option>`;
+
+  // รวม File+Lot ซ้ำ
   const uniqueMap = {};
   rows.forEach(r => {
     const key = `${r.File5digit}|${r.Lot}`;
@@ -288,12 +288,13 @@ function renderDropdown(rows) {
   html += uniqueRows.map(r => {
     const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
     const value = `${r.File5digit}|${r.Lot}`;
-    return `<option value="${value}">${done} ${r.File5digit} (${r.Lot})</option>`;
+    const customer = r.Customer || "";
+    
+    return `<option value="${value}">${done} ${customer} — ${r.File5digit} (${r.Lot})</option>`;
   }).join('');
 
   itemSelect.innerHTML = html;
 }
-
 
 function showDetail() {
   try {

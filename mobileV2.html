@@ -193,11 +193,15 @@ button {
         <div class="row2col">
           <div class="col">
             <select class="rackGroup" onchange="updateRackSub(this)">
-              <option value="">--เลือก--</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
+<option value="">--เลือก--</option>
+<option value="A">A</option>
+<option value="B">B</option>
+<option value="C">C</option>
+<option value="D">D</option>
+<option value="PC AREA">PC AREA</option>
+<option value="BKK AREA">BKK AREA</option>
+<option value="SUBSTORE AREA">SUBSTORE AREA</option>
+
             </select>
           </div>
           <div class="col"><select class="rackSub"></select></div>
@@ -479,11 +483,22 @@ function showDetail() {
 }
 
 
-function updateRackSub(select){
-  const subSelect=select.closest(".rack-set").querySelector(".rackSub");
-  const group=select.value;
-  subSelect.innerHTML=group?rackMap[group].map(v=>`<option value="${v}">${v}</option>`).join(''):'';
+function updateRackSub(select) {
+  const subSelect = select.closest(".rack-set").querySelector(".rackSub");
+  const group = select.value;
+
+  // 🆕 ถ้าเป็นพื้นที่พิเศษ — ใส่ค่าเดียวลงไปเลย
+  if (group === "PC AREA" || group === "BKK AREA" || group === "SUBSTORE AREA") {
+    subSelect.innerHTML = `<option value="${group}" selected>${group}</option>`;
+    return;
+  }
+
+  // 🧩 เดิม สำหรับ A / B / C / D
+  subSelect.innerHTML = group
+    ? rackMap[group].map(v => `<option value="${v}">${v}</option>`).join('')
+    : '';
 }
+
 function calcActQty(input){
   const p=input.closest(".rack-set");
   const a=+p.querySelector(".pkg-input.a").value||0;

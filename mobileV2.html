@@ -165,8 +165,12 @@ button {
   </div>
 
   <div id="itemSection" style="display:none;">
-    <label>เลือกรายการ</label>
-    <select id="itemSelect" onchange="showDetail()"></select>
+<label>เลือกลูกค้า</label>
+<select id="customerSelect" onchange="filterItemsByCustomer()"></select>
+
+<label style="margin-top:10px;">เลือกรายการ</label>
+<select id="itemSelect" onchange="showDetail()"></select>
+
 
     <div class="row2col" style="margin-top:10px;">
       <div class="col"><label>Customer</label><input id="customer" readonly></div>
@@ -269,7 +273,12 @@ async function fetchItems() {
     const res = await fetch(`${scriptURL}?page=getDataByName&name=${encodeURIComponent(name)}`);
     const rows = await res.json(); Swal.close();
     if(!rows||rows.length===0)return Swal.fire("ℹ️","ไม่พบข้อมูลของผู้ทำคนนี้","info");
-    currentItems=rows; renderDropdown(rows); itemSection.style.display="block"; showDetail();
+    currentItems = rows;
+loadCustomers(rows);   // ⬅⬅⬅ เพิ่มบรรทัดนี้
+itemSelect.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
+customerSelect.value = "";
+itemSection.style.display = "block";
+
   } catch { Swal.fire("❌","ไม่สามารถดึงข้อมูลได้","error"); }
 }
 
@@ -703,6 +712,43 @@ function clearForm(){
 
   function validateNumber(el) {
   el.value = el.value.replace(/[^0-9]/g, ''); // ลบทุกตัวที่ไม่ใช่เลข
+}
+function loadCustomers(rows) {
+  const customers = [...new Set(rows.map(r => r.Customer || ""))];
+
+  customerSelect.innerHTML =
+    `<option value="">-- เลือกลูกค้า --</option>` +
+    customers.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+  function filterItemsByCustomer() {
+  const customer = customerSelect.value;
+  const list = document.getElementById("itemSelect");
+
+  if (!customer) {
+    list.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
+    return;
+  }
+
+  const rows = currentItems.filter(r => r.Customer === customer);
+
+  // รวม File+Lot ซ้ำ
+  const uniqueMap = {};
+  rows.forEach(r => {
+    const key = `${r.File5digit}|${r.Lot}`;
+    if (!uniqueMap[key]) uniqueMap[key] = r;
+  });
+
+  const uniqueRows = Object.values(uniqueMap);
+
+  list.innerHTML =
+    `<option value="">-- เลือกรายการ --</option>` +
+    uniqueRows.map(r => {
+      const done = r.Act_Qty ? "✅" : "⚪️";
+      return `<option value="${r.File5digit}|${r.Lot}">
+                ${done} ${r.File5digit} (${r.Lot})
+              </option>`;
+    }).join('');
 }
 
 </script>

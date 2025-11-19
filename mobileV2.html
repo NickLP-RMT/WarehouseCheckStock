@@ -418,10 +418,15 @@ function showDetail() {
             <div class="col">
               <select class="rackGroup" onchange="updateRackSub(this)" ${actRack ? 'disabled' : ''}>
                 <option value="">--เลือก--</option>
-                <option value="A" ${actRack.startsWith("A") ? "selected" : ""}>A</option>
-                <option value="B" ${actRack.startsWith("B") ? "selected" : ""}>B</option>
-                <option value="C" ${actRack.startsWith("C") ? "selected" : ""}>C</option>
-                <option value="D" ${actRack.startsWith("D") ? "selected" : ""}>D</option>
+<option value="A" ${actRack.startsWith("A") ? "selected" : ""}>A</option>
+<option value="B" ${actRack.startsWith("B") ? "selected" : ""}>B</option>
+<option value="C" ${actRack.startsWith("C") ? "selected" : ""}>C</option>
+<option value="D" ${actRack.startsWith("D") ? "selected" : ""}>D</option>
+
+<option value="PC AREA" ${actRack === "PC AREA" ? "selected" : ""}>PC AREA</option>
+<option value="BKK AREA" ${actRack === "BKK AREA" ? "selected" : ""}>BKK AREA</option>
+<option value="SUBSTORE AREA" ${actRack === "SUBSTORE AREA" ? "selected" : ""}>SUBSTORE AREA</option>
+
               </select>
             </div>
             <div class="col">

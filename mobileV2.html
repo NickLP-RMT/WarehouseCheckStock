@@ -722,17 +722,67 @@ function loadCustomers(rows) {
 }
 
   function filterItemsByCustomer() {
-  const customer = customerSelect.value;
+  const customerSel = customerSelect.value;
   const list = document.getElementById("itemSelect");
 
-  if (!customer) {
-    list.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
-    return;
-  }
+  // 🔥 เคลียร์ค่าทั้งหมดด้านล่างทันทีเมื่อเปลี่ยนลูกค้า
+  customer.value = "";
+  file5digit.value = "";
+  lot.value = "";
+  sumQty.value = "";
+  rack.value = "";
 
-  const rows = currentItems.filter(r => r.Customer === customer);
+  document.getElementById("rackZone").innerHTML = `
+    <div class="rack-set">
+      <div class="action-buttons">
+        <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+        <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+      </div>
+      <label>Act Rack</label>
+      <div class="row2col">
+        <div class="col">
+          <select class="rackGroup" onchange="updateRackSub(this)">
+            <option value="">--เลือก--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+          </select>
+        </div>
+        <div class="col"><select class="rackSub"></select></div>
+      </div>
 
-  // รวม File+Lot ซ้ำ
+      <div style="margin-top:10px;">
+        <label>Act Lot</label>
+        <input type="text" class="actLotInput">
+      </div>
+
+      <div class="package-row">
+        <div class="package-box">
+          <label>Package</label>
+          <div class="package-inputs">
+            <input class="pkg-input a" oninput="calcActQty(this)">
+            <span>×</span>
+            <input class="pkg-input b" oninput="calcActQty(this)">
+            <span>+</span>
+            <input class="pkg-input c" oninput="calcActQty(this)">
+          </div>
+        </div>
+        <div class="actQty-box">
+          <label>Act Q'ty</label>
+          <input class="actQty" readonly>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 🔥 เคลียร์รายการ dropdown ด้วย
+  list.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
+  if (!customerSel) return;
+
+  // 🔍 กรองข้อมูลตามลูกค้า
+  const rows = currentItems.filter(r => r.Customer === customerSel);
+
   const uniqueMap = {};
   rows.forEach(r => {
     const key = `${r.File5digit}|${r.Lot}`;
@@ -741,15 +791,14 @@ function loadCustomers(rows) {
 
   const uniqueRows = Object.values(uniqueMap);
 
-  list.innerHTML =
-    `<option value="">-- เลือกรายการ --</option>` +
-    uniqueRows.map(r => {
+  list.innerHTML += uniqueRows
+    .map(r => {
       const done = r.Act_Qty ? "✅" : "⚪️";
-      return `<option value="${r.File5digit}|${r.Lot}">
-                ${done} ${r.File5digit} (${r.Lot})
-              </option>`;
-    }).join('');
+      return `<option value="${r.File5digit}|${r.Lot}">${done} ${r.File5digit} (${r.Lot})</option>`;
+    })
+    .join('');
 }
+
 
 </script>
 

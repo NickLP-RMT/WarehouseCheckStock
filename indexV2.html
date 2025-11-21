@@ -211,13 +211,14 @@
     } catch { Swal.fire("❌", "เกิดข้อผิดพลาดระหว่างลบข้อมูล", "error"); }
   }
 
-  // 🔍 Search
+    
 async function searchData() {
   const resultText = document.getElementById("resultText");
   resultText.textContent = "";
 
   const start = document.getElementById("startDate").value;
   const end = document.getElementById("endDate").value;
+  const customer = document.getElementById("searchCustomer").value.trim().toLowerCase();
   const file5 = document.getElementById("searchFile5").value.trim().toLowerCase();
   const lot = document.getElementById("searchLot").value.trim().toLowerCase();
 
@@ -228,7 +229,6 @@ async function searchData() {
     const data = await res.json();
     Swal.close();
 
-    // 🔹 ไม่ต้องเก็บ allData ตรงนี้
     const parseDate = ts => {
       if (!ts) return "";
       const [d, m, y] = ts.split(" ")[0].split("/");
@@ -238,19 +238,26 @@ async function searchData() {
     const filtered = data.filter(row => {
       const ts = row.Timestamp || "";
       const date = parseDate(ts);
-      const file5Match = !file5 || (row.File5digit || "").toLowerCase().includes(file5);
-      const lotMatch = !lot || (row.Lot || "").toLowerCase().includes(lot);
-      const dateMatch = (!start || date >= start) && (!end || date <= end);
-      return dateMatch && file5Match && lotMatch;
+
+      const customerMatch =
+        !customer || (row.Customer || "").toLowerCase().includes(customer);
+
+      const file5Match =
+        !file5 || (row.File5digit || "").toLowerCase().includes(file5);
+
+      const lotMatch =
+        !lot || (row.Lot || "").toLowerCase().includes(lot);
+
+      const dateMatch =
+        (!start || date >= start) && (!end || date <= end);
+
+      return dateMatch && customerMatch && file5Match && lotMatch;
     });
 
-    // ✅ เก็บข้อมูลไว้ให้ export ใช้เสมอ
     allData = filtered;
 
-    // ✅ แสดงบนตาราง
     renderGroupedTable(filtered);
 
-    // ✅ ข้อความแสดงผล
     if (filtered.length > 0) {
       resultText.innerHTML = `🔎 พบข้อมูล <b>${filtered.length}</b> แถวจากฐานข้อมูล`;
       resultText.classList.remove("text-secondary");
@@ -267,12 +274,14 @@ async function searchData() {
   }
 }
 
+
   // 🧹 Clear Filter
   function clearFilters() {
     document.getElementById("startDate").value = "";
     document.getElementById("endDate").value = "";
     document.getElementById("searchFile5").value = "";
     document.getElementById("searchLot").value = "";
+    document.getElementById("searchCustomer").value = "";
     Swal.fire("🧹", "เคลียร์ช่องค้นหาทั้งหมดเรียบร้อย", "success");
   }
 

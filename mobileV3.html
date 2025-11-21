@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📋 FG Inventory data check</title>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+:root {
+  --pkg-a: 65px;
+  --pkg-b: 65px;
+  --pkg-c: 65px;
+}
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 20px;
+  min-height: 100vh;
+  margin: 0;
+}
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.header-bar {
+  background: linear-gradient(90deg, #2563eb, #1d4ed8);
+  color: white;
+  text-align: center;
+  padding: 12px;
+  border-radius: 14px 14px 0 0;
+  margin: -24px -24px 20px -24px;
+}
+.header-bar h3 { margin: 0; font-weight: 600; font-size: 17px; }
+
+label { font-weight: 600; font-size: 13.5px; }
+input, select {
+  width: 100%;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  height: 42px;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+input[readonly], select:disabled {
+  background-color: #f1f5f9 !important;
+  color: #6b7280;
+}
+input.editable, select.editable {
+  background-color: #fff !important;
+  color: #1e293b;
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-primary { background: #2563eb; color: white; font-size: 14px; }
+.btn-add { background: #10b981; color: white; font-size: 20px; }
+
+.name-row { display: flex; gap: 10px; align-items: flex-end; }
+.name-row select { flex: 1; }
+.name-row button { flex: 0 0 110px; }
+
+.row2col { display: flex; gap: 12px; }
+.col { flex: 1; }
+
+.rack-set {
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 15px;
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.btn-edit { background: #3b82f6; }
+.btn-delete { background: #ef4444; }
+
+.package-row {
+  display: flex;
+  gap: 10px;
+}
+.package-box { flex: 0 0 70%; }
+.actQty-box { flex: 0 0 30%; }
+
+.package-inputs {
+  display: flex;
+  gap: 6px;
+}
+.pkg-input {
+  text-align: center;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  height: 42px;
+}
+.pkg-input.a { width: var(--pkg-a); }
+.pkg-input.b { width: var(--pkg-b); }
+.pkg-input.c { width: var(--pkg-c); }
+
+.footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="header-bar"><h3>📋 FG Inventory data check</h3></div>
+
+  <div class="name-row">
+    <div style="flex:1;">
+      <label>ชื่อผู้ทำ</label>
+      <select id="nameSelect"></select>
+    </div>
+    <button class="btn-primary" onclick="fetchItems()">🔍 ค้นหา</button>
+  </div>
+
+  <div id="itemSection" style="display:none; margin-top:12px;">
+    <label>เลือกลูกค้า</label>
+    <select id="customerSelect" onchange="filterItemsByCustomer()"></select>
+
+    <label style="margin-top:10px;">เลือกรายการ</label>
+    <select id="itemSelect" onchange="showDetail()"></select>
+
+    <div class="row2col" style="margin-top:10px;">
+      <div class="col">
+        <label>Customer</label>
+        <input id="customer" readonly>
+      </div>
+      <div class="col">
+        <label>File</label>
+        <input id="file5digit" readonly>
+      </div>
+    </div>
+
+    <div class="row2col">
+      <div class="col">
+        <label>Lot</label>
+        <input id="lot" readonly>
+      </div>
+      <div class="col">
+        <label>Q'ty</label>
+        <input id="sumQty" readonly>
+      </div>
+    </div>
+
+    <label>Rack</label>
+    <input id="rack" readonly>
+
+    <div id="rackZone" style="margin-top:12px;"></div>
+
+    <div style="display:flex; gap:10px; margin-top:15px;">
+      <button class="btn-add" onclick="addRackSet()">＋</button>
+      <button class="btn-primary" style="flex:1;" onclick="saveData()">💾 บันทึกข้อมูล</button>
+    </div>
+  </div>
+
+  <div class="footer">© 2025 Resonac Materials (Thailand) Co., Ltd.</div>
+</div>
+
+<script>
+const scriptURL = "https://script.google.com/macros/s/AKfycbwBdxGb7KQfCzS9EuAHGnTLxH05fKmARywauVUQdm2O2yqrAPU08NjmgAKO43AyColN/exec";
+let currentItems = [];
+let selectedGroup = [];
+let selectedKey = "";
+let selectedBase = null;
+
+/* ------------------------------------------------------  
+   ⭐ 1) Load Name
+------------------------------------------------------ */
+async function fetchItems() {
+  const name = nameSelect.value;
+  if (!name) return Swal.fire("⚠️","กรุณาเลือกชื่อผู้ทำ","warning");
+
+  Swal.fire({title:"กำลังดึงข้อมูล...", allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
+  const res = await fetch(`${scriptURL}?page=getDataByName&name=${encodeURIComponent(name)}`);
+  const rows = await res.json();
+
+  Swal.close();
+  if (!rows || rows.length === 0)
+    return Swal.fire("ℹ️","ไม่พบข้อมูล","info");
+
+  currentItems = rows;
+  loadCustomers(rows);
+
+  customerSelect.value = "";
+  itemSelect.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
+  itemSection.style.display = "block";
+}
+
+/* ------------------------------------------------------  
+   ⭐ 2) Dropdown ลูกค้า
+------------------------------------------------------ */
+function loadCustomers(rows) {
+  const customers = [...new Set(rows.map(r => r.Customer || ""))];
+  customerSelect.innerHTML =
+    `<option value="">-- เลือกลูกค้า --</option>` +
+    customers.map(c => `<option>${c}</option>`).join('');
+}
+
+/* ------------------------------------------------------  
+   ⭐ 3) Filter รายการตามลูกค้า
+------------------------------------------------------ */
+function filterItemsByCustomer() {
+  const cust = customerSelect.value;
+
+  itemSelect.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
+  if (!cust) return;
+
+  const rows = currentItems.filter(r => r.Customer === cust);
+
+  const map = {};
+  rows.forEach(r => {
+    const key = `${r.File5digit}|${r.Lot}`;
+    map[key] = true;
+  });
+
+  Object.keys(map).forEach(k => {
+    const [f,l] = k.split("|");
+    itemSelect.innerHTML += `<option value="${k}">${f} (${l})</option>`;
+  });
+}
+
+/* ------------------------------------------------------  
+   ⭐ 4) แสดงรายละเอียด File+Lot และ Rack Sets ทั้งหมด
+------------------------------------------------------ */
+function showDetail() {
+  const value = itemSelect.value;
+  if (!value) return clearForm();
+
+  const [fileCode, lotCode] = value.split("|");
+
+  selectedGroup = currentItems.filter(r => r.File5digit == fileCode && r.Lot == lotCode);
+  selectedBase = selectedGroup[0];
+
+  customer.value = selectedBase.Customer;
+  file5digit.value = selectedBase.File5digit;
+  lot.value = selectedBase.Lot;
+  sumQty.value = selectedBase["Sum of Qty"];
+  rack.value = selectedBase.Rack;
+
+  renderRackSets(selectedGroup);
+}
+
+/* ------------------------------------------------------  
+   ⭐ 5) Render Rack Sets ตามจำนวนแถวจริง
+------------------------------------------------------ */
+function renderRackSets(rows) {
+  let html = "";
+
+  rows.forEach(r => {
+    const actRack = r.Act_Rack || "";
+    const actLot = r.Act_Lot || r.Lot;
+    const actPkg = r.Act_Package || "";
+    const actQty = r.Act_Qty || "";
+
+    const [a="",bc=""] = actPkg.split("×");
+    const [b="",c=""] = bc.split("+");
+
+    html += `
+      <div class="rack-set">
+        <div class="action-buttons">
+          <button class="btn-edit" onclick="toggleEdit(this)">✏️</button>
+          <button class="btn-delete" onclick="deleteRackRow('${r.Act_Rack||""}')">🗑️</button>
+        </div>
+
+        <label>Act Rack</label>
+        <div class="row2col">
+          <div class="col">
+            <select class="rackGroup" onchange="updateRackSub(this)" ${actRack ? "disabled" : ""}>
+              <option value="">--เลือก--</option>
+              <option value="A" ${actRack.startsWith("A")?"selected":""}>A</option>
+              <option value="B" ${actRack.startsWith("B")?"selected":""}>B</option>
+              <option value="C" ${actRack.startsWith("C")?"selected":""}>C</option>
+              <option value="D" ${actRack.startsWith("D")?"selected":""}>D</option>
+              <option value="PC AREA" ${actRack=="PC AREA"?"selected":""}>PC AREA</option>
+              <option value="BKK AREA" ${actRack=="BKK AREA"?"selected":""}>BKK AREA</option>
+              <option value="SUBSTORE AREA" ${actRack=="SUBSTORE AREA"?"selected":""}>SUBSTORE AREA</option>
+            </select>
+          </div>
+
+          <div class="col">
+            <select class="rackSub" ${actRack ? "disabled" : ""}>
+              ${actRack ? `<option selected>${actRack}</option>` : ""}
+            </select>
+          </div>
+        </div>
+
+        <label>Act Lot</label>
+        <input class="actLotInput" value="${actLot}" ${r.Act_Lot ? "readonly" : ""}>
+
+        <div class="package-row">
+          <div class="package-box">
+            <label>Package</label>
+            <div class="package-inputs">
+              <input class="pkg-input a" value="${a}" ${actPkg?"readonly":""} oninput="calcActQty(this)">
+              <span>×</span>
+              <input class="pkg-input b" value="${b}" ${actPkg?"readonly":""} oninput="calcActQty(this)">
+              <span>+</span>
+              <input class="pkg-input c" value="${c}" ${actPkg?"readonly":""} oninput="calcActQty(this)">
+            </div>
+          </div>
+
+          <div class="actQty-box">
+            <label>Act Q'ty</label>
+            <input class="actQty" readonly value="${actQty}">
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  rackZone.innerHTML = html;
+}
+
+/* ------------------------------------------------------  
+   ⭐ 6) Add Rack Set (เพิ่มแถวใหม่)
+------------------------------------------------------ */
+function addRackSet() {
+  const html = `
+    <div class="rack-set">
+      <div class="action-buttons">
+        <button class="btn-edit" onclick="toggleEdit(this)">✏️</button>
+        <button class="btn-delete" onclick="this.closest('.rack-set').remove()">🗑️</button>
+      </div>
+
+      <label>Act Rack</label>
+      <div class="row2col">
+        <div class="col">
+          <select class="rackGroup" onchange="updateRackSub(this)">
+            <option value="">--เลือก--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="PC AREA">PC AREA</option>
+            <option value="BKK AREA">BKK AREA</option>
+            <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+          </select>
+        </div>
+        <div class="col">
+          <select class="rackSub"></select>
+        </div>
+      </div>
+
+      <label>Act Lot</label>
+      <input class="actLotInput" value="${lot.value}">
+
+      <div class="package-row">
+        <div class="package-box">
+          <label>Package</label>
+          <div class="package-inputs">
+            <input class="pkg-input a" oninput="calcActQty(this)">
+            <span>×</span>
+            <input class="pkg-input b" oninput="calcActQty(this)">
+            <span>+</span>
+            <input class="pkg-input c" oninput="calcActQty(this)">
+          </div>
+        </div>
+
+        <div class="actQty-box">
+          <label>Act Q'ty</label>
+          <input class="actQty" readonly>
+        </div>
+      </div>
+    </div>
+  `;
+  rackZone.insertAdjacentHTML("beforeend", html);
+}
+
+/* ------------------------------------------------------  
+   ⭐ 7) คำนวณ Act Q'ty อัตโนมัติ
+------------------------------------------------------ */
+function calcActQty(el) {
+  const rack = el.closest(".rack-set");
+  const a = +rack.querySelector(".pkg-input.a").value || 0;
+  const b = +rack.querySelector(".pkg-input.b").value || 0;
+  const c = +rack.querySelector(".pkg-input.c").value || 0;
+  rack.querySelector(".actQty").value = a * b + c;
+}
+
+/* ------------------------------------------------------  
+   ⭐ 8) Rack Sub Loader
+------------------------------------------------------ */
+function updateRackSub(sel) {
+  const subSel = sel.closest(".rack-set").querySelector(".rackSub");
+  const g = sel.value;
+
+  if (["PC AREA","BKK AREA","SUBSTORE AREA"].includes(g)) {
+    subSel.innerHTML = `<option value="${g}">${g}</option>`;
+    return;
+  }
+
+  if (rackMap[g]) {
+    subSel.innerHTML = rackMap[g].map(r => `<option>${r}</option>`).join('');
+  }
+}
+
+/* ------------------------------------------------------  
+   ⭐ 9) Save Data → append ทุก Rack Set
+------------------------------------------------------ */
+async function saveData() {
+  const sets = document.querySelectorAll(".rack-set");
+  if (sets.length === 0) return;
+
+  for (const s of sets) {
+    const group = s.querySelector(".rackGroup").value;
+    const sub = s.querySelector(".rackSub").value;
+    const actRack = sub || "";
+
+    const actLot = s.querySelector(".actLotInput").value;
+    const a = s.querySelector(".pkg-input.a").value;
+    const b = s.querySelector(".pkg-input.b").value;
+    const c = s.querySelector(".pkg-input.c").value;
+    const qty = s.querySelector(".actQty").value;
+
+    if (!actRack || !a || !b || !qty)
+      return Swal.fire("⚠️","ข้อมูลไม่ครบ","warning");
+
+    const actPackage = `${a}×${b}+${c}`;
+
+    await fetch(`${scriptURL}?page=updateRecord`, {
+      method: "POST",
+      body: new URLSearchParams({
+        name: nameSelect.value,
+        file5digit: file5digit.value,
+        lot: lot.value,
+        actRack,
+        actLot,
+        actQty: qty,
+        actPackage
+      })
+    });
+  }
+
+  Swal.fire("✅","บันทึกเรียบร้อย","success");
+  fetchItems();
+}
+
+/* ------------------------------------------------------  
+   ⭐ 10) Delete 1 Row
+------------------------------------------------------ */
+async function deleteRackRow(rackValue) {
+  const file = file5digit.value;
+  const lotVal = lot.value;
+  const name = nameSelect.value;
+
+  if (!rackValue) return Swal.fire("⚠️","ลบได้เฉพาะข้อมูลที่เคยบันทึกแล้ว","warning");
+
+  const ok = await Swal.fire({
+    title: "ยืนยันการลบ?",
+    showCancelButton: true,
+    confirmButtonText: "ลบ"
+  });
+
+  if (!ok.isConfirmed) return;
+
+  await fetch(`${scriptURL}?page=deleteRecord`, {
+    method: "POST",
+    body: new URLSearchParams({ name, file5digit:file, lot:lotVal, actRack:rackValue })
+  });
+
+  Swal.fire("ลบสำเร็จ","","success");
+  fetchItems();
+}
+
+/* ------------------------------------------------------  
+   ⭐ 11) Toggle Edit Mode
+------------------------------------------------------ */
+function toggleEdit(btn) {
+  const rack = btn.closest(".rack-set");
+  const editable = btn.textContent === "✏️";
+
+  btn.textContent = editable ? "🔒" : "✏️";
+  rack.querySelectorAll("input,select").forEach(e => {
+    if (e.classList.contains("actQty")) return;
+    e.readOnly = !editable;
+    e.disabled = !editable;
+    e.classList.toggle("editable", editable);
+  });
+}
+
+/* ------------------------------------------------------  
+   ⭐ 12) Rack Map
+------------------------------------------------------ */
+const rackMap = {
+  A:["A-A1","A-A2","A-A3","A-A4","A-A5","A-A6","A-A7","A-A8","A-B1","A-B2","A-B3","A-B4","A-B5","A-B6","A-B7","A-B8",
+     "A-C1","A-C2","A-C3","A-C4","A-C5","A-C6","A-C7","A-C8","A-D1","A-D2","A-D3","A-D4","A-D5","A-D6","A-D7","A-D8"],
+
+  B:Array.from({length:28},(_,i)=>["B-A","B-B","B-C","B-D"].flatMap(p=>`${p}${i+1}`)).flat(),
+
+  C:Array.from({length:36},(_,i)=>["C-A","C-B","C-C","C-D"].flatMap(p=>`${p}${i+1}`)).flat(),
+
+  D:["D-A1","D-A2","D-A3","D-A4","D-A5","D-A6","D-A7","D-A8","D-A9","D-A10","D-A11","D-A12","D-A13","D-A14","D-A15","D-A16","D-A17","D-A18",
+     "D-A19","D-A20","D-A21","D-A22","D-B1","D-B2","D-B3","D-B4","D-B5","D-B6","D-B7","D-B8","D-B9","D-B10","D-B11","D-B12",
+     "D-B13","D-B14","D-B15","D-B16","D-B17","D-B18","D-B19","D-B20","D-B21","D-B22"]
+};
+
+/* ------------------------------------------------------  
+   ⭐ 13) Initialize Names
+------------------------------------------------------ */
+(async function loadNames(){
+  const res = await fetch(`${scriptURL}?page=getNames`);
+  const data = await res.json();
+  nameSelect.innerHTML = '<option value="">-- เลือกชื่อผู้ทำ --</option>' + data.map(n=>`<option>${n}</option>`).join('');
+})();
+</script>
+
+</body>
+</html>

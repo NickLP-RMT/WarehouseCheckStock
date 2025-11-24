@@ -698,18 +698,20 @@ async function saveData() {
 
     const actPackage = `${a}×${b}+${c}`;
 
-    await fetch(`${scriptURL}?page=updateRecord`, {
-      method: "POST",
-      body: new URLSearchParams({
-        name,
-        file5digit: file,
-        lot: lot.value,
-        actRack,
-        actLot,
-        actQty,
-        actPackage
-      })
-    });
+await fetch(`${scriptURL}?page=updateRecord`, {
+  method: "POST",
+  body: new URLSearchParams({
+    name,
+    file5digit: file,
+    lot: lot.value,
+    originalRack: rack.value,   // ⬅⬅⬅ เพิ่มบรรทัดนี้
+    actRack,
+    actLot,
+    actQty,
+    actPackage
+  })
+});
+
   }
 
   Swal.close();

@@ -165,12 +165,11 @@ button {
   </div>
 
   <div id="itemSection" style="display:none;">
-<label>เลือกลูกค้า</label>
-<select id="customerSelect" onchange="filterItemsByCustomer()"></select>
+    <label>เลือกลูกค้า</label>
+    <select id="customerSelect" onchange="filterItemsByCustomer()"></select>
 
-<label style="margin-top:10px;">เลือกรายการ</label>
-<select id="itemSelect" onchange="showDetail()"></select>
-
+    <label style="margin-top:10px;">เลือกรายการ</label>
+    <select id="itemSelect" onchange="showDetail()"></select>
 
     <div class="row2col" style="margin-top:10px;">
       <div class="col"><label>Customer</label><input id="customer" readonly></div>
@@ -187,21 +186,21 @@ button {
       <div class="rack-set">
         <div class="action-buttons">
           <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+          <!-- master row จะไม่มีปุ่มลบ (ซ่อนด้วย JS) -->
           <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
         </div>
         <label>Act Rack</label>
         <div class="row2col">
           <div class="col">
             <select class="rackGroup" onchange="updateRackSub(this)">
-<option value="">--เลือก--</option>
-<option value="A">A</option>
-<option value="B">B</option>
-<option value="C">C</option>
-<option value="D">D</option>
-<option value="PC AREA">PC AREA</option>
-<option value="BKK AREA">BKK AREA</option>
-<option value="SUBSTORE AREA">SUBSTORE AREA</option>
-
+              <option value="">--เลือก--</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="PC AREA">PC AREA</option>
+              <option value="BKK AREA">BKK AREA</option>
+              <option value="SUBSTORE AREA">SUBSTORE AREA</option>
             </select>
           </div>
           <div class="col"><select class="rackSub"></select></div>
@@ -241,7 +240,7 @@ button {
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbxAKUgUc7nxcbCqSTDWqjI6MDeVeQfYSKbwX5AXMQR2-VwqlLiNrTF6Dp-tCnb7VnA/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbx0p7eElbeOAWne4HsxjOybGXbSXehq8mwu9lRfN-vmCRBuoBAG0z-MMFyKaVg-RQwn/exec";
 let currentItems = [];
 
 // 🧩 Rack Map
@@ -256,6 +255,22 @@ const rackMap = {
      "D-B1","D-B2","D-B3","D-B4","D-B5","D-B6","D-B7","D-B8","D-B9","D-B10","D-B11","D-B12","D-B13","D-B14","D-B15","D-B16","D-B17","D-B18","D-B19","D-B20","D-B21","D-B22"]
 };
 
+// ทำให้แถวแรกเป็น Master (ไม่มีปุ่มลบ) ทุกครั้ง
+function refreshRackSets() {
+  const sets = document.querySelectorAll(".rack-set");
+  sets.forEach((set, idx) => {
+    const delBtn = set.querySelector(".btn-delete");
+    if (idx === 0) {
+      set.dataset.master = "true";
+      if (delBtn) delBtn.style.display = "none";
+    } else {
+      set.dataset.master = "false";
+      if (delBtn) delBtn.style.display = "inline-flex";
+    }
+  });
+}
+
+// โหลดรายชื่อผู้ทำ
 async function loadNames() {
   Swal.fire({ title: "กำลังโหลดรายชื่อผู้ทำ...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
   try {
@@ -268,6 +283,7 @@ async function loadNames() {
   }
 }
 loadNames();
+refreshRackSets();
 
 async function fetchItems() {
   const name = nameSelect.value;
@@ -278,35 +294,26 @@ async function fetchItems() {
     const rows = await res.json(); Swal.close();
     if(!rows||rows.length===0)return Swal.fire("ℹ️","ไม่พบข้อมูลของผู้ทำคนนี้","info");
     currentItems = rows;
-loadCustomers(rows);   // ⬅⬅⬅ เพิ่มบรรทัดนี้
-itemSelect.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
-customerSelect.value = "";
-itemSection.style.display = "block";
-
+    loadCustomers(rows);
+    itemSelect.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
+    customerSelect.value = "";
+    itemSection.style.display = "block";
   } catch { Swal.fire("❌","ไม่สามารถดึงข้อมูลได้","error"); }
 }
 
+// แสดงตัวเลือกตาม Customer + File + Lot + Rack เดิม
 function renderDropdown(rows) {
   let html = `<option value="">-- เลือกรายการ --</option>`;
-
-  // รวม File+Lot ซ้ำ
-  const uniqueMap = {};
-  rows.forEach(r => {
-    const key = `${r.File5digit}|${r.Lot}`;
-    if (!uniqueMap[key]) uniqueMap[key] = r;
-  });
-
-  const uniqueRows = rows;   // แสดงทุกแถว ไม่ merge
+  const uniqueRows = rows;   // แสดงทุกแถว
 
   html += uniqueRows.map(r => {
     const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
     const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
-const value = `${r.File5digit}|${r.Lot}|${cleanRack}`;
+    const value = `${r.File5digit}|${r.Lot}|${cleanRack}`;
     const customer = r.Customer || "";
-    
     return `<option value="${value}">
-  ${done} ${customer} — ${r.File5digit} (${r.Lot}) [${cleanRack}]
-</option>`;
+      ${done} ${customer} — ${r.File5digit} (${r.Lot}) [${cleanRack}]
+    </option>`;
   }).join('');
 
   itemSelect.innerHTML = html;
@@ -316,7 +323,7 @@ function showDetail() {
   try {
     const value = itemSelect.value;
 
-    // 🧹 ถ้าไม่ได้เลือกรายการ → ล้างข้อมูล
+    // ⬅ ถ้าไม่ได้เลือกรายการ → reset เป็น master ว่าง 1 ชุด
     if (!value) {
       customer.value = "";
       file5digit.value = "";
@@ -332,17 +339,16 @@ function showDetail() {
           <label>Act Rack</label>
           <div class="row2col">
             <div class="col">
-<select class="rackGroup" onchange="updateRackSub(this)">
-  <option value="">--เลือก--</option>
-  <option value="A">A</option>
-  <option value="B">B</option>
-  <option value="C">C</option>
-  <option value="D">D</option>
-  <option value="PC AREA">PC AREA</option>
-  <option value="BKK AREA">BKK AREA</option>
-  <option value="SUBSTORE AREA">SUBSTORE AREA</option>
-</select>
-
+              <select class="rackGroup" onchange="updateRackSub(this)">
+                <option value="">--เลือก--</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="PC AREA">PC AREA</option>
+                <option value="BKK AREA">BKK AREA</option>
+                <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+              </select>
             </div>
             <div class="col"><select class="rackSub"></select></div>
           </div>
@@ -355,13 +361,10 @@ function showDetail() {
               <label>Package</label>
               <div class="package-inputs">
                 <input type="text" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
-
                 <span>×</span>
-                <input type="text" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
-
+                <input type="text" inputmode="numeric" pattern="[0-9]*" class="pkg-input b" oninput="validateNumber(this); calcActQty(this)">
                 <span>+</span>
-               <input type="text" inputmode="numeric" pattern="[0-9]*" class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
-
+                <input type="text" inputmode="numeric" pattern="[0-9]*" class="pkg-input c" oninput="validateNumber(this); calcActQty(this)">
               </div>
             </div>
             <div class="actQty-box">
@@ -370,26 +373,27 @@ function showDetail() {
             </div>
           </div>
         </div>`;
+      refreshRackSets();
       return;
     }
+
     // 🧠 ถ้ามีการเลือก File จริง
     const [fileCode, lotCode, rackName] = value.split('|');
     if (!fileCode || !lotCode) return;
 
-   // ดึงเฉพาะแถวที่ตรง File + Lot + Rack
-const selectedRows = currentItems.filter(r => {
-  return (
-    (r.File5digit+"").trim() === fileCode.trim() &&
-    (r.Lot+"").trim() === lotCode.trim() &&
-    (r.Rack+"").replace(/\[.*?\]/g, "").trim() === rackName.trim()
-  );
-});
-
+    // ดึงเฉพาะแถวที่ตรง File + Lot + Rack เดิม
+    const selectedRows = currentItems.filter(r => {
+      return (
+        (r.File5digit+"").trim() === fileCode.trim() &&
+        (r.Lot+"").trim() === lotCode.trim() &&
+        (r.Rack+"").replace(/\[.*?\]/g, "").trim() === rackName.trim()
+      );
+    });
 
     if (selectedRows.length === 0)
       return Swal.fire("⚠️", "ไม่พบข้อมูลของรายการนี้", "warning");
 
-    // 🏷️ ใช้ข้อมูลแถวแรกเป็นข้อมูลหลัก (Customer / File / Lot / Qty)
+    // 🏷️ ใช้ข้อมูลแถวแรกเป็น master
     const base = selectedRows[0];
     const getVal = key => {
       const found = Object.keys(base).find(k => k.trim().toLowerCase() === key.toLowerCase());
@@ -404,7 +408,8 @@ const selectedRows = currentItems.filter(r => {
 
     // 🧱 สร้าง rack-set ทั้งหมดตามจำนวนแถว
     let htmlRack = "";
-    selectedRows.forEach(row => {
+    selectedRows.forEach((row, idx) => {
+      const isMaster = idx === 0;
       const actRack = row.Act_Rack || "";
       const rawActLot = row.Act_Lot;
       const actLot = rawActLot || row.Lot || "";
@@ -412,10 +417,10 @@ const selectedRows = currentItems.filter(r => {
       const actQty = row.Act_Qty || "";
 
       htmlRack += `
-        <div class="rack-set">
+        <div class="rack-set" data-master="${isMaster ? "true" : "false"}">
           <div class="action-buttons">
             <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
-            <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+            ${isMaster ? '' : '<button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>'}
           </div>
 
           <label>Act Rack</label>
@@ -423,15 +428,13 @@ const selectedRows = currentItems.filter(r => {
             <div class="col">
               <select class="rackGroup" onchange="updateRackSub(this)" ${actRack ? 'disabled' : ''}>
                 <option value="">--เลือก--</option>
-<option value="A" ${actRack.startsWith("A") ? "selected" : ""}>A</option>
-<option value="B" ${actRack.startsWith("B") ? "selected" : ""}>B</option>
-<option value="C" ${actRack.startsWith("C") ? "selected" : ""}>C</option>
-<option value="D" ${actRack.startsWith("D") ? "selected" : ""}>D</option>
-
-<option value="PC AREA" ${actRack === "PC AREA" ? "selected" : ""}>PC AREA</option>
-<option value="BKK AREA" ${actRack === "BKK AREA" ? "selected" : ""}>BKK AREA</option>
-<option value="SUBSTORE AREA" ${actRack === "SUBSTORE AREA" ? "selected" : ""}>SUBSTORE AREA</option>
-
+                <option value="A" ${actRack.startsWith("A") ? "selected" : ""}>A</option>
+                <option value="B" ${actRack.startsWith("B") ? "selected" : ""}>B</option>
+                <option value="C" ${actRack.startsWith("C") ? "selected" : ""}>C</option>
+                <option value="D" ${actRack.startsWith("D") ? "selected" : ""}>D</option>
+                <option value="PC AREA" ${actRack === "PC AREA" ? "selected" : ""}>PC AREA</option>
+                <option value="BKK AREA" ${actRack === "BKK AREA" ? "selected" : ""}>BKK AREA</option>
+                <option value="SUBSTORE AREA" ${actRack === "SUBSTORE AREA" ? "selected" : ""}>SUBSTORE AREA</option>
               </select>
             </div>
             <div class="col">
@@ -465,17 +468,27 @@ const selectedRows = currentItems.filter(r => {
         </div>`;
     });
 
-    // ถ้ายังไม่มี rack-set ให้มีอย่างน้อย 1 ชุด
+    // ถ้ายังไม่มี rack-set เลย → ให้มี master ว่าง 1 ชุด
     if (!htmlRack) {
       htmlRack = `
-        <div class="rack-set">
+        <div class="rack-set" data-master="true">
           <div class="action-buttons">
             <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
-            <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
           </div>
           <label>Act Rack</label>
           <div class="row2col">
-            <div class="col"><select class="rackGroup" onchange="updateRackSub(this)"></select></div>
+            <div class="col">
+              <select class="rackGroup" onchange="updateRackSub(this)">
+                <option value="">--เลือก--</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="PC AREA">PC AREA</option>
+                <option value="BKK AREA">BKK AREA</option>
+                <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+              </select>
+            </div>
             <div class="col"><select class="rackSub"></select></div>
           </div>
           <div><label>Act Lot</label><input class="actLotInput" value="${lotCode}"></div>
@@ -489,6 +502,7 @@ const selectedRows = currentItems.filter(r => {
     }
 
     document.getElementById("rackZone").innerHTML = htmlRack;
+    refreshRackSets();
 
   } catch (err) {
     console.error("❌ showDetail error:", err);
@@ -496,18 +510,15 @@ const selectedRows = currentItems.filter(r => {
   }
 }
 
-
 function updateRackSub(select) {
   const subSelect = select.closest(".rack-set").querySelector(".rackSub");
   const group = select.value;
 
-  // 🆕 ถ้าเป็นพื้นที่พิเศษ — ใส่ค่าเดียวลงไปเลย
   if (group === "PC AREA" || group === "BKK AREA" || group === "SUBSTORE AREA") {
     subSelect.innerHTML = `<option value="${group}" selected>${group}</option>`;
     return;
   }
 
-  // 🧩 เดิม สำหรับ A / B / C / D
   subSelect.innerHTML = group
     ? rackMap[group].map(v => `<option value="${v}">${v}</option>`).join('')
     : '';
@@ -525,30 +536,45 @@ function addRackSet(){
   const zone=document.getElementById("rackZone");
   const template=document.querySelector(".rack-set");
   const newSet=template.cloneNode(true);
-  newSet.querySelectorAll("input").forEach(i=>i.value="");
-  newSet.querySelectorAll("select").forEach(s=>{
-    if(s.classList.contains("rackSub"))s.innerHTML="";
-    else s.value="";
+  newSet.dataset.master = "false";
+
+  newSet.querySelectorAll("input").forEach(i=>{
+    if (i.classList.contains("actQty")) i.value="";
+    else i.value="";
+    i.readOnly = false;
+    i.classList.remove("editable");
   });
+
+  newSet.querySelectorAll("select").forEach(s=>{
+    if(s.classList.contains("rackSub")) s.innerHTML="";
+    s.value="";
+    s.disabled = false;
+    s.classList.remove("editable");
+  });
+
+  const delBtn = newSet.querySelector(".btn-delete");
+  if (delBtn) delBtn.style.display = "inline-flex";
+
   newSet.querySelector(".actLotInput").value=document.getElementById("lot").value||"";
   zone.appendChild(newSet);
+  refreshRackSets();
   setTimeout(()=>newSet.querySelector(".pkg-input.a").focus(),150);
 }
-  // 🗑️ ลบ Rack-Set ทั้งในหน้าเว็บและ Google Sheet
+
+// 🗑️ ลบ Rack-Set เฉพาะแถวเพิ่ม (master ไม่มีปุ่มลบอยู่แล้ว)
 async function removeRackSet(btn) {
-  const rack = btn.closest(".rack-set");
-  const actRack = rack.querySelector(".rackSub").value.trim();
+  const rackSet = btn.closest(".rack-set");
+  const isMaster = rackSet.dataset.master === "true";
+  if (isMaster) return; // safety
+
+  const actRack = rackSet.querySelector(".rackSub").value.trim();
   const file = file5digit.value.trim();
   const lotVal = lot.value.trim();
   const name = nameSelect.value.trim();
+  const originalRack = rack.value.trim();
 
-  // ✅ ถ้ายังไม่เคยบันทึก (ไม่มี actRack) → แค่ลบจากหน้าจอ
-  if (!actRack) {
-    rack.remove();
-    return;
-  }
+  if (!actRack) { rackSet.remove(); refreshRackSets(); return; }
 
-  // 🟨 ยืนยันก่อนลบ
   const confirm = await Swal.fire({
     title: "ยืนยันการลบ?",
     text: `ต้องการลบ Rack ${actRack} ของ ${file} (${lotVal}) หรือไม่`,
@@ -559,7 +585,6 @@ async function removeRackSet(btn) {
   });
   if (!confirm.isConfirmed) return;
 
-  // 🔄 แสดงโหลดระหว่างลบ
   Swal.fire({
     title: "กำลังลบข้อมูล...",
     allowOutsideClick: false,
@@ -567,13 +592,13 @@ async function removeRackSet(btn) {
   });
 
   try {
-    // 🔗 เรียก Google Apps Script เพื่อลบข้อมูลจากชีต
     const res = await fetch(`${scriptURL}?page=deleteRecord`, {
       method: "POST",
       body: new URLSearchParams({
         name,
         file5digit: file,
         lot: lotVal,
+        originalRack,
         actRack
       })
     });
@@ -582,7 +607,8 @@ async function removeRackSet(btn) {
     Swal.close();
 
     if (result.success) {
-      rack.remove(); // ✅ ลบจากหน้าจอด้วย
+      rackSet.remove();
+      refreshRackSets();
       Swal.fire("✅", "ลบข้อมูลเรียบร้อยแล้ว", "success");
     } else {
       Swal.fire("⚠️", result.message || "ไม่สามารถลบข้อมูลได้", "warning");
@@ -594,8 +620,7 @@ async function removeRackSet(btn) {
   }
 }
 
-
-// ✅ toggleEdit: ปลดล็อก/ล็อกช่อง + เปลี่ยนสีพื้นหลัง
+// toggleEdit
 function toggleEdit(btn) {
   const rack = btn.closest(".rack-set");
   const isEditing = btn.dataset.editing === "false";
@@ -605,9 +630,9 @@ function toggleEdit(btn) {
   btn.style.background = isEditing ? "#10b981" : "#3b82f6";
 
   rack.querySelectorAll("input").forEach(el => {
-    if (el.classList.contains("actQty")) return; // Act Q'ty ห้ามแก้
+    if (el.classList.contains("actQty")) return;
     el.readOnly = !isEditing;
-    el.classList.toggle("editable", isEditing); // เพิ่ม/ลบคลาส editable
+    el.classList.toggle("editable", isEditing);
   });
 
   rack.querySelectorAll("select").forEach(el => {
@@ -616,14 +641,13 @@ function toggleEdit(btn) {
   });
 }
 
-
 async function saveData() {
   const name = nameSelect.value;
   const file = file5digit.value.trim();
   const itemValue = itemSelect.value;
   const sets = document.querySelectorAll(".rack-set");
+  const originalRack = rack.value.trim();
 
-  // ✅ ต้องเลือกรายการก่อนเท่านั้นถึงจะตรวจ
   if (!itemValue) {
     return Swal.fire({
       icon: "warning",
@@ -632,7 +656,7 @@ async function saveData() {
     });
   }
 
-  // ✅ ตรวจแต่ละ rack-set ก่อน
+  // ตรวจทุก rack-set
   for (const s of sets) {
     const group = s.querySelector(".rackGroup").value.trim();
     const sub = s.querySelector(".rackSub").value.trim();
@@ -643,9 +667,8 @@ async function saveData() {
     let c = s.querySelector(".pkg-input.c").value.trim();
     const actQty = s.querySelector(".actQty").value.trim();
 
-    if (c === "") c = "0"; // ให้ช่อง + เป็น 0 อัตโนมัติ
+    if (c === "") c = "0";
 
-    // ❌ ถ้ายังไม่กรอกครบทุกช่อง
     if (!actRack || !a || !b || !actLot || !actQty) {
       return Swal.fire({
         icon: "warning",
@@ -655,7 +678,6 @@ async function saveData() {
       });
     }
 
-    // ❌ ถ้า Act Q'ty <= 0
     if (parseInt(actQty) <= 0) {
       return Swal.fire({
         icon: "warning",
@@ -666,7 +688,6 @@ async function saveData() {
     }
   }
 
-  // ✅ ผ่านทุกการตรวจ → แสดงยืนยัน
   const confirm = await Swal.fire({
     title: "ยืนยันการบันทึกข้อมูล?",
     text: "คุณต้องการบันทึกข้อมูลที่กรอกหรือไม่",
@@ -678,14 +699,16 @@ async function saveData() {
 
   if (!confirm.isConfirmed) return;
 
-  // ✅ เริ่มบันทึก
   Swal.fire({
     title: "กำลังบันทึกข้อมูล...",
     allowOutsideClick: false,
     didOpen: () => Swal.showLoading()
   });
 
-  for (const s of sets) {
+  // บันทึกทีละ rack-set
+  for (let i = 0; i < sets.length; i++) {
+    const s = sets[i];
+    const isMaster = i === 0; // แถวแรก = master
     const group = s.querySelector(".rackGroup").value.trim();
     const sub = s.querySelector(".rackSub").value.trim();
     const actRack = group && sub ? sub : "";
@@ -698,20 +721,20 @@ async function saveData() {
 
     const actPackage = `${a}×${b}+${c}`;
 
-await fetch(`${scriptURL}?page=updateRecord`, {
-  method: "POST",
-  body: new URLSearchParams({
-    name,
-    file5digit: file,
-    lot: lot.value,
-    originalRack: rack.value,   // ⬅⬅⬅ เพิ่มบรรทัดนี้
-    actRack,
-    actLot,
-    actQty,
-    actPackage
-  })
-});
-
+    await fetch(`${scriptURL}?page=updateRecord`, {
+      method: "POST",
+      body: new URLSearchParams({
+        name,
+        file5digit: file,
+        lot: lot.value,
+        originalRack,
+        actRack,
+        actLot,
+        actQty,
+        actPackage,
+        isMaster: isMaster ? "true" : "false"
+      })
+    });
   }
 
   Swal.close();
@@ -732,21 +755,13 @@ await fetch(`${scriptURL}?page=updateRecord`, {
 }
 
 function clearForm() {
-
-  // ❌ ไม่เคลียร์ customerSelect (ให้พนักงานทำงานต่อกับลูกค้าเดิม)
-  // customerSelect.value = "";
-
-  // ✔ เคลียร์ input ที่แสดงผลอยู่ในหน้า
   customer.value = "";
   file5digit.value = "";
   lot.value = "";
   sumQty.value = "";
   rack.value = "";
-
-  // ✔ เคลียร์ dropdown รายการสินค้า
   itemSelect.value = "";
 
-  // ✔ เคลียร์ rack-set ทั้งหมด และสร้าง rack-set เปล่าใหม่ 1 ชุด
   const zone = document.getElementById("rackZone");
   zone.innerHTML = `
     <div class="rack-set">
@@ -754,7 +769,6 @@ function clearForm() {
         <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
         <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
       </div>
-
       <label>Act Rack</label>
       <div class="row2col">
         <div class="col">
@@ -795,15 +809,14 @@ function clearForm() {
       </div>
     </div>
   `;
-
-  // ✔ ซ่อนหน้ารายละเอียดรายการ
   document.getElementById("itemSection").style.display = "none";
+  refreshRackSets();
 }
 
-
-  function validateNumber(el) {
-  el.value = el.value.replace(/[^0-9]/g, ''); // ลบทุกตัวที่ไม่ใช่เลข
+function validateNumber(el) {
+  el.value = el.value.replace(/[^0-9]/g, '');
 }
+
 function loadCustomers(rows) {
   const customers = [...new Set(rows.map(r => r.Customer || ""))];
 
@@ -812,11 +825,10 @@ function loadCustomers(rows) {
     customers.map(c => `<option value="${c}">${c}</option>`).join('');
 }
 
-  function filterItemsByCustomer() {
+function filterItemsByCustomer() {
   const customerSel = customerSelect.value;
   const list = document.getElementById("itemSelect");
 
-  // 🔥 เคลียร์ค่าทั้งหมดด้านล่างทันทีเมื่อเปลี่ยนลูกค้า
   customer.value = "";
   file5digit.value = "";
   lot.value = "";
@@ -832,17 +844,16 @@ function loadCustomers(rows) {
       <label>Act Rack</label>
       <div class="row2col">
         <div class="col">
-<select class="rackGroup" onchange="updateRackSub(this)">
-  <option value="">--เลือก--</option>
-  <option value="A">A</option>
-  <option value="B">B</option>
-  <option value="C">C</option>
-  <option value="D">D</option>
-  <option value="PC AREA">PC AREA</option>
-  <option value="BKK AREA">BKK AREA</option>
-  <option value="SUBSTORE AREA">SUBSTORE AREA</option>
-</select>
-
+          <select class="rackGroup" onchange="updateRackSub(this)">
+            <option value="">--เลือก--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="PC AREA">PC AREA</option>
+            <option value="BKK AREA">BKK AREA</option>
+            <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+          </select>
         </div>
         <div class="col"><select class="rackSub"></select></div>
       </div>
@@ -870,39 +881,25 @@ function loadCustomers(rows) {
       </div>
     </div>
   `;
+  refreshRackSets();
 
-  // 🔥 เคลียร์รายการ dropdown ด้วย
   list.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
   if (!customerSel) return;
 
-  // 🔍 กรองข้อมูลตามลูกค้า
   const rows = currentItems.filter(r => r.Customer === customerSel);
 
-  const uniqueMap = {};
-  rows.forEach(r => {
-    const key = `${r.File5digit}|${r.Lot}`;
-    if (!uniqueMap[key]) uniqueMap[key] = r;
-  });
-
-  const uniqueRows = Object.values(uniqueMap);
-
-list.innerHTML += rows
-  .map(r => {
-    const done = r.Act_Qty ? "✅" : "⚪️";
-
-    const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
-
-    return `
-      <option value="${r.File5digit}|${r.Lot}|${cleanRack}">
-        ${done} ${r.File5digit} (${r.Lot}) [${cleanRack}]
-      </option>
-    `;
-  })
-  .join('');
+  list.innerHTML += rows
+    .map(r => {
+      const done = r.Act_Qty ? "✅" : "⚪️";
+      const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
+      return `
+        <option value="${r.File5digit}|${r.Lot}|${cleanRack}">
+          ${done} ${r.File5digit} (${r.Lot}) [${cleanRack}]
+        </option>
+      `;
+    })
+    .join('');
 }
-
-
 </script>
-
 </body>
 </html>

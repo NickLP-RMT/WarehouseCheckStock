@@ -296,7 +296,7 @@ function renderDropdown(rows) {
     if (!uniqueMap[key]) uniqueMap[key] = r;
   });
 
-  const uniqueRows = Object.values(uniqueMap);
+  const uniqueRows = rows;   // แสดงทุกแถว ไม่ merge
 
   html += uniqueRows.map(r => {
     const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
@@ -370,7 +370,7 @@ function showDetail() {
       return;
     }
     // 🧠 ถ้ามีการเลือก File จริง
-    const [fileCode, lotCode] = value.split('|');
+    const [fileCode, lotCode, rackName] = value.split('|');
     if (!fileCode || !lotCode) return;
 
     // ✅ ดึงทุกแถวที่ File + Lot ตรงกัน (อาจมีหลาย rack-set)
@@ -879,12 +879,15 @@ function loadCustomers(rows) {
 
   const uniqueRows = Object.values(uniqueMap);
 
-  list.innerHTML += uniqueRows
-    .map(r => {
-      const done = r.Act_Qty ? "✅" : "⚪️";
-      return `<option value="${r.File5digit}|${r.Lot}">${done} ${r.File5digit} (${r.Lot})</option>`;
-    })
-    .join('');
+list.innerHTML += rows
+  .map(r => {
+    const done = r.Act_Qty ? "✅" : "⚪️";
+    return `<option value="${r.File5digit}|${r.Lot}|${r.Rack}">
+      ${done} ${r.File5digit} (${r.Lot}) [${r.Rack}]
+    </option>`;
+  })
+  .join('');
+
 }
 
 

@@ -300,10 +300,13 @@ function renderDropdown(rows) {
 
   html += uniqueRows.map(r => {
     const done = r.Act_Qty && r.Act_Qty !== "" ? "✅" : "⚪️";
-    const value = `${r.File5digit}|${r.Lot}`;
+    const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
+const value = `${r.File5digit}|${r.Lot}|${cleanRack}`;
     const customer = r.Customer || "";
     
-    return `<option value="${value}">${done} ${customer} — ${r.File5digit} (${r.Lot})</option>`;
+    return `<option value="${value}">
+  ${done} ${customer} — ${r.File5digit} (${r.Lot}) [${cleanRack}]
+</option>`;
   }).join('');
 
   itemSelect.innerHTML = html;
@@ -373,13 +376,15 @@ function showDetail() {
     const [fileCode, lotCode, rackName] = value.split('|');
     if (!fileCode || !lotCode) return;
 
-    // ✅ ดึงทุกแถวที่ File + Lot ตรงกัน (อาจมีหลาย rack-set)
-    const selectedRows = currentItems.filter(r => {
-      const keys = Object.keys(r);
-      const fileKey = keys.find(k => k.trim().toLowerCase() === "file5digit");
-      const lotKey  = keys.find(k => k.trim().toLowerCase() === "lot");
-      return (r[fileKey]+"").trim()===fileCode.trim() && (r[lotKey]+"").trim()===lotCode.trim();
-    });
+   // ดึงเฉพาะแถวที่ตรง File + Lot + Rack
+const selectedRows = currentItems.filter(r => {
+  return (
+    (r.File5digit+"").trim() === fileCode.trim() &&
+    (r.Lot+"").trim() === lotCode.trim() &&
+    (r.Rack+"").replace(/\[.*?\]/g, "").trim() === rackName.trim()
+  );
+});
+
 
     if (selectedRows.length === 0)
       return Swal.fire("⚠️", "ไม่พบข้อมูลของรายการนี้", "warning");

@@ -724,15 +724,75 @@ async function saveData() {
   await fetchItems();
 }
 
-function clearForm(){
-  document.querySelectorAll("input").forEach(el=>{
-    if(!el.readOnly)el.value="";
-  });
-  document.querySelectorAll(".rackGroup,.rackSub").forEach(s=>s.value="");
-  document.querySelectorAll(".actQty").forEach(q=>q.value="");
-  itemSelect.value="";
-  document.getElementById("itemSection").style.display="none";
+function clearForm() {
+
+  // ❌ ไม่เคลียร์ customerSelect (ให้พนักงานทำงานต่อกับลูกค้าเดิม)
+  // customerSelect.value = "";
+
+  // ✔ เคลียร์ input ที่แสดงผลอยู่ในหน้า
+  customer.value = "";
+  file5digit.value = "";
+  lot.value = "";
+  sumQty.value = "";
+  rack.value = "";
+
+  // ✔ เคลียร์ dropdown รายการสินค้า
+  itemSelect.value = "";
+
+  // ✔ เคลียร์ rack-set ทั้งหมด และสร้าง rack-set เปล่าใหม่ 1 ชุด
+  const zone = document.getElementById("rackZone");
+  zone.innerHTML = `
+    <div class="rack-set">
+      <div class="action-buttons">
+        <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+        <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+      </div>
+
+      <label>Act Rack</label>
+      <div class="row2col">
+        <div class="col">
+          <select class="rackGroup" onchange="updateRackSub(this)">
+            <option value="">--เลือก--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="PC AREA">PC AREA</option>
+            <option value="BKK AREA">BKK AREA</option>
+            <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+          </select>
+        </div>
+        <div class="col"><select class="rackSub"></select></div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <label>Act Lot</label>
+        <input type="text" class="actLotInput">
+      </div>
+
+      <div class="package-row">
+        <div class="package-box">
+          <label>Package</label>
+          <div class="package-inputs">
+            <input class="pkg-input a" oninput="calcActQty(this)">
+            <span>×</span>
+            <input class="pkg-input b" oninput="calcActQty(this)">
+            <span>+</span>
+            <input class="pkg-input c" oninput="calcActQty(this)">
+          </div>
+        </div>
+        <div class="actQty-box">
+          <label>Act Q'ty</label>
+          <input class="actQty" readonly>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ✔ ซ่อนหน้ารายละเอียดรายการ
+  document.getElementById("itemSection").style.display = "none";
 }
+
 
   function validateNumber(el) {
   el.value = el.value.replace(/[^0-9]/g, ''); // ลบทุกตัวที่ไม่ใช่เลข

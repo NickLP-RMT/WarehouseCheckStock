@@ -176,19 +176,40 @@
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, {
+   
+const rawRows = XLSX.utils.sheet_to_json(sheet, {
   header: 1,
-  defval: ""   // << สำคัญ ทำให้ช่องว่างไม่ถูก drop
-}).slice(1);
+  range: 1,       // เริ่มหลัง header
+  blankrows: true,
+  defval: ""      // บังคับช่องว่างให้มีค่า
+});
 
-const payload = rows.map(r => ({
-  Customer: String(r[0] || "").trim(),
-  Name: String(r[1] || "").trim(),
-  File5digit: String(r[2] || "").trim(),
-  Lot: String(r[3] || "").trim(),
-  Rack: String(r[4] || "").trim(),
-  SumOfQty: String(r[5] || "").trim()
+// ⭐ บังคับให้ทุกแถวต้องมี 6 คอลัมน์เสมอ
+const fixedRows = rawRows
+  .map(r => {
+    // ตัดคอลัมน์เกิน
+    if (r.length > 6) r = r.slice(0, 6);
+
+    // เติมคอลัมน์ให้ครบ 6
+    while (r.length < 6) r.push("");
+
+    return r;
+  })
+  // ⚠️ ตัดแถวที่ไม่มีข้อมูลทั้งหมด (ป้องกัน append แถวว่าง)
+  .filter(r => r.some(col => col !== ""));
+  
+
+// ⭐ สร้าง payload สำหรับส่งไปเข้า Google Apps Script
+const payload = fixedRows.map(r => ({
+  Customer: String(r[0]).trim(),
+  Name: String(r[1]).trim(),
+  File5digit: String(r[2]).trim(),
+  Lot: String(r[3]).trim(),
+  Rack: String(r[4]).trim(),
+  SumOfQty: String(r[5]).trim()
 }));
+
+console.log("UPLOAD PAYLOAD:", payload);
 
 
       try {

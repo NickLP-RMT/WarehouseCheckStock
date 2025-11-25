@@ -324,6 +324,11 @@ function normalizeRack(rack) {
   return match ? match[1].trim() : rack.trim();
 }
 
+// สำหรับแสดงผลใน UI
+function displayRack(rack) {
+  const match = rack.match(/\[(.*?)\]/);
+  return match ? match[1].trim() : rack.trim();
+}
     // สำหรับแสดงผลใน UI
 function renderGroupedTable(data) {
   const head = document.getElementById("tableHead");

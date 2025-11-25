@@ -1159,12 +1159,14 @@ function filterItemsByCustomer() {
   const customerSel = customerSelect.value;
   const list = document.getElementById("itemSelect");
 
+  // เคลียร์ข้อมูลฟอร์ม
   customer.value = "";
   file5digit.value = "";
   lot.value = "";
   sumQty.value = "";
   rack.value = "";
 
+  // รีเซ็ต rackZone -> Act Set #1 (โหมดกรอกได้)
   document.getElementById("rackZone").innerHTML = `
     <div class="rack-set" data-master="true" data-id="1" data-loaded="false">
       <div class="set-title">Act Set #1</div>
@@ -1215,25 +1217,29 @@ function filterItemsByCustomer() {
   `;
   refreshRackSets();
 
+  // รีเซ็ตรายการ
   list.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
   if (!customerSel) return;
 
   const rows = currentItems.filter(r => r.Customer === customerSel);
 
-list.innerHTML += rows
-  .filter(r => String(r.ID) === "1")   // ⭐ แสดงเฉพาะ ID = 1
-  .map(r => {
-    const done = r.Act_Qty ? "✅" : "⚪️";
-    const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
-    return `
-      <option value="${r.File5digit}|${r.Lot}|${cleanRack}">
-        ${done} ${r.File5digit} (${r.Lot}) [${cleanRack}]
-      </option>
-    `;
-  })
-  .join("");
-
+  // ✅ ใส่ data-done="yes/no" เพื่อให้ showDetail() รู้ว่าอันไหน DONE
+  list.innerHTML += rows
+    .filter(r => String(r.ID) === "1")   // แสดงเฉพาะ ID = 1
+    .map(r => {
+      const isDone = !!r.Act_Qty;                      // มี Act_Qty = DONE
+      const icon = isDone ? "✅" : "⚪️";               // ไอคอนแสดงผล
+      const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
+      return `
+        <option value="${r.File5digit}|${r.Lot}|${cleanRack}"
+                data-done="${isDone ? "yes" : "no"}">
+          ${icon} ${r.File5digit} (${r.Lot}) [${cleanRack}]
+        </option>
+      `;
+    })
+    .join("");
 }
+
 </script>
 </body>
 </html>

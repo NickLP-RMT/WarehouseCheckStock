@@ -803,7 +803,7 @@ function addRackSet() {
   const newSet = document.createElement("div");
   newSet.className = "rack-set";
   newSet.dataset.master = "false";
-  newSet.dataset.id = "new";   // ⭐ ส่งค่า new เพื่อให้ code.gs สร้าง ID ใหม่
+  newSet.dataset.id = "new"; // ⭐ ส่งค่า new เพื่อให้ code.gs สร้าง ID ใหม่
 
   newSet.innerHTML = `
     <div class="set-title">Act Set #?</div>
@@ -829,22 +829,29 @@ function addRackSet() {
       <div class="col"><select class="rackSub"></select></div>
     </div>
 
-<div style="margin-top:10px;">
-  <label>Act Lot</label>
-  <input type="text" class="actLotInput" value="${lot.value}">
-</div>
+    <div style="margin-top:10px;">
+      <label>Act Lot</label>
+      <input type="text" class="actLotInput" value="${lot.value}">
+    </div>
 
     <div class="package-row">
       <div class="package-box">
         <label>Package</label>
         <div class="package-inputs">
-          <input class="pkg-input a" oninput="calcActQty(this)">
+          <input type="text" inputmode="numeric" pattern="[0-9]*"
+                 class="pkg-input a"
+                 oninput="validateNumber(this); calcActQty(this)">
           <span>×</span>
-          <input class="pkg-input b" oninput="calcActQty(this)">
+          <input type="text" inputmode="numeric" pattern="[0-9]*"
+                 class="pkg-input b"
+                 oninput="validateNumber(this); calcActQty(this)">
           <span>+</span>
-          <input class="pkg-input c" oninput="calcActQty(this)">
+          <input type="text" inputmode="numeric" pattern="[0-9]*"
+                 class="pkg-input c"
+                 oninput="validateNumber(this); calcActQty(this)">
         </div>
       </div>
+
       <div class="actQty-box">
         <label>Act Q'ty</label>
         <input class="actQty" readonly>
@@ -855,6 +862,7 @@ function addRackSet() {
   zone.appendChild(newSet);
   refreshRackSets();
 }
+
 
 
 async function removeRackSet(btn) {

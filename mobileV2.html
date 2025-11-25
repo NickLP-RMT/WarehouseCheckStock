@@ -240,7 +240,7 @@ button {
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbyS1mQpFdecwYB3IrMowdWJVDtDUGefje1QzD7o3KrrmzHx9aS5EMS47nNWkEfoVlws/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbxGUCtiukCadkSJHapZZGgeJq0bZ66HLBElOHa55pYLYhU_Z7clF-mtnwenDqr2A9JT/exec";
 let currentItems = [];
 
 // 🧩 Rack Map
@@ -416,8 +416,9 @@ function showDetail() {
       const actPkg = row.Act_Package || "";
       const actQty = row.Act_Qty || "";
 
-      htmlRack += `
-        <div class="rack-set" data-master="${isMaster ? "true" : "false"}">
+htmlRack += `
+  <div class="rack-set" data-id="${row.ID || ""}" data-master="${isMaster ? "true" : "false"}">
+
           <div class="action-buttons">
             <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
             ${isMaster ? '' : '<button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>'}
@@ -561,19 +562,23 @@ function addRackSet(){
   setTimeout(()=>newSet.querySelector(".pkg-input.a").focus(),150);
 }
 
-// 🗑️ ลบ Rack-Set เฉพาะแถวเพิ่ม (master ไม่มีปุ่มลบอยู่แล้ว)
 async function removeRackSet(btn) {
   const rackSet = btn.closest(".rack-set");
   const isMaster = rackSet.dataset.master === "true";
-  if (isMaster) return; // safety
+  if (isMaster) return; 
 
   const actRack = rackSet.querySelector(".rackSub").value.trim();
   const file = file5digit.value.trim();
   const lotVal = lot.value.trim();
   const name = nameSelect.value.trim();
   const originalRack = rack.value.trim();
+  const rackId = rackSet.dataset.id;
 
-  if (!actRack) { rackSet.remove(); refreshRackSets(); return; }
+  if (!actRack) { 
+    rackSet.remove(); 
+    refreshRackSets(); 
+    return; 
+  }
 
   const confirm = await Swal.fire({
     title: "ยืนยันการลบ?",
@@ -599,7 +604,7 @@ async function removeRackSet(btn) {
         file5digit: file,
         lot: lotVal,
         originalRack,
-        actRack
+        id: rackId
       })
     });
 
@@ -619,6 +624,7 @@ async function removeRackSet(btn) {
     console.error(err);
   }
 }
+
 
 // toggleEdit
 function toggleEdit(btn) {
@@ -721,20 +727,23 @@ async function saveData() {
 
     const actPackage = `${a}×${b}+${c}`;
 
-    await fetch(`${scriptURL}?page=updateRecord`, {
-      method: "POST",
-      body: new URLSearchParams({
-        name,
-        file5digit: file,
-        lot: lot.value,
-        originalRack,
-        actRack,
-        actLot,
-        actQty,
-        actPackage,
-        isMaster: isMaster ? "true" : "false"
-      })
-    });
+const rackId = s.dataset.id || "";  // ⭐ ดึง ID ของแถวนี้
+
+await fetch(`${scriptURL}?page=updateRecord`, {
+  method: "POST",
+  body: new URLSearchParams({
+    name,
+    file5digit: file,
+    lot: lot.value,
+    originalRack,
+    actRack,
+    actLot,
+    actQty,
+    actPackage,
+    rackId    // ⭐ ส่ง ID ไป backend
+  })
+});
+
   }
 
   Swal.close();

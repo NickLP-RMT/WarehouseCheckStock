@@ -351,27 +351,37 @@ function renderGroupedTable(data) {
 
   head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
 
-  // GROUP 1: File + Lot
-  const mainGroups = {};
-  data.forEach(row => {
-    const key = `${row.File5digit}_${row.Lot}`;
-    if (!mainGroups[key]) mainGroups[key] = [];
-    mainGroups[key].push(row);
-  });
+// GROUP 1: File + Lot
+const mainGroups = {};
+data.forEach(row => {
+  const key = `${row.File5digit}_${row.Lot}`;
+  if (!mainGroups[key]) mainGroups[key] = [];
+  mainGroups[key].push(row);
+});
 
-  const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
+for (const key in mainGroups) {
+  const groupRows = mainGroups[key];
+  const [file, lot] = key.split("_");
 
-  for (const key in mainGroups) {
-    const groupRows = mainGroups[key];
-    const [file, lot] = key.split("_");
+  // ตรวจว่ากลุ่มนี้ยังไม่ Check ทั้งหมดหรือไม่
+  const allEmptyGroup = groupRows.every(r =>
+    (!r.Act_Rack || r.Act_Rack === "") &&
+    (!r.Act_Lot || r.Act_Lot === "") &&
+    (!r.Act_Qty || r.Act_Qty === "") &&
+    (!r.Act_Package || r.Act_Package === "")
+  );
 
-    body.innerHTML += `
-      <tr class="table-group">
-        <td colspan="${headers.length}">
-          📦 <b>${file}</b> / <b>${lot}</b>
-        </td>
-      </tr>
-    `;
+  // ถ้ายังไม่ Check = แสดงบนบรรทัด Group เลย
+  const groupStatusText = allEmptyGroup ? " -  <span style='color:#b45309;'>ยังไม่ Check</span>" : "";
+
+  body.innerHTML += `
+    <tr class="table-group">
+      <td colspan="${headers.length}">
+        📦 <b>${file}</b> / <b>${lot}</b> ${groupStatusText}
+      </td>
+    </tr>
+  `;
+
 
 // GROUP 2: Rack
 const rackGroups = {};

@@ -389,7 +389,7 @@ function refreshRackSets() {
 
   sets.forEach((set, idx) => {
 
-    // ⭐ กำหนด ID (ไม่เขียนทับของเดิม)
+    // ⭐ Assign ID ถ้าไม่มี
     if (!set.dataset.id) {
       set.dataset.id = idx === 0 ? "1" : "new";
     }
@@ -398,8 +398,11 @@ function refreshRackSets() {
     const isMaster = idx === 0;
     set.dataset.master = isMaster ? "true" : "false";
 
+    // ⭐ ตรวจว่ามาจาก Database หรือไม่
+    const isLoadedFromDB = set.dataset.loaded === "true";
+
     // -------------------------
-    // 1. อัปเดตชื่อ Title
+    // 1. Update Title
     // -------------------------
     let title = set.querySelector(".set-title");
     if (!title) {
@@ -415,18 +418,23 @@ function refreshRackSets() {
     const editBtn = set.querySelector(".btn-edit");
     const delBtn  = set.querySelector(".btn-delete");
 
-    if (isMaster) {
-      // Master → ปุ่มลบไม่ต้องมี
-      if (delBtn) delBtn.style.display = "none";
+    // ================================
+    // ⭐ CASE A: เซตใหม่ (ไม่เคยบันทึก)
+    // ================================
+    if (!isLoadedFromDB) {
 
-      // Master: เริ่มเป็นโหมด editable (เปิดแก้ไข)
+      // Master หรือเซตใหม่จากปุ่ม + → Editable
       if (editBtn) {
         editBtn.dataset.editing = "true";
         editBtn.textContent = "🔒";
         editBtn.style.background = "#10b981";
       }
 
-      // เปิดให้แก้ไข input/select
+      if (delBtn) {
+        delBtn.style.display = isMaster ? "none" : "inline-flex";
+      }
+
+      // เปิดแก้ไข input/select
       set.querySelectorAll("input").forEach(el => {
         if (!el.classList.contains("actQty")) {
           el.readOnly = false;
@@ -439,37 +447,38 @@ function refreshRackSets() {
         el.classList.add("editable");
       });
 
-    } else {
-      // -------------------------
-      // Set #2 ขึ้นไป → Lock mode ตอนแรก
-      // -------------------------
-      if (delBtn) delBtn.style.display = "inline-flex";
-
-      if (editBtn) {
-        // ถ้าไม่เคยมีค่า editing → ตั้งเป็น false
-        if (!editBtn.dataset.editing) {
-          editBtn.dataset.editing = "false";
-        }
-        const editing = editBtn.dataset.editing === "true";
-
-        editBtn.textContent = editing ? "🔒" : "✏️";
-        editBtn.style.background = editing ? "#10b981" : "#3b82f6";
-
-        // ตั้งสถานะ Readonly / Editable
-        set.querySelectorAll("input").forEach(el => {
-          if (el.classList.contains("actQty")) return;
-          el.readOnly = !editing;
-          el.classList.toggle("editable", editing);
-        });
-
-        set.querySelectorAll("select").forEach(el => {
-          el.disabled = !editing;
-          el.classList.toggle("editable", editing);
-        });
-      }
+      return;   // ⬅ จบ สำหรับเซตที่ยังไม่เคยบันทึก
     }
+
+    // =====================================
+    // ⭐ CASE B: โหลดจาก DATABASE → ต้อง Lock
+    // =====================================
+    if (editBtn) {
+      editBtn.dataset.editing = "false";
+      editBtn.textContent = "✏️";
+      editBtn.style.background = "#3b82f6";
+    }
+
+    if (delBtn) {
+      delBtn.style.display = isMaster ? "none" : "inline-flex";
+    }
+
+    // Lock fields
+    set.querySelectorAll("input").forEach(el => {
+      if (!el.classList.contains("actQty")) {
+        el.readOnly = true;
+        el.classList.remove("editable");
+      }
+    });
+
+    set.querySelectorAll("select").forEach(el => {
+      el.disabled = true;
+      el.classList.remove("editable");
+    });
+
   });
 }
+
 
 // โหลดรายชื่อผู้ทำ
 async function loadNames() {
@@ -654,7 +663,8 @@ function showDetail() {
       const pkgC = actPkg ? ((actPkg.split("+")[1] || "") || "") : "";
 
       htmlRack += `
-        <div class="rack-set" data-id="${idStr}" data-master="${isMaster ? "true" : "false"}">
+        <div class="rack-set" data-id="${idStr}" data-master="${isMaster ? "true" : "false"}" data-loaded="true">
+
           <div class="set-title">Act Set #${index + 1}</div>
 
           <div class="action-buttons">

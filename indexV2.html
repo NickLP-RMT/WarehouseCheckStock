@@ -329,6 +329,12 @@ function displayRack(rack) {
   const match = rack.match(/\[(.*?)\]/);
   return match ? match[1].trim() : rack.trim();
 }
+
+    function toNum(v) {
+  if (v === undefined || v === null) return 0;
+  return Number(String(v).replace(/,/g, "")) || 0;
+}
+
     // สำหรับแสดงผลใน UI
 function renderGroupedTable(data) {
   const head = document.getElementById("tableHead");

@@ -438,6 +438,24 @@ const tds = headers.map(h => {
   });
 
   // ✔ NEW: ใช้สูตรใหม่
+// ✔ ตรวจว่าทุกแถวยังไม่ Check หรือไม่
+const allEmpty = rows.every(r =>
+  (!r.Act_Rack || r.Act_Rack === "") &&
+  (!r.Act_Lot || r.Act_Lot === "") &&
+  (!r.Act_Qty || r.Act_Qty === "") &&
+  (!r.Act_Package || r.Act_Package === "")
+);
+
+// ถ้ายังไม่ Check เลย
+if (allEmpty) {
+  body.innerHTML += `
+    <tr class="rack-row ${foldId}" style="background:#fff7d6; font-weight:bold; color:#b45309;">
+      <td colspan="${headers.length}" class="text-center">ยังไม่ Check</td>
+    </tr>
+  `;
+  continue; // ข้ามไม่ต้องคำนวณ delta
+}
+
 const rackTotal = totalActQty - baseSumQty;
 
 // เลือก class สี

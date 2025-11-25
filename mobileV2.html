@@ -1060,8 +1060,16 @@ async function saveData() {
   Swal.close();
   await Swal.fire({ icon: "success", title: "บันทึกข้อมูลสำเร็จแล้ว" });
 
-  clearForm();
-  await fetchItems();
+// ⭐ จำลูกค้าที่เลือกไว้ก่อนบันทึก
+const lastCustomer = customerSelect.value;
+
+clearForm();
+await fetchItems();
+
+// ⭐ เลือกลูกค้าคืนให้เหมือนเดิม
+customerSelect.value = lastCustomer;
+filterItemsByCustomer();
+
 }
 
 function clearForm() {

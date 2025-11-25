@@ -1195,17 +1195,19 @@ function filterItemsByCustomer() {
 
   const rows = currentItems.filter(r => r.Customer === customerSel);
 
-  list.innerHTML += rows
-    .map(r => {
-      const done = r.Act_Qty ? "✅" : "⚪️";
-      const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
-      return `
-        <option value="${r.File5digit}|${r.Lot}|${cleanRack}">
-          ${done} ${r.File5digit} (${r.Lot}) [${cleanRack}]
-        </option>
-      `;
-    })
-    .join("");
+list.innerHTML += rows
+  .filter(r => String(r.ID) === "1")   // ⭐ แสดงเฉพาะ ID = 1
+  .map(r => {
+    const done = r.Act_Qty ? "✅" : "⚪️";
+    const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
+    return `
+      <option value="${r.File5digit}|${r.Lot}|${cleanRack}">
+        ${done} ${r.File5digit} (${r.Lot}) [${cleanRack}]
+      </option>
+    `;
+  })
+  .join("");
+
 }
 </script>
 </body>

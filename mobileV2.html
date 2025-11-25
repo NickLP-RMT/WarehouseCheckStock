@@ -945,7 +945,19 @@ async function saveData() {
   const file = file5digit.value.trim();
   const itemValue = itemSelect.value;
   const sets = document.querySelectorAll(".rack-set");
-  const originalRack = rack.value.trim();
+
+  let originalRack = rack.value.trim();
+
+  // ⭐ FIX: ถ้าค่าว่าง ให้ใช้ค่า Act Rack ของ master set แทน
+  if (!originalRack) {
+    const master = document.querySelector(".rack-set[data-master='true']");
+    if (master) {
+      const g = master.querySelector(".rackGroup")?.value.trim() || "";
+      const s = master.querySelector(".rackSub")?.value.trim() || "";
+      originalRack = s || g || "";
+    }
+  }
+
   const customerVal = customer.value.trim();
   const sumQtyVal = sumQty.value.trim();
 
@@ -957,7 +969,9 @@ async function saveData() {
     });
   }
 
-  // ตรวจว่าทุก set กรอกครบ + มี rackId (ตาม logic ของ code.gs)
+  //----------------------------------------------
+  // VALIDATE ทุก rack-set กรอกครบ
+  //----------------------------------------------
   for (const s of sets) {
     const isMaster = s.dataset.master === "true";
     const group = s.querySelector(".rackGroup").value.trim();
@@ -966,37 +980,25 @@ async function saveData() {
     const actLot = s.querySelector(".actLotInput").value.trim();
     let a = s.querySelector(".pkg-input.a").value.trim();
     let b = s.querySelector(".pkg-input.b").value.trim();
-    let c = s.querySelector(".pkg-input.c").value.trim();
+    let c = s.querySelector(".pkg-input.c").value.trim() || "0";
     const actQty = s.querySelector(".actQty").value.trim();
-    const rackId = s.dataset.id || "";
 
-    if (isMaster && !actRack) {
-      actRack = originalRack;
-    }
-    if (c === "") c = "0";
+    if (isMaster && !actRack) actRack = originalRack;
 
-    if (!actRack || !a || !b || !actLot || !actQty) {
+    if (!actRack || !actLot || !a || !b || !actQty) {
       return Swal.fire({
         icon: "warning",
         title: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
-        confirmButtonText: "ตกลง",
-        allowOutsideClick: false
-      });
-    }
-
-    if (parseInt(actQty, 10) <= 0) {
-      return Swal.fire({
-        icon: "warning",
-        title: "Act Q'ty ต้องมากกว่า 0",
-        confirmButtonText: "ตกลง",
-        allowOutsideClick: false
+        confirmButtonText: "ตกลง"
       });
     }
   }
 
+  //----------------------------------------------
+  // เตรียมบันทึก
+  //----------------------------------------------
   const confirm = await Swal.fire({
     title: "ยืนยันการบันทึกข้อมูล?",
-    text: "คุณต้องการบันทึกข้อมูลที่กรอกหรือไม่",
     icon: "question",
     showCancelButton: true,
     confirmButtonText: "บันทึก",
@@ -1010,25 +1012,25 @@ async function saveData() {
     didOpen: () => Swal.showLoading()
   });
 
-  // บันทึกทีละ rack-set
+  //----------------------------------------------
+  // POST ไป code.gs ทีละชุด
+  //----------------------------------------------
   for (const s of sets) {
     const isMaster = s.dataset.master === "true";
     const group = s.querySelector(".rackGroup").value.trim();
     const sub   = s.querySelector(".rackSub").value.trim();
     let actRack = group && sub ? sub : "";
     const actLot = s.querySelector(".actLotInput").value.trim();
+
     let a = s.querySelector(".pkg-input.a").value.trim();
     let b = s.querySelector(".pkg-input.b").value.trim();
-    let c = s.querySelector(".pkg-input.c").value.trim();
+    let c = s.querySelector(".pkg-input.c").value.trim() || "0";
     const actQty = s.querySelector(".actQty").value.trim();
-    const rackId = s.dataset.id || "";
 
-    if (isMaster && !actRack) {
-      actRack = originalRack;
-    }
-    if (c === "") c = "0";
+    if (isMaster && !actRack) actRack = originalRack;
 
     const actPackage = `${a}×${b}+${c}`;
+    const rackId = s.dataset.id || "";
 
     await fetch(`${scriptURL}?page=updateRecord`, {
       method: "POST",
@@ -1049,18 +1051,7 @@ async function saveData() {
   }
 
   Swal.close();
-
-  await Swal.fire({
-    icon: "success",
-    title: "บันทึกข้อมูลสำเร็จแล้ว",
-    confirmButtonText: "OK"
-  });
-
-  Swal.fire({
-    title: "กำลังดึงข้อมูล...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading()
-  });
+  await Swal.fire({ icon: "success", title: "บันทึกข้อมูลสำเร็จแล้ว" });
 
   clearForm();
   await fetchItems();

@@ -324,6 +324,7 @@ function normalizeRack(rack) {
   return match ? match[1].trim() : rack.trim();
 }
 
+    // สำหรับแสดงผลใน UI
 function renderGroupedTable(data) {
   const head = document.getElementById("tableHead");
   const body = document.getElementById("tableBody");
@@ -335,11 +336,9 @@ function renderGroupedTable(data) {
     return;
   }
 
-  // Header
   const headersRaw = Object.keys(data[0]);
   const headers = headersRaw.filter(h => h !== "ID");
 
-  // Insert Delta column
   if (!headers.includes("Delta +/-")) {
     const insertIndex = headers.indexOf("Act_Package") + 1;
     headers.splice(insertIndex, 0, "Delta +/-");
@@ -347,7 +346,7 @@ function renderGroupedTable(data) {
 
   head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
 
-  // STEP 1: Group ตาม File5digit + Lot
+  // GROUP 1: File + Lot
   const mainGroups = {};
   data.forEach(row => {
     const key = `${row.File5digit}_${row.Lot}`;
@@ -357,12 +356,10 @@ function renderGroupedTable(data) {
 
   const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
 
-  // LOOP main groups
   for (const key in mainGroups) {
     const groupRows = mainGroups[key];
     const [file, lot] = key.split("_");
 
-    // Group Header
     body.innerHTML += `
       <tr class="table-group">
         <td colspan="${headers.length}">
@@ -371,7 +368,7 @@ function renderGroupedTable(data) {
       </tr>
     `;
 
-    // STEP 2: Group by Rack Normalize
+    // GROUP 2: Rack
     const rackGroups = {};
     groupRows.forEach(r => {
       const norm = normalizeRack(r.Rack);
@@ -379,29 +376,34 @@ function renderGroupedTable(data) {
       rackGroups[norm].push(r);
     });
 
-    // STEP 3: Render each Rack group
     for (const rackNorm in rackGroups) {
       let rows = rackGroups[rackNorm];
-
-      // Sort by ID
       rows = rows.sort((a, b) => Number(a.ID) - Number(b.ID));
 
-      // Rack Header
+      const foldId = "rack_" + rackNorm.replace(/\W/g, "_"); // class name safe
+
+      // ▶ Rack Header
       body.innerHTML += `
-        <tr style="background:#e2e8f0;">
-          <td colspan="${headers.length}" style="font-weight:bold;">▶ Rack: ${rackNorm}</td>
+        <tr class="rack-header" data-target="${foldId}" style="background:#e2e8f0; cursor:pointer;">
+          <td colspan="${headers.length}" style="font-weight:bold;">
+            ▶ Rack: <b>${displayRack(rackNorm)}</b>
+          </td>
         </tr>
       `;
 
-      // Render rows inside Rack
-      rows.forEach(row => {
+      let totalRackDelta = 0;
 
+      // Child rows
+      rows.forEach(row => {
         const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
         const actQty = toNum(row.Act_Qty);
+
         let deltaText = "", deltaClass = "";
 
         if (row.Act_Qty !== undefined && row.Act_Qty !== "") {
           const delta = actQty - sumQty;
+          totalRackDelta += delta;
+
           if (delta > 0) {
             deltaText = `▲ +${delta}`;
             deltaClass = "delta-positive";
@@ -420,13 +422,35 @@ function renderGroupedTable(data) {
           return `<td>${row[h] ?? ""}</td>`;
         }).join("");
 
-        body.innerHTML += `<tr>${tds}</tr>`;
+        body.innerHTML += `
+          <tr class="rack-row ${foldId}">
+            ${tds}
+          </tr>
+        `;
       });
+
+      // TOTAL PER RACK
+      body.innerHTML += `
+        <tr class="rack-row ${foldId}" style="background:#f8fafc; font-weight:bold;">
+          <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
+          <td>${totalRackDelta > 0 ? "▲ +" + totalRackDelta :
+                                  totalRackDelta < 0 ? "▼ " + totalRackDelta :
+                                  "0"}</td>
+        </tr>
+      `;
     }
   }
+
+  // COLLAPSE EVENT
+  document.querySelectorAll(".rack-header").forEach(el => {
+    el.addEventListener("click", () => {
+      const target = el.dataset.target;
+      document.querySelectorAll("." + target).forEach(r => {
+        r.style.display = r.style.display === "none" ? "" : "none";
+      });
+    });
+  });
 }
-
-
 
 // 📤 Export Excel แบบ Flat List พร้อมจัดเรียงตาม File5digit + Lot
 async function exportExcel() {

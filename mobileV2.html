@@ -946,7 +946,7 @@ async function saveData() {
   const itemValue = itemSelect.value;
   const sets = document.querySelectorAll(".rack-set");
 
-  let originalRack = rack.value.trim();
+  let originalRack = rack.value.replace(/\[.*?\]/g, "").trim();
 
   // ⭐ FIX: ถ้าค่าว่าง ให้ใช้ค่า Act Rack ของ master set แทน
   if (!originalRack) {

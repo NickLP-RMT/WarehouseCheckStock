@@ -517,7 +517,6 @@ async function fetchItems() {
     currentItems = rows;
     loadCustomers(rows);
     itemSelect.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
-    customerSelect.value = "";
     itemSection.style.display = "block";
   } catch {
     Swal.fire("❌", "ไม่สามารถดึงข้อมูลได้", "error");

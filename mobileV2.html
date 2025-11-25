@@ -149,6 +149,12 @@ button {
   .package-row { flex-direction: column; }
   .package-box, .actQty-box { flex: 1 1 100%; }
 }
+  .set-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #065f46;
+  margin-bottom: 8px;
+}
 </style>
 </head>
 
@@ -259,21 +265,53 @@ const rackMap = {
 // ทำให้ master แถวแรกไม่มีปุ่มลบ + แก้ Act Rack ไม่ได้
 function refreshRackSets() {
   const sets = document.querySelectorAll(".rack-set");
-  sets.forEach(set => {
-    const delBtn = set.querySelector(".btn-delete");
-    const isMaster = set.dataset.master === "true";
+  sets.forEach((set, idx) => {
 
-    if (isMaster) {
+    // ⭐ เพิ่มชื่อเซ็ต
+let title = newSet.querySelector(".set-title");
+if (!title) {
+  title = document.createElement("div");
+  title.className = "set-title";
+  newSet.prepend(title);
+}
+    title.textContent = `Act Set #${idx + 1}`;
+
+    const delBtn = set.querySelector(".btn-delete");
+    const editBtn = set.querySelector(".btn-edit");
+
+    // ⭐ Set#1 คือ master
+    if (idx === 0) {
+      set.dataset.master = "true";
+
+      // ซ่อนปุ่มลบ
       if (delBtn) delBtn.style.display = "none";
-      const rg = set.querySelector(".rackGroup");
-      const rs = set.querySelector(".rackSub");
-      if (rg) rg.disabled = true;
-      if (rs) rs.disabled = true;
+
+      // ซ่อนปุ่ม edit
+      if (editBtn) editBtn.style.display = "none";
+
+      // เปิดให้แก้ไขทุกช่อง
+      set.querySelectorAll("input").forEach(el => {
+        if (!el.classList.contains("actQty")) {
+          el.readOnly = false;
+          el.classList.add("editable");
+        }
+      });
+
+      set.querySelectorAll("select").forEach(el => {
+        el.disabled = false;
+        el.classList.add("editable");
+      });
+
     } else {
+      // ⭐ Set #2, #3... → ปกติ
+      set.dataset.master = "false";
+
       if (delBtn) delBtn.style.display = "inline-flex";
+      if (editBtn) editBtn.style.display = "inline-flex";
     }
   });
 }
+
 
 // โหลดรายชื่อผู้ทำ
 async function loadNames() {
@@ -429,6 +467,7 @@ function showDetail() {
 
       htmlRack += `
         <div class="rack-set" data-id="${idStr}" data-master="${isMaster ? "true" : "false"}">
+        <div class="set-title">Act Set #${idx + 1}</div>     <!-- ⭐ NEW LINE -->
           <div class="action-buttons">
             <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
             ${isMaster ? '' : '<button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>'}

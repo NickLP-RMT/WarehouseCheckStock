@@ -373,79 +373,80 @@ function renderGroupedTable(data) {
       </tr>
     `;
 
-    // GROUP 2: Rack
-    const rackGroups = {};
-    groupRows.forEach(r => {
-      const norm = normalizeRack(r.Rack);
-      if (!rackGroups[norm]) rackGroups[norm] = [];
-      rackGroups[norm].push(r);
-    });
+// GROUP 2: Rack
+const rackGroups = {};
+groupRows.forEach(r => {
+  const norm = normalizeRack(r.Rack);
+  if (!rackGroups[norm]) rackGroups[norm] = [];
+  rackGroups[norm].push(r);
+});
 
-    for (const rackNorm in rackGroups) {
-      let rows = rackGroups[rackNorm];
-      rows = rows.sort((a, b) => Number(a.ID) - Number(b.ID));
+for (const rackNorm in rackGroups) {
+  let rows = rackGroups[rackNorm];
 
-      const foldId = "rack_" + rackNorm.replace(/\W/g, "_"); // class name safe
+  rows = rows.sort((a, b) => Number(a.ID) - Number(b.ID));
 
-      // ▶ Rack Header
-      body.innerHTML += `
-        <tr class="rack-header" data-target="${foldId}" style="background:#e2e8f0; cursor:pointer;">
-          <td colspan="${headers.length}" style="font-weight:bold;">
-            ▶ Rack: <b>${displayRack(rackNorm)}</b>
-          </td>
-        </tr>
-      `;
+  const foldId = "rack_" + rackNorm.replace(/\W/g, "_");
 
-      let totalRackDelta = 0;
+  body.innerHTML += `
+    <tr class="rack-header" data-target="${foldId}" style="background:#e2e8f0; cursor:pointer;">
+      <td colspan="${headers.length}" style="font-weight:bold;">
+        ▶ Rack: <b>${displayRack(rackNorm)}</b>
+      </td>
+    </tr>
+  `;
 
-      // Child rows
-      rows.forEach(row => {
-        const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
-        const actQty = toNum(row.Act_Qty);
+  // ✔ NEW: logic คำนวณตามสูตรใหม่
+  const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty || 0);
+  let totalActQty = 0;
 
-        let deltaText = "", deltaClass = "";
+  rows.forEach(row => {
+    const actQty = toNum(row.Act_Qty);
+    totalActQty += actQty;
 
-        if (row.Act_Qty !== undefined && row.Act_Qty !== "") {
-          const delta = actQty - sumQty;
-          totalRackDelta += delta;
+    const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
+    let deltaText = "", deltaClass = "";
 
-          if (delta > 0) {
-            deltaText = `▲ +${delta}`;
-            deltaClass = "delta-positive";
-          } else if (delta < 0) {
-            deltaText = `▼ ${delta}`;
-            deltaClass = "delta-negative";
-          } else {
-            deltaText = "0";
-            deltaClass = "delta-zero";
-          }
-        }
+    if (row.Act_Qty !== undefined && row.Act_Qty !== "") {
+      const delta = actQty - sumQty;
 
- const tds = headers.map(h => {
-  if (h === "Delta +/-") return `<td class="${deltaClass}">${deltaText}</td>`;
-  if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
-  if (h === "Rack") return `<td>${displayRack(row[h])}</td>`;
-  return `<td>${row[h] ?? ""}</td>`;
-}).join("");
-
-
-        body.innerHTML += `
-          <tr class="rack-row ${foldId}">
-            ${tds}
-          </tr>
-        `;
-      });
-
-      // TOTAL PER RACK
-      body.innerHTML += `
-        <tr class="rack-row ${foldId}" style="background:#f8fafc; font-weight:bold;">
-          <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
-          <td>${totalRackDelta > 0 ? "▲ +" + totalRackDelta :
-                                  totalRackDelta < 0 ? "▼ " + totalRackDelta :
-                                  "0"}</td>
-        </tr>
-      `;
+      if (delta > 0) {
+        deltaText = `▲ +${delta}`;
+        deltaClass = "delta-positive";
+      } else if (delta < 0) {
+        deltaText = `▼ ${delta}`;
+        deltaClass = "delta-negative";
+      } else {
+        deltaText = "0";
+        deltaClass = "delta-zero";
+      }
     }
+
+    const tds = headers.map(h => {
+      if (h === "Delta +/-") return `<td class="${deltaClass}">${deltaText}</td>`;
+      if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
+      return `<td>${row[h] ?? ""}</td>`;
+    }).join("");
+
+    body.innerHTML += `
+      <tr class="rack-row ${foldId}">
+        ${tds}
+      </tr>
+    `;
+  });
+
+  // ✔ NEW: ใช้สูตรใหม่
+  const rackTotal = totalActQty - baseSumQty;
+
+  body.innerHTML += `
+    <tr class="rack-row ${foldId}" style="background:#f8fafc; font-weight:bold;">
+      <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
+      <td>${rackTotal > 0 ? "▲ +" + rackTotal :
+           rackTotal < 0 ? "▼ " + rackTotal : "0"}</td>
+    </tr>
+  `;
+}
+
   }
 
   // COLLAPSE EVENT

@@ -179,7 +179,6 @@
    
 const rawRows = XLSX.utils.sheet_to_json(sheet, {
   header: 1,
-  range: 1,       // เริ่มหลัง header
   blankrows: true,
   defval: ""      // บังคับช่องว่างให้มีค่า
 });

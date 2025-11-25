@@ -133,7 +133,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-  const scriptURL = "https://script.google.com/macros/s/AKfycbwBdxGb7KQfCzS9EuAHGnTLxH05fKmARywauVUQdm2O2yqrAPU08NjmgAKO43AyColN/exec";
+  const scriptURL = "https://script.google.com/macros/s/AKfycbxGNyandA7QK3SkjjYPfs8z0-MDUwctGcJxEA0vETp3kXgsHCYMt4vZ1QeNEcoU8DG2/exec";
   let allData = [];
 
   // 🕒 เวลาไทย
@@ -301,9 +301,18 @@ function renderGroupedTable(data) {
     return;
   }
 
-  const headers = Object.keys(data[0]);
+  // เอา key มาจาก object แถวแรก
+  const headersRaw = Object.keys(data[0]);
+
+  // 🔒 ซ่อนคอลัมน์ ID ออกจากการแสดงผล (แต่ยังอยู่ใน data)
+  const headers = headersRaw.filter(h => h !== "ID");
+
+  // แทรกคอลัมน์ Delta +/-
   const insertIndex = headers.indexOf("Act_Package") + 1;
-  if (!headers.includes("Delta +/-")) headers.splice(insertIndex, 0, "Delta +/-");
+  if (!headers.includes("Delta +/-")) {
+    headers.splice(insertIndex, 0, "Delta +/-");
+  }
+
   head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
 
   const grouped = {};
@@ -320,16 +329,13 @@ function renderGroupedTable(data) {
     const groupRows = grouped[key];
     let totalDelta = 0;
 
-    // ✅ ตรวจว่ามีข้อมูล Act_* หรือไม่
     const hasActData = groupRows.some(r =>
       r.Act_Rack || r.Act_Lot || r.Act_Qty || r.Act_Package
     );
 
-    // ✅ สีพื้นหลังของกลุ่ม
     const groupBg = hasActData ? "" : "style='background-color:#fff7d6;'";
-
-    // 🔹 แถวหัวกลุ่ม + ต่อท้ายข้อความยังไม่ Check Stock ถ้าไม่มีข้อมูล
     const statusText = hasActData ? "" : `<span style="color:#b45309; font-weight:500;"> - 🕒 ยังไม่ Check Stock</span>`;
+
     body.innerHTML += `
       <tr class="table-group" ${groupBg}>
         <td colspan="${headers.length}">
@@ -338,7 +344,6 @@ function renderGroupedTable(data) {
       </tr>
     `;
 
-    // 🔹 รายละเอียดแต่ละแถว
     groupRows.forEach((row, idx) => {
       const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
       const actQty = toNum(row.Act_Qty);
@@ -366,12 +371,12 @@ function renderGroupedTable(data) {
       body.innerHTML += `<tr class="table-detail" ${groupBg}>${tds}</tr>`;
     });
 
-    // 🔹 แถวสรุปของกลุ่ม (เฉพาะกรณีที่มี Act Data)
     if (hasActData) {
       const totalText =
         totalDelta === 0 ? "0" : totalDelta > 0 ? `▲ +${totalDelta}` : `▼ ${totalDelta}`;
       const totalClass =
         totalDelta > 0 ? "delta-positive" : totalDelta < 0 ? "delta-negative" : "delta-zero";
+
       body.innerHTML += `
         <tr class="${totalClass}" style="font-weight:700;">
           <td colspan="${headers.length - 1}" class="text-end pe-3">รวมทั้งหมด:</td>
@@ -380,6 +385,7 @@ function renderGroupedTable(data) {
     }
   }
 }
+
 
 // 📤 Export Excel แบบ Flat List พร้อมจัดเรียงตาม File5digit + Lot
 async function exportExcel() {

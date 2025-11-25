@@ -1012,27 +1012,40 @@ async function saveData() {
   //----------------------------------------------
   // VALIDATE ทุก rack-set กรอกครบ
   //----------------------------------------------
-  for (const s of sets) {
-    const isMaster = s.dataset.master === "true";
-    const group = s.querySelector(".rackGroup").value.trim();
-    const sub   = s.querySelector(".rackSub").value.trim();
-    let actRack = group && sub ? sub : "";
-    const actLot = s.querySelector(".actLotInput").value.trim();
-    let a = s.querySelector(".pkg-input.a").value.trim();
-    let b = s.querySelector(".pkg-input.b").value.trim();
-    let c = s.querySelector(".pkg-input.c").value.trim() || "0";
-    const actQty = s.querySelector(".actQty").value.trim();
+//----------------------------------------------
+// VALIDATE ทุก rack-set กรอกครบ
+//----------------------------------------------
+for (const s of sets) {
 
-    if (isMaster && !actRack) actRack = originalRack;
+  const group = s.querySelector(".rackGroup").value.trim();
+  const sub   = s.querySelector(".rackSub").value.trim();
+  const actRack = (group && sub) ? sub : "";
 
-    if (!actRack || !actLot || !a || !b || !actQty) {
-      return Swal.fire({
-        icon: "warning",
-        title: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
-        confirmButtonText: "ตกลง"
-      });
-    }
+  const actLot = s.querySelector(".actLotInput").value.trim();
+  const a = s.querySelector(".pkg-input.a").value.trim();
+  const b = s.querySelector(".pkg-input.b").value.trim();
+  const c = s.querySelector(".pkg-input.c").value.trim() || "0";
+  const actQty = s.querySelector(".actQty").value.trim();
+
+  // ❗ บังคับเลือก Act Rack ทุกชุด รวม Act Set #1
+  if (!actRack) {
+    return Swal.fire({
+      icon: "warning",
+      title: "⚠️ กรุณาเลือก Act Rack",
+      confirmButtonText: "ตกลง"
+    });
   }
+
+  // ❗ บังคับกรอก Act Lot และ Package
+  if (!actLot || !a || !b || !actQty) {
+    return Swal.fire({
+      icon: "warning",
+      title: "⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง",
+      confirmButtonText: "ตกลง"
+    });
+  }
+}
+
 
   //----------------------------------------------
   // เตรียมบันทึก

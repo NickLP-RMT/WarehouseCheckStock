@@ -438,15 +438,24 @@ const tds = headers.map(h => {
   });
 
   // ✔ NEW: ใช้สูตรใหม่
-  const rackTotal = totalActQty - baseSumQty;
+const rackTotal = totalActQty - baseSumQty;
 
-  body.innerHTML += `
-    <tr class="rack-row ${foldId}" style="background:#f8fafc; font-weight:bold;">
-      <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
-      <td>${rackTotal > 0 ? "▲ +" + rackTotal :
-           rackTotal < 0 ? "▼ " + rackTotal : "0"}</td>
-    </tr>
-  `;
+// เลือก class สี
+let rackTotalClass = "";
+if (rackTotal > 0) rackTotalClass = "delta-positive";
+else if (rackTotal < 0) rackTotalClass = "delta-negative";
+else rackTotalClass = "delta-zero";
+
+body.innerHTML += `
+  <tr class="rack-row ${foldId}" style="background:#f8fafc; font-weight:bold;">
+    <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
+    <td class="${rackTotalClass}">
+      ${rackTotal > 0 ? "▲ +" + rackTotal :
+         rackTotal < 0 ? "▼ " + rackTotal : "0"}
+    </td>
+  </tr>
+`;
+
 }
 
   }

@@ -528,7 +528,9 @@ function showDetail() {
   try {
     const value = itemSelect.value;
 
+    // -----------------------------------------
     // ถ้ายังไม่เลือกรายการ → reset เป็น Act Set #1 ว่าง
+    // -----------------------------------------
     if (!value) {
       customer.value = "";
       file5digit.value = "";
@@ -591,11 +593,15 @@ function showDetail() {
       return;
     }
 
+    // -----------------------------------------
     // แยกค่า File | Lot | Rack เดิม
+    // -----------------------------------------
     const [fileCode, lotCode, rackName] = value.split("|");
     if (!fileCode || !lotCode) return;
 
-    // เลือกเฉพาะแถวที่ File + Lot + Rack เดิมตรงกัน
+    // -----------------------------------------
+    // เลือกเฉพาะแถวที่ File + Lot + Rack ตรงกัน
+    // -----------------------------------------
     const selectedRows = currentItems.filter(r => {
       return (
         String(r.File5digit).trim() === fileCode.trim() &&
@@ -615,21 +621,28 @@ function showDetail() {
       return found ? base[found] : "";
     };
 
-    customer.value = getVal("Customer");
+    customer.value  = getVal("Customer");
     file5digit.value = getVal("File5digit");
-    lot.value = getVal("Lot");
-    rack.value = getVal("Rack");
-    sumQty.value = getVal("Sum of Qty") || getVal("SumOfQty") || "";
+    lot.value       = getVal("Lot");
+    rack.value      = getVal("Rack");
+    sumQty.value    = getVal("Sum of Qty") || getVal("SumOfQty") || "";
 
+    // -----------------------------------------
     // สร้าง rack-set ทั้งหมด
+    // -----------------------------------------
     let htmlRack = "";
-    selectedRows.forEach((row, index) => {
-      const rawId = row.ID !== undefined ? row.ID :
-                    row.Id !== undefined ? row.Id :
-                    row.id;
-      const idStr = rawId !== undefined && rawId !== null ? String(rawId) : "";
 
-      const isMaster = idStr === "1";  // ID=1 = master ตาม code.gs
+    selectedRows.forEach((row, index) => {
+
+      // ⭐⭐⭐ จุดแก้สำคัญ: แถวที่ไม่มี ID → ถือว่าเป็น "new"
+      let rawId =
+        row.ID !== undefined ? row.ID :
+        row.Id !== undefined ? row.Id :
+        row.id;
+
+      let idStr = (rawId === undefined || rawId === null || rawId === "") ? "new" : String(rawId);
+
+      const isMaster = (idStr === "1");
 
       const actRack   = row.Act_Rack    || "";
       const rawActLot = row.Act_Lot;
@@ -673,8 +686,7 @@ function showDetail() {
 
           <div style="margin-top:10px;">
             <label>Act Lot</label>
-            <input type="text" class="actLotInput"
-                   value="${actLotVal}" ${rawActLot ? "readonly" : ""}>
+            <input type="text" class="actLotInput" value="${actLotVal}" ${rawActLot ? "readonly" : ""}>
           </div>
 
           <div class="package-row">
@@ -700,10 +712,12 @@ function showDetail() {
       `;
     });
 
-    // ถ้าไม่มี rack-set เลย → ทำ Act Set #1 ว่าง
+    // -------------------------------
+    // ถ้าไม่มี rack-set เลย → Create Act Set #1
+    // -------------------------------
     if (!htmlRack) {
       htmlRack = `
-        <div class="rack-set" data-master="true">
+        <div class="rack-set" data-master="true" data-id="1">
           <div class="set-title">Act Set #1</div>
           <div class="action-buttons">
             <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
@@ -759,6 +773,7 @@ function showDetail() {
     Swal.fire("❌", "ไม่สามารถโหลดรายละเอียดได้", "error");
   }
 }
+
 
 function updateRackSub(select) {
   const subSelect = select.closest(".rack-set").querySelector(".rackSub");

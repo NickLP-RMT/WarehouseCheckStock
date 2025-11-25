@@ -358,7 +358,7 @@ button {
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbxGUCtiukCadkSJHapZZGgeJq0bZ66HLBElOHa55pYLYhU_Z7clF-mtnwenDqr2A9JT/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbzTjblFsGLcaenms5lt5-D1jjSzH4pNlzsEJjLCSfCdKRkT78hiw-M3tJ4DMGG7MC0_/exec";
 let currentItems = [];
 
 // Rack Map
@@ -768,12 +768,12 @@ function addRackSet() {
   const newSet = document.createElement("div");
   newSet.className = "rack-set";
   newSet.dataset.master = "false";
-  newSet.dataset.id = ""; // ให้ส่งค่า "" เพื่อให้ code.gs สร้างแถวใหม่ (ID ใหม่)
+  newSet.dataset.id = "new";   // ⭐ ส่งค่า new เพื่อให้ code.gs สร้าง ID ใหม่
 
   newSet.innerHTML = `
     <div class="set-title">Act Set #?</div>
     <div class="action-buttons">
-      <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+      <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
       <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
     </div>
 

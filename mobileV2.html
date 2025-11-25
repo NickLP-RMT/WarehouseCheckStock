@@ -388,60 +388,80 @@ function refreshRackSets() {
   const sets = document.querySelectorAll(".rack-set");
 
   sets.forEach((set, idx) => {
+
+    // ⭐ กำหนด ID (ไม่เขียนทับของเดิม)
+    if (!set.dataset.id) {
+      set.dataset.id = idx === 0 ? "1" : "new";
+    }
+
+    // ⭐ เซตแรกเป็น master เสมอ
     const isMaster = idx === 0;
     set.dataset.master = isMaster ? "true" : "false";
 
-    // set-title
+    // -------------------------
+    // 1. อัปเดตชื่อ Title
+    // -------------------------
     let title = set.querySelector(".set-title");
     if (!title) {
       title = document.createElement("div");
       title.className = "set-title";
-      set.insertBefore(title, set.firstChild);
+      set.prepend(title);
     }
     title.textContent = `Act Set #${idx + 1}`;
 
+    // -------------------------
+    // 2. ปุ่ม Edit / Delete
+    // -------------------------
     const editBtn = set.querySelector(".btn-edit");
     const delBtn  = set.querySelector(".btn-delete");
 
     if (isMaster) {
-      // Master: ไม่มีปุ่มลบ
+      // Master → ปุ่มลบไม่ต้องมี
       if (delBtn) delBtn.style.display = "none";
 
-      // Master: เริ่มต้นอยู่ในโหมดแก้ไขเลย
+      // Master: เริ่มเป็นโหมด editable (เปิดแก้ไข)
       if (editBtn) {
-        editBtn.style.display = "inline-flex";
         editBtn.dataset.editing = "true";
         editBtn.textContent = "🔒";
         editBtn.style.background = "#10b981";
       }
 
+      // เปิดให้แก้ไข input/select
       set.querySelectorAll("input").forEach(el => {
         if (!el.classList.contains("actQty")) {
           el.readOnly = false;
           el.classList.add("editable");
         }
       });
+
       set.querySelectorAll("select").forEach(el => {
         el.disabled = false;
         el.classList.add("editable");
       });
 
     } else {
-      // Set#2 ขึ้นไป: เริ่มต้นเป็นโหมด lock
+      // -------------------------
+      // Set #2 ขึ้นไป → Lock mode ตอนแรก
+      // -------------------------
       if (delBtn) delBtn.style.display = "inline-flex";
+
       if (editBtn) {
+        // ถ้าไม่เคยมีค่า editing → ตั้งเป็น false
         if (!editBtn.dataset.editing) {
           editBtn.dataset.editing = "false";
         }
         const editing = editBtn.dataset.editing === "true";
+
         editBtn.textContent = editing ? "🔒" : "✏️";
         editBtn.style.background = editing ? "#10b981" : "#3b82f6";
 
+        // ตั้งสถานะ Readonly / Editable
         set.querySelectorAll("input").forEach(el => {
           if (el.classList.contains("actQty")) return;
           el.readOnly = !editing;
           el.classList.toggle("editable", editing);
         });
+
         set.querySelectorAll("select").forEach(el => {
           el.disabled = !editing;
           el.classList.toggle("editable", editing);

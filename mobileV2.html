@@ -349,11 +349,7 @@ button {
     </div>
 
     <div style="display:flex; gap:10px; margin-top:15px;">
-      <!-- ปุ่มเพิ่ม RackSet: ปิดไว้เพราะ backend ยังไม่ได้ใช้หลาย ID จริงๆ -->
-      <button class="btn-add" type="button" onclick="addRackSet()" disabled
-              title="ฟังก์ชันเพิ่ม Rack ใหม่จะเปิดใช้เมื่อ backend รองรับ">
-        ＋
-      </button>
+<button class="btn-add" type="button" onclick="addRackSet()">＋</button>
       <button class="btn-primary" style="flex:1;" onclick="saveData()">💾 บันทึกข้อมูล</button>
     </div>
   </div>
@@ -521,7 +517,7 @@ function showDetail() {
       rack.value = "";
 
       document.getElementById("rackZone").innerHTML = `
-        <div class="rack-set" data-master="true">
+        <div class="rack-set" data-master="true" data-id="1">
           <div class="set-title">Act Set #1</div>
           <div class="action-buttons">
             <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
@@ -767,12 +763,64 @@ function calcActQty(input) {
 }
 
 function addRackSet() {
-  Swal.fire(
-    "ℹ️",
-    "ฟังก์ชันเพิ่ม Rack ใหม่จะเปิดใช้เมื่อ backend รองรับการสร้าง ID ใหม่",
-    "info"
-  );
+  const zone = document.getElementById("rackZone");
+
+  const newSet = document.createElement("div");
+  newSet.className = "rack-set";
+  newSet.dataset.master = "false";
+  newSet.dataset.id = ""; // ให้ส่งค่า "" เพื่อให้ code.gs สร้างแถวใหม่ (ID ใหม่)
+
+  newSet.innerHTML = `
+    <div class="set-title">Act Set #?</div>
+    <div class="action-buttons">
+      <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
+      <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
+    </div>
+
+    <label>Act Rack</label>
+    <div class="row2col">
+      <div class="col">
+        <select class="rackGroup" onchange="updateRackSub(this)">
+          <option value="">--เลือก--</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="PC AREA">PC AREA</option>
+          <option value="BKK AREA">BKK AREA</option>
+          <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+        </select>
+      </div>
+      <div class="col"><select class="rackSub"></select></div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <label>Act Lot</label>
+      <input type="text" class="actLotInput" value="">
+    </div>
+
+    <div class="package-row">
+      <div class="package-box">
+        <label>Package</label>
+        <div class="package-inputs">
+          <input class="pkg-input a" oninput="calcActQty(this)">
+          <span>×</span>
+          <input class="pkg-input b" oninput="calcActQty(this)">
+          <span>+</span>
+          <input class="pkg-input c" oninput="calcActQty(this)">
+        </div>
+      </div>
+      <div class="actQty-box">
+        <label>Act Q'ty</label>
+        <input class="actQty" readonly>
+      </div>
+    </div>
+  `;
+
+  zone.appendChild(newSet);
+  refreshRackSets();
 }
+
 
 async function removeRackSet(btn) {
   const rackSet = btn.closest(".rack-set");
@@ -909,14 +957,6 @@ async function saveData() {
         allowOutsideClick: false
       });
     }
-
-    if (!rackId) {
-      return Swal.fire({
-        icon: "warning",
-        title: "พบแถวที่ไม่มี ID (rackId) ซึ่ง backend ยังไม่รองรับการสร้าง ID ใหม่จาก mobile",
-        confirmButtonText: "ตกลง"
-      });
-    }
   }
 
   const confirm = await Swal.fire({
@@ -1001,7 +1041,7 @@ function clearForm() {
 
   const zone = document.getElementById("rackZone");
   zone.innerHTML = `
-    <div class="rack-set" data-master="true">
+    <div class="rack-set" data-master="true" data-id="1">
       <div class="set-title">Act Set #1</div>
       <div class="action-buttons">
         <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
@@ -1075,7 +1115,7 @@ function filterItemsByCustomer() {
   rack.value = "";
 
   document.getElementById("rackZone").innerHTML = `
-    <div class="rack-set" data-master="true">
+    <div class="rack-set" data-master="true" data-id="1">
       <div class="set-title">Act Set #1</div>
       <div class="action-buttons">
         <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>

@@ -176,11 +176,20 @@
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }).slice(1);
-      const payload = rows.map(r => ({
-        Customer: r[0] || "", Name: r[1] || "", File5digit: r[2] || "",
-        Lot: r[3] || "", Rack: r[4] || "", SumOfQty: r[5] || ""
-      }));
+      const rows = XLSX.utils.sheet_to_json(sheet, {
+  header: 1,
+  defval: ""   // << สำคัญ ทำให้ช่องว่างไม่ถูก drop
+}).slice(1);
+
+const payload = rows.map(r => ({
+  Customer: String(r[0] || "").trim(),
+  Name: String(r[1] || "").trim(),
+  File5digit: String(r[2] || "").trim(),
+  Lot: String(r[3] || "").trim(),
+  Rack: String(r[4] || "").trim(),
+  SumOfQty: String(r[5] || "").trim()
+}));
+
 
       try {
         const res = await fetch(`${scriptURL}?page=uploadData`, {

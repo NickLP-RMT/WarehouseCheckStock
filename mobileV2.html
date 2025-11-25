@@ -758,11 +758,14 @@ function showDetail() {
             <div class="package-box">
               <label>Package</label>
               <div class="package-inputs">
-                <input class="pkg-input a" oninput="calcActQty(this)">
+                <input type="number" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
                 <span>×</span>
-                <input class="pkg-input b" oninput="calcActQty(this)">
+                <input type="number" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input b" oninput="validateNumber(this); calcActQty(this)">
                 <span>+</span>
-                <input class="pkg-input c" oninput="calcActQty(this)">
+                <input type="number" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input c" oninput="validateNumber(this); calcActQty(this)">
               </div>
             </div>
             <div class="actQty-box">
@@ -1125,11 +1128,19 @@ function clearForm() {
         <div class="package-box">
           <label>Package</label>
           <div class="package-inputs">
-            <input class="pkg-input a" oninput="calcActQty(this)">
-            <span>×</span>
-            <input class="pkg-input b" oninput="calcActQty(this)">
-            <span>+</span>
-            <input class="pkg-input c" oninput="calcActQty(this)">
+<input type="number" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
+
+<span>×</span>
+
+<input type="number" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input b" oninput="validateNumber(this); calcActQty(this)">
+
+<span>+</span>
+
+<input type="number" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input c" oninput="validateNumber(this); calcActQty(this)">
+
           </div>
         </div>
         <div class="actQty-box">
@@ -1201,11 +1212,19 @@ function filterItemsByCustomer() {
         <div class="package-box">
           <label>Package</label>
           <div class="package-inputs">
-            <input class="pkg-input a" oninput="calcActQty(this)">
-            <span>×</span>
-            <input class="pkg-input b" oninput="calcActQty(this)">
-            <span>+</span>
-            <input class="pkg-input c" oninput="calcActQty(this)">
+<input type="number" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input a" oninput="validateNumber(this); calcActQty(this)">
+
+<span>×</span>
+
+<input type="number" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input b" oninput="validateNumber(this); calcActQty(this)">
+
+<span>+</span>
+
+<input type="number" inputmode="numeric" pattern="[0-9]*"
+       class="pkg-input c" oninput="validateNumber(this); calcActQty(this)">
+
           </div>
         </div>
         <div class="actQty-box">

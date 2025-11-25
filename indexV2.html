@@ -422,11 +422,13 @@ for (const rackNorm in rackGroups) {
       }
     }
 
-    const tds = headers.map(h => {
-      if (h === "Delta +/-") return `<td class="${deltaClass}">${deltaText}</td>`;
-      if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
-      return `<td>${row[h] ?? ""}</td>`;
-    }).join("");
+const tds = headers.map(h => {
+  if (h === "Delta +/-") return `<td class="${deltaClass}">${deltaText}</td>`;
+  if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
+  if (h === "Rack") return `<td>${displayRack(row[h])}</td>`;
+  return `<td>${row[h] ?? ""}</td>`;
+}).join("");
+
 
     body.innerHTML += `
       <tr class="rack-row ${foldId}">

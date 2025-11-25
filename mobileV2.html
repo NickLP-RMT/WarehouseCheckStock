@@ -183,10 +183,10 @@ button {
     <label>Rack</label><input id="rack" readonly>
 
     <div id="rackZone">
-      <div class="rack-set">
+      <div class="rack-set" data-master="true">
         <div class="action-buttons">
           <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
-          <!-- master row จะไม่มีปุ่มลบ (ซ่อนด้วย JS) -->
+          <!-- master row: no delete -->
           <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
         </div>
         <label>Act Rack</label>
@@ -231,7 +231,8 @@ button {
     </div>
 
     <div style="display:flex; gap:10px; margin-top:15px;">
-      <button class="btn-add" onclick="addRackSet()">＋</button>
+      <!-- ปุ่มเพิ่ม Rack ใหม่: ปิดไว้ก่อน เพราะ code.gs ยังไม่รองรับสร้าง ID ใหม่จาก mobile -->
+      <button class="btn-add" type="button" onclick="addRackSet()" disabled title="ฟังก์ชันเพิ่ม Rack ใหม่จะเปิดใช้เมื่อ backend รองรับ">＋</button>
       <button class="btn-primary" style="flex:1;" onclick="saveData()">💾 บันทึกข้อมูล</button>
     </div>
   </div>
@@ -255,16 +256,15 @@ const rackMap = {
      "D-B1","D-B2","D-B3","D-B4","D-B5","D-B6","D-B7","D-B8","D-B9","D-B10","D-B11","D-B12","D-B13","D-B14","D-B15","D-B16","D-B17","D-B18","D-B19","D-B20","D-B21","D-B22"]
 };
 
-// ทำให้แถวแรกเป็น Master (ไม่มีปุ่มลบ) ทุกครั้ง
+// ทำให้ master แถวแรกไม่มีปุ่มลบ + แก้ Act Rack ไม่ได้
 function refreshRackSets() {
   const sets = document.querySelectorAll(".rack-set");
-  sets.forEach((set, idx) => {
+  sets.forEach(set => {
     const delBtn = set.querySelector(".btn-delete");
-    set.dataset.master = idx === 0 ? "true" : "false";
+    const isMaster = set.dataset.master === "true";
 
-    if (idx === 0) {
+    if (isMaster) {
       if (delBtn) delBtn.style.display = "none";
-      // ⭐ FIX: master ห้ามแก้ Act Rack
       const rg = set.querySelector(".rackGroup");
       const rs = set.querySelector(".rackSub");
       if (rg) rg.disabled = true;
@@ -274,7 +274,6 @@ function refreshRackSets() {
     }
   });
 }
-
 
 // โหลดรายชื่อผู้ทำ
 async function loadNames() {
@@ -297,14 +296,17 @@ async function fetchItems() {
   Swal.fire({title:"กำลังดึงข้อมูล...",allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
   try {
     const res = await fetch(`${scriptURL}?page=getDataByName&name=${encodeURIComponent(name)}`);
-    const rows = await res.json(); Swal.close();
-    if(!rows||rows.length===0)return Swal.fire("ℹ️","ไม่พบข้อมูลของผู้ทำคนนี้","info");
+    const rows = await res.json(); 
+    Swal.close();
+    if(!rows || rows.length === 0) return Swal.fire("ℹ️","ไม่พบข้อมูลของผู้ทำคนนี้","info");
     currentItems = rows;
     loadCustomers(rows);
     itemSelect.innerHTML = `<option value="">-- เลือกรายการ --</option>`;
     customerSelect.value = "";
     itemSection.style.display = "block";
-  } catch { Swal.fire("❌","ไม่สามารถดึงข้อมูลได้","error"); }
+  } catch { 
+    Swal.fire("❌","ไม่สามารถดึงข้อมูลได้","error"); 
+  }
 }
 
 // แสดงตัวเลือกตาม Customer + File + Lot + Rack เดิม
@@ -329,7 +331,7 @@ function showDetail() {
   try {
     const value = itemSelect.value;
 
-    // ⬅ ถ้าไม่ได้เลือกรายการ → reset เป็น master ว่าง 1 ชุด
+    // ถ้าไม่ได้เลือกรายการ → reset เป็น master ว่าง 1 ชุด
     if (!value) {
       customer.value = "";
       file5digit.value = "";
@@ -337,7 +339,7 @@ function showDetail() {
       sumQty.value = "";
       rack.value = "";
       document.getElementById("rackZone").innerHTML = `
-        <div class="rack-set">
+        <div class="rack-set" data-master="true">
           <div class="action-buttons">
             <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
             <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
@@ -383,23 +385,23 @@ function showDetail() {
       return;
     }
 
-    // 🧠 ถ้ามีการเลือก File จริง
+    // ถ้ามีการเลือก File จริง
     const [fileCode, lotCode, rackName] = value.split('|');
     if (!fileCode || !lotCode) return;
 
     // ดึงเฉพาะแถวที่ตรง File + Lot + Rack เดิม
     const selectedRows = currentItems.filter(r => {
       return (
-        (r.File5digit+"").trim() === fileCode.trim() &&
-        (r.Lot+"").trim() === lotCode.trim() &&
-        (r.Rack+"").replace(/\[.*?\]/g, "").trim() === rackName.trim()
+        String(r.File5digit).trim() === fileCode.trim() &&
+        String(r.Lot).trim()       === lotCode.trim() &&
+        String(r.Rack).replace(/\[.*?\]/g, "").trim() === rackName.trim()
       );
     });
 
     if (selectedRows.length === 0)
       return Swal.fire("⚠️", "ไม่พบข้อมูลของรายการนี้", "warning");
 
-    // 🏷️ ใช้ข้อมูลแถวแรกเป็น master
+    // ใช้ข้อมูลแถวแรกเป็น base
     const base = selectedRows[0];
     const getVal = key => {
       const found = Object.keys(base).find(k => k.trim().toLowerCase() === key.toLowerCase());
@@ -412,19 +414,21 @@ function showDetail() {
     rack.value = getVal("Rack");
     sumQty.value = getVal("Sum of Qty") || getVal("SumOfQty") || "";
 
-    // 🧱 สร้าง rack-set ทั้งหมดตามจำนวนแถว
+    // สร้าง rack-set ทั้งหมดตามจำนวนแถว
     let htmlRack = "";
-    selectedRows.forEach((row, idx) => {
-      const isMaster = idx === 0;
-      const actRack = row.Act_Rack || "";
+    selectedRows.forEach(row => {
+      const rawId = row.ID !== undefined ? row.ID : (row.Id !== undefined ? row.Id : row.id);
+      const idStr = rawId !== undefined && rawId !== null ? String(rawId) : "";
+      const isMaster = idStr === "1";   // ID=1 = master
+
+      const actRack   = row.Act_Rack    || "";
       const rawActLot = row.Act_Lot;
-      const actLot = rawActLot || row.Lot || "";
-      const actPkg = row.Act_Package || "";
-      const actQty = row.Act_Qty || "";
+      const actLot    = rawActLot || row.Lot || "";
+      const actPkg    = row.Act_Package || "";
+      const actQty    = row.Act_Qty     || "";
 
-htmlRack += `
-  <div class="rack-set" data-id="${row.ID || ""}" data-master="${isMaster ? "true" : "false"}">
-
+      htmlRack += `
+        <div class="rack-set" data-id="${idStr}" data-master="${isMaster ? "true" : "false"}">
           <div class="action-buttons">
             <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
             ${isMaster ? '' : '<button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>'}
@@ -460,11 +464,11 @@ htmlRack += `
             <div class="package-box">
               <label>Package</label>
               <div class="package-inputs">
-                <input type="number" class="pkg-input a" oninput="calcActQty(this)" value="${actPkg.split('×')[0]||''}" ${actPkg ? 'readonly' : ''}>
+                <input type="number" class="pkg-input a" oninput="calcActQty(this)" value="${actPkg.split('×')[0]||''}" ${(actPkg ? 'readonly' : '')}>
                 <span>×</span>
-                <input type="number" class="pkg-input b" oninput="calcActQty(this)" value="${(actPkg.split('×')[1]||'').split('+')[0]||''}" ${actPkg ? 'readonly' : ''}>
+                <input type="number" class="pkg-input b" oninput="calcActQty(this)" value="${(actPkg.split('×')[1]||'').split('+')[0]||''}" ${(actPkg ? 'readonly' : '')}>
                 <span>+</span>
-                <input type="number" class="pkg-input c" oninput="calcActQty(this)" value="${(actPkg.split('+')[1]||'')}" ${actPkg ? 'readonly' : ''}>
+                <input type="number" class="pkg-input c" oninput="calcActQty(this)" value="${(actPkg.split('+')[1]||'')}" ${(actPkg ? 'readonly' : '')}>
               </div>
             </div>
             <div class="actQty-box">
@@ -532,48 +536,22 @@ function updateRackSub(select) {
 }
 
 function calcActQty(input){
-  const p=input.closest(".rack-set");
-  const a=+p.querySelector(".pkg-input.a").value||0;
-  const b=+p.querySelector(".pkg-input.b").value||0;
-  const c=+p.querySelector(".pkg-input.c").value||0;
-  p.querySelector(".actQty").value=(a*b)+c;
+  const p = input.closest(".rack-set");
+  const a = +p.querySelector(".pkg-input.a").value || 0;
+  const b = +p.querySelector(".pkg-input.b").value || 0;
+  const c = +p.querySelector(".pkg-input.c").value || 0;
+  p.querySelector(".actQty").value = (a * b) + c;
 }
 
+// ตอนนี้ backend ยังไม่รองรับเพิ่ม ID ใหม่ → ฟังก์ชันนี้ยังไม่ใช้งาน
 function addRackSet(){
-  const zone=document.getElementById("rackZone");
-  const template=document.querySelector(".rack-set");
-  const newSet=template.cloneNode(true);
-
-  newSet.dataset.master = "false";
-  newSet.removeAttribute("data-id");   // ⭐ FIXED: ห้าม copy ID เดิมมา
-
-  newSet.querySelectorAll("input").forEach(i=>{
-    if (i.classList.contains("actQty")) i.value="";
-    else i.value="";
-    i.readOnly = false;
-    i.classList.remove("editable");
-  });
-
-  newSet.querySelectorAll("select").forEach(s=>{
-    if(s.classList.contains("rackSub")) s.innerHTML="";
-    s.value="";
-    s.disabled = false;
-    s.classList.remove("editable");
-  });
-
-  const delBtn = newSet.querySelector(".btn-delete");
-  if (delBtn) delBtn.style.display = "inline-flex";
-
-  newSet.querySelector(".actLotInput").value=document.getElementById("lot").value||"";
-  zone.appendChild(newSet);
-  refreshRackSets();
-  setTimeout(()=>newSet.querySelector(".pkg-input.a").focus(),150);
+  Swal.fire("ℹ️","ฟังก์ชันเพิ่ม Rack ใหม่จะเปิดใช้เมื่อ backend รองรับการสร้าง ID ใหม่","info");
 }
 
 async function removeRackSet(btn) {
   const rackSet = btn.closest(".rack-set");
   const isMaster = rackSet.dataset.master === "true";
-  if (isMaster) return; 
+  if (isMaster) return;
 
   const actRack = rackSet.querySelector(".rackSub").value.trim();
   const file = file5digit.value.trim();
@@ -582,7 +560,7 @@ async function removeRackSet(btn) {
   const originalRack = rack.value.trim();
   const rackId = rackSet.dataset.id;
 
-  if (!actRack) { 
+  if (!actRack || !rackId) { 
     rackSet.remove(); 
     refreshRackSets(); 
     return; 
@@ -633,7 +611,6 @@ async function removeRackSet(btn) {
   }
 }
 
-
 // toggleEdit
 function toggleEdit(btn) {
   const rack = btn.closest(".rack-set");
@@ -643,7 +620,6 @@ function toggleEdit(btn) {
   btn.textContent = isEditing ? "🔒" : "✏️";
   btn.style.background = isEditing ? "#10b981" : "#3b82f6";
 
-  // 🔒 Master row → ให้แก้ไขเฉพาะ Lot + Package เท่านั้น
   const isMaster = rack.dataset.master === "true";
 
   rack.querySelectorAll("input").forEach(el => {
@@ -654,7 +630,7 @@ function toggleEdit(btn) {
 
   rack.querySelectorAll("select").forEach(el => {
     if (isMaster && (el.classList.contains("rackGroup") || el.classList.contains("rackSub"))) {
-      el.disabled = true;     // ⭐ FIX: master ห้ามแก้ Act Rack
+      el.disabled = true; // master ห้ามแก้ Act Rack
       return;
     }
     el.disabled = !isEditing;
@@ -662,13 +638,14 @@ function toggleEdit(btn) {
   });
 }
 
-
 async function saveData() {
   const name = nameSelect.value;
   const file = file5digit.value.trim();
   const itemValue = itemSelect.value;
   const sets = document.querySelectorAll(".rack-set");
   const originalRack = rack.value.trim();
+  const customerVal = customer.value.trim();
+  const sumQtyVal = sumQty.value.trim();
 
   if (!itemValue) {
     return Swal.fire({
@@ -680,14 +657,20 @@ async function saveData() {
 
   // ตรวจทุก rack-set
   for (const s of sets) {
+    const isMaster = s.dataset.master === "true";
     const group = s.querySelector(".rackGroup").value.trim();
-    const sub = s.querySelector(".rackSub").value.trim();
-    const actRack = group && sub ? sub : "";
+    const sub   = s.querySelector(".rackSub").value.trim();
+    let actRack = group && sub ? sub : "";
     const actLot = s.querySelector(".actLotInput").value.trim();
     let a = s.querySelector(".pkg-input.a").value.trim();
     let b = s.querySelector(".pkg-input.b").value.trim();
     let c = s.querySelector(".pkg-input.c").value.trim();
     const actQty = s.querySelector(".actQty").value.trim();
+
+    // master ใช้ originalRack แทน Act Rack (ไม่ต้องเลือกใน dropdown)
+    if (isMaster && !actRack) {
+      actRack = originalRack;
+    }
 
     if (c === "") c = "0";
 
@@ -700,7 +683,7 @@ async function saveData() {
       });
     }
 
-    if (parseInt(actQty) <= 0) {
+    if (parseInt(actQty, 10) <= 0) {
       return Swal.fire({
         icon: "warning",
         title: "Act Q'ty ต้องมากกว่า 0",
@@ -727,39 +710,48 @@ async function saveData() {
     didOpen: () => Swal.showLoading()
   });
 
-  // บันทึกทีละ rack-set
+  // บันทึกทีละ rack-set (ทั้งหมดต้องมี rackId ตรงตาม Code.gs)
   for (let i = 0; i < sets.length; i++) {
     const s = sets[i];
-    const isMaster = i === 0; // แถวแรก = master
+    const isMaster = s.dataset.master === "true";
     const group = s.querySelector(".rackGroup").value.trim();
-    const sub = s.querySelector(".rackSub").value.trim();
-    const actRack = group && sub ? sub : "";
+    const sub   = s.querySelector(".rackSub").value.trim();
+    let actRack = group && sub ? sub : "";
     const actLot = s.querySelector(".actLotInput").value.trim();
     let a = s.querySelector(".pkg-input.a").value.trim();
     let b = s.querySelector(".pkg-input.b").value.trim();
     let c = s.querySelector(".pkg-input.c").value.trim();
     const actQty = s.querySelector(".actQty").value.trim();
+
+    if (isMaster && !actRack) {
+      actRack = originalRack;
+    }
     if (c === "") c = "0";
 
     const actPackage = `${a}×${b}+${c}`;
+    const rackId = s.dataset.id || "";  // ต้องมี ID ตรงกับ Code.gs
 
-const rackId = s.dataset.id || "";  // ⭐ ดึง ID ของแถวนี้
+    if (!rackId) {
+      Swal.close();
+      return Swal.fire("⚠️","พบแถวที่ไม่มี ID (rackId) ซึ่ง backend ยังไม่รองรับการสร้าง ID ใหม่จาก mobile","warning");
+    }
 
-await fetch(`${scriptURL}?page=updateRecord`, {
-  method: "POST",
-  body: new URLSearchParams({
-    name,
-    file5digit: file,
-    lot: lot.value,
-    originalRack,
-    actRack,
-    actLot,
-    actQty,
-    actPackage,
-    rackId    // ⭐ ส่ง ID ไป backend
-  })
-});
-
+    await fetch(`${scriptURL}?page=updateRecord`, {
+      method: "POST",
+      body: new URLSearchParams({
+        name,
+        file5digit: file,
+        lot: lot.value,
+        originalRack,
+        customer: customerVal,
+        sumQty: sumQtyVal,
+        actRack,
+        actLot,
+        actQty,
+        actPackage,
+        rackId
+      })
+    });
   }
 
   Swal.close();
@@ -789,7 +781,7 @@ function clearForm() {
 
   const zone = document.getElementById("rackZone");
   zone.innerHTML = `
-    <div class="rack-set">
+    <div class="rack-set" data-master="true">
       <div class="action-buttons">
         <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
         <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
@@ -861,7 +853,7 @@ function filterItemsByCustomer() {
   rack.value = "";
 
   document.getElementById("rackZone").innerHTML = `
-    <div class="rack-set">
+    <div class="rack-set" data-master="true">
       <div class="action-buttons">
         <button class="btn-edit" data-editing="false" onclick="toggleEdit(this)">✏️</button>
         <button class="btn-delete" onclick="removeRackSet(this)">🗑️</button>
@@ -916,13 +908,12 @@ function filterItemsByCustomer() {
   list.innerHTML += rows
     .map(r => {
       const done = r.Act_Qty ? "✅" : "⚪️";
-const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
-return `
-<option value="${r.File5digit}|${r.Lot}|${cleanRack}">
-  ${done} ${r.File5digit} (${r.Lot}) [${cleanRack}]
-</option>
-`;
-
+      const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
+      return `
+        <option value="${r.File5digit}|${r.Lot}|${cleanRack}">
+          ${done} ${r.File5digit} (${r.Lot}) [${cleanRack}]
+        </option>
+      `;
     })
     .join('');
 }

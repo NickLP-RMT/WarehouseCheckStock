@@ -547,7 +547,7 @@ function showDetail() {
       rack.value = "";
 
       document.getElementById("rackZone").innerHTML = `
-        <div class="rack-set" data-master="true" data-id="1">
+         <div class="rack-set" data-master="true" data-id="1" data-loaded="false">
           <div class="set-title">Act Set #1</div>
           <div class="action-buttons">
             <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
@@ -726,7 +726,7 @@ function showDetail() {
     // -------------------------------
     if (!htmlRack) {
       htmlRack = `
-        <div class="rack-set" data-master="true" data-id="1">
+        <div class="rack-set" data-master="true" data-id="1" data-loaded="false">
           <div class="set-title">Act Set #1</div>
           <div class="action-buttons">
             <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
@@ -1092,7 +1092,7 @@ function clearForm() {
 
   const zone = document.getElementById("rackZone");
   zone.innerHTML = `
-    <div class="rack-set" data-master="true" data-id="1">
+    <div class="rack-set" data-master="true" data-id="1" data-loaded="false">
       <div class="set-title">Act Set #1</div>
       <div class="action-buttons">
         <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>
@@ -1166,7 +1166,7 @@ function filterItemsByCustomer() {
   rack.value = "";
 
   document.getElementById("rackZone").innerHTML = `
-    <div class="rack-set" data-master="true" data-id="1">
+    <div class="rack-set" data-master="true" data-id="1" data-loaded="false">
       <div class="set-title">Act Set #1</div>
       <div class="action-buttons">
         <button class="btn-edit" data-editing="true" onclick="toggleEdit(this)">🔒</button>

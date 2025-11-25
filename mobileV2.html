@@ -260,15 +260,21 @@ function refreshRackSets() {
   const sets = document.querySelectorAll(".rack-set");
   sets.forEach((set, idx) => {
     const delBtn = set.querySelector(".btn-delete");
+    set.dataset.master = idx === 0 ? "true" : "false";
+
     if (idx === 0) {
-      set.dataset.master = "true";
       if (delBtn) delBtn.style.display = "none";
+      // ⭐ FIX: master ห้ามแก้ Act Rack
+      const rg = set.querySelector(".rackGroup");
+      const rs = set.querySelector(".rackSub");
+      if (rg) rg.disabled = true;
+      if (rs) rs.disabled = true;
     } else {
-      set.dataset.master = "false";
       if (delBtn) delBtn.style.display = "inline-flex";
     }
   });
 }
+
 
 // โหลดรายชื่อผู้ทำ
 async function loadNames() {
@@ -537,7 +543,9 @@ function addRackSet(){
   const zone=document.getElementById("rackZone");
   const template=document.querySelector(".rack-set");
   const newSet=template.cloneNode(true);
+
   newSet.dataset.master = "false";
+  newSet.removeAttribute("data-id");   // ⭐ FIXED: ห้าม copy ID เดิมมา
 
   newSet.querySelectorAll("input").forEach(i=>{
     if (i.classList.contains("actQty")) i.value="";
@@ -635,6 +643,9 @@ function toggleEdit(btn) {
   btn.textContent = isEditing ? "🔒" : "✏️";
   btn.style.background = isEditing ? "#10b981" : "#3b82f6";
 
+  // 🔒 Master row → ให้แก้ไขเฉพาะ Lot + Package เท่านั้น
+  const isMaster = rack.dataset.master === "true";
+
   rack.querySelectorAll("input").forEach(el => {
     if (el.classList.contains("actQty")) return;
     el.readOnly = !isEditing;
@@ -642,10 +653,15 @@ function toggleEdit(btn) {
   });
 
   rack.querySelectorAll("select").forEach(el => {
+    if (isMaster && (el.classList.contains("rackGroup") || el.classList.contains("rackSub"))) {
+      el.disabled = true;     // ⭐ FIX: master ห้ามแก้ Act Rack
+      return;
+    }
     el.disabled = !isEditing;
     el.classList.toggle("editable", isEditing);
   });
 }
+
 
 async function saveData() {
   const name = nameSelect.value;
@@ -900,12 +916,13 @@ function filterItemsByCustomer() {
   list.innerHTML += rows
     .map(r => {
       const done = r.Act_Qty ? "✅" : "⚪️";
-      const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
-      return `
-        <option value="${r.File5digit}|${r.Lot}|${cleanRack}">
-          ${done} ${r.File5digit} (${r.Lot}) [${cleanRack}]
-        </option>
-      `;
+const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
+return `
+<option value="${r.File5digit}|${r.Lot}|${cleanRack}">
+  ${done} ${r.File5digit} (${r.Lot}) [${cleanRack}]
+</option>
+`;
+
     })
     .join('');
 }

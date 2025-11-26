@@ -501,42 +501,60 @@ for (const rackNorm in rackGroups) {
   const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty || 0);
   let totalActQty = 0;
 
-  rows.forEach(row => {
-    const actQty = toNum(row.Act_Qty);
-    totalActQty += actQty;
+  rows.forEach((row, idx) => {
 
-    const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty);
-    let deltaText = "", deltaClass = "";
+  const actQty = toNum(row.Act_Qty);
+  totalActQty += actQty;
 
-    if (row.Act_Qty !== undefined && row.Act_Qty !== "") {
-      const delta = actQty - sumQty;
+  let delta = 0;
+  let deltaText = "";
+  let deltaClass = "";
 
-      if (delta > 0) {
-        deltaText = `▲ +${delta}`;
-        deltaClass = "delta-positive";
-      } else if (delta < 0) {
-        deltaText = `▼ ${delta}`;
-        deltaClass = "delta-negative";
-      } else {
-        deltaText = "0";
-        deltaClass = "delta-zero";
-      }
+  // ⭐ แถวแรก (ID 1 ของ Rack)
+  if (idx === 0) {
+    const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty || 0);
+    delta = actQty - sumQty;   // Act_Qty – SumOfQty
+  } 
+  // ⭐ แถวอื่น ๆ
+  else {
+    delta = actQty;            // ใช้ Act_Qty อย่างเดียว
+  }
+
+  // ⭐ กำหนดสี
+  if (delta > 0) {
+    deltaText = `▲ +${delta}`;
+    deltaClass = "delta-positive";
+  } else if (delta < 0) {
+    deltaText = `▼ ${delta}`;
+    deltaClass = "delta-negative";
+  } else {
+    deltaText = "0";
+    deltaClass = "delta-zero";
+  }
+
+  // ⭐ ซ่อนคอลัมน์แถวอื่น (ไม่ใช่แถวแรก)
+  const hideCols = ["Customer", "Name", "File5digit", "Lot", "Rack", "SumOfQty"];
+
+  const tds = headers.map(h => {
+
+    if (idx !== 0 && hideCols.includes(h)) {
+      return `<td></td>`;
     }
 
-const tds = headers.map(h => {
-  if (h === "Delta +/-") return `<td class="${deltaClass}">${deltaText}</td>`;
-  if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
-  if (h === "Rack") return `<td>${displayRack(row[h])}</td>`;
-  return `<td>${row[h] ?? ""}</td>`;
-}).join("");
+    if (h === "Delta +/-") return `<td class="${deltaClass}">${deltaText}</td>`;
+    if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
+    if (h === "Rack") return `<td>${displayRack(row[h])}</td>`;
 
+    return `<td>${row[h] ?? ""}</td>`;
+  }).join("");
 
-    body.innerHTML += `
-      <tr class="rack-row ${foldId}">
-        ${tds}
-      </tr>
-    `;
-  });
+  body.innerHTML += `
+    <tr class="rack-row ${foldId}">
+      ${tds}
+    </tr>
+  `;
+});
+
 
   // ✔ NEW: ใช้สูตรใหม่
 // ✔ ตรวจว่าทุกแถวยังไม่ Check หรือไม่
@@ -644,21 +662,27 @@ async function exportExcel() {
     for (const rackNorm in rackGroups) {
       const rows = rackGroups[rackNorm].sort((a, b) => Number(a.ID) - Number(b.ID));
 
-      // ✔ base sum qty = ของแถวแรก (ID ต่ำสุด)
-      const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
+   // ✔ base sum qty = ของแถวแรก (ID ต่ำสุด)
+const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
 
-      rows.forEach(row => {
-        const sumQty = baseSumQty;
-        const actQty = toNum(row.Act_Qty);
+rows.forEach(row => {
+  const actQty = toNum(row.Act_Qty);
 
-        // ✔ Delta ตาม UI logic
-        let delta = "";
-        if (row.Act_Qty !== "" && row.Act_Qty != null) {
-          const diff = actQty - sumQty;
-          if (diff > 0) delta = `▲ +${diff}`;
-          else if (diff < 0) delta = `▼ ${diff}`;
-          else delta = "0";
-        }
+  // ✔ UI Delta logic
+  let diff = 0;
+  if (row.ID == rows[0].ID) {
+    diff = actQty - baseSumQty;   // แถวแรก
+  } else {
+    diff = actQty;                // แถวลูก
+  }
+
+  let delta = "";
+  if (row.Act_Qty !== "" && row.Act_Qty != null) {
+    if (diff > 0) delta = `▲ +${diff}`;
+    else if (diff < 0) delta = `▼ ${diff}`;
+    else delta = "0";
+  }
+
 
         // ✔ Push ลง Excel dataset
         exportData.push({
@@ -667,7 +691,7 @@ async function exportExcel() {
           File5digit: row.File5digit || "",
           Lot: row.Lot || "",
           Rack: displayRack(rackNorm),           // ✔ แสดงชื่อ Rack แบบ UI
-          "Sum of Qty": sumQty,
+          "Sum of Qty": baseSumQty,
           Act_Rack: row.Act_Rack || "",
           Act_Lot: row.Act_Lot || "",
           Act_Qty: row.Act_Qty || "",

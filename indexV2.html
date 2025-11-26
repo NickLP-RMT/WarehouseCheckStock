@@ -693,20 +693,25 @@ rows.forEach(row => {
 
 
         // ✔ Push ลง Excel dataset
-        exportData.push({
-          Customer: row.Customer || "",
-          Name: row.Name || "",
-          File5digit: row.File5digit || "",
-          Lot: row.Lot || "",
-          Rack: displayRack(rackNorm),           // ✔ แสดงชื่อ Rack แบบ UI
-          "Sum of Qty": baseSumQty,
-          Act_Rack: row.Act_Rack || "",
-          Act_Lot: row.Act_Lot || "",
-          Act_Qty: row.Act_Qty || "",
-          Act_Package: row.Act_Package || "",
-          "Delta +/-": delta,
-          Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
-        });
+exportData.push({
+  Customer: row.Customer || "",
+  Name: row.Name || "",
+  File5digit: row.File5digit || "",
+  Lot: row.Lot || "",
+  Rack: displayRack(rackNorm),
+
+  // ⬇⬇⬇ ซ่อน Sum of Qty ทุกแถว ยกเว้นแถวแรก ⬇⬇⬇
+  "Sum of Qty": (row.ID == rows[0].ID) ? baseSumQty : "",
+
+  Act_Rack: row.Act_Rack || "",
+  Act_Lot: row.Act_Lot || "",
+  Act_Qty: row.Act_Qty || "",
+  Act_Package: row.Act_Package || "",
+  "Delta +/-": delta,
+  Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
+});
+
+
       });
     }
   }

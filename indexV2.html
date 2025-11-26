@@ -169,72 +169,125 @@
   setInterval(updateDateTime, 1000); updateDateTime();
 
   // 📤 Upload Excel
-  async function uploadToSheet() {
-    const file = document.getElementById("fileInput").files[0];
-    if (!file) return Swal.fire("⚠️", "Please select a file!", "warning");
+// 📤 Upload Excel
+async function uploadToSheet() {
+  const file = document.getElementById("fileInput").files[0];
+  if (!file) return Swal.fire("⚠️", "Please select a file!", "warning");
 
-    const progress = document.querySelector(".progress");
-    const bar = document.getElementById("progressBar");
-    progress.style.display = "block";
-    bar.style.width = "0%"; bar.innerText = "0%";
+  const progress = document.querySelector(".progress");
+  const bar = document.getElementById("progressBar");
+  progress.style.display = "block";
+  bar.style.width = "0%"; 
+  bar.innerText = "0%";
 
-    Swal.fire({ title: "Uploading...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  Swal.fire({ title: "Uploading...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-    const reader = new FileReader();
-    reader.onload = async e => {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-   
-const rawRows = XLSX.utils.sheet_to_json(sheet, {
-  header: 1,
-  blankrows: true,
-  defval: ""      // บังคับช่องว่างให้มีค่า
-});
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-// ⭐ บังคับให้ทุกแถวต้องมี 6 คอลัมน์เสมอ
-const fixedRows = rawRows
-  .map(r => {
-    // ตัดคอลัมน์เกิน
-    if (r.length > 6) r = r.slice(0, 6);
+    const rawRows = XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      blankrows: true,
+      defval: ""
+    });
 
-    // เติมคอลัมน์ให้ครบ 6
-    while (r.length < 6) r.push("");
+    // -----------------------------------------------------
+    // 📌 1) ตรวจจำนวนคอลัมน์ของทุกแถว (ต้องเท่ากับ 6)
+    // -----------------------------------------------------
+    for (let i = 0; i < rawRows.length; i++) {
+      const r = rawRows[i];
+      const colCount = r.filter(x => x !== "").length;
 
-    return r;
-  })
-  // ⚠️ ตัดแถวที่ไม่มีข้อมูลทั้งหมด (ป้องกัน append แถวว่าง)
-  .filter(r => r.some(col => col !== ""));
-  
-
-// ⭐ สร้าง payload สำหรับส่งไปเข้า Google Apps Script
-const payload = fixedRows.map(r => ({
-  Customer: String(r[0]).trim(),
-  Name: String(r[1]).trim(),
-  File5digit: String(r[2]).trim(),
-  Lot: String(r[3]).trim(),
-  Rack: String(r[4]).trim(),
-  SumOfQty: String(r[5]).trim()
-}));
-
-console.log("UPLOAD PAYLOAD:", payload);
-
-
-      try {
-        const res = await fetch(`${scriptURL}?page=uploadData`, {
-          method: "POST", body: JSON.stringify(payload)
+      if (colCount > 6) {
+        return Swal.fire({
+          icon: "error",
+          title: "รูปแบบไฟล์ไม่ถูกต้อง",
+          html: `
+            ❌ ตรวจพบแถวที่มีจำนวนคอลัมน์เกิน 6<br>
+            <b>แถวที่ ${i + 1}</b><br><br>
+            ระบบไม่สามารถอัปโหลดไฟล์นี้ได้
+          `
         });
-        const json = await res.json();
-        Swal.fire("✅", json.message, "success");
-        document.getElementById("resultText").textContent = json.message;
-        bar.style.width = "100%"; bar.innerText = "100%";
-        bar.classList.remove("bg-info"); bar.classList.add("bg-success");
-      } catch {
-        Swal.fire("❌", "Error uploading data", "error");
       }
-    };
-    reader.readAsArrayBuffer(file);
-  }
+    }
+
+    // -----------------------------------------------------
+    // 📌 2) ตรวจ Header ให้ตรงตาม Template
+    // -----------------------------------------------------
+    const expectedHeader = [
+      "Customer", "Name", "File5digit", "Lot", "Rack", "SumOfQty"
+    ];
+
+    const header = rawRows[0];
+
+    const isHeaderMismatch = header.some((val, i) => {
+      if (!val) return true;
+      return val.trim() !== expectedHeader[i];
+    });
+
+    if (isHeaderMismatch) {
+      return Swal.fire({
+        icon: "warning",
+        title: "Header ไม่ตรงกับ Template",
+        html: `
+          ❌ กรุณาตรวจสอบว่า Header ต้องเป็น:<br>
+          <b>${expectedHeader.join(" | ")}</b><br><br>
+          และห้ามมีช่อง merge หรือ format พิเศษ
+        `
+      });
+    }
+
+    // -----------------------------------------------------
+    // 📌 3) Normalize → ลดคอลัมน์ให้เหลือ 6 และเติมให้ครบ
+    // -----------------------------------------------------
+    const fixedRows = rawRows
+      .map(r => {
+        if (r.length > 6) r = r.slice(0, 6); 
+        while (r.length < 6) r.push("");
+        return r;
+      })
+      .filter(r => r.some(col => col !== ""));
+
+    // -----------------------------------------------------
+    // 📌 4) สร้าง Payload เพื่อส่งไปยัง Google Script
+    // -----------------------------------------------------
+    const payload = fixedRows.slice(1).map(r => ({
+      Customer: String(r[0]).trim(),
+      Name: String(r[1]).trim(),
+      File5digit: String(r[2]).trim(),
+      Lot: String(r[3]).trim(),
+      Rack: String(r[4]).trim(),
+      SumOfQty: String(r[5]).trim()
+    }));
+
+    console.log("UPLOAD PAYLOAD:", payload);
+
+    try {
+      const res = await fetch(`${scriptURL}?page=uploadData`, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+
+      Swal.fire("✅", json.message, "success");
+
+      document.getElementById("resultText").textContent = json.message;
+      bar.style.width = "100%";
+      bar.innerText = "100%";
+      bar.classList.remove("bg-info");
+      bar.classList.add("bg-success");
+
+    } catch (err) {
+      Swal.fire("❌", "Error uploading data", "error");
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
 
   // 🗑 Delete All
   async function deleteAll() {

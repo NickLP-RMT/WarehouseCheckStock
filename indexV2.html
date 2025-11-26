@@ -600,7 +600,7 @@ arrow.textContent = isHidden ? "▼" : "▶";
 }
 
 
-// 📤 Export Excel แบบ Flat List พร้อมจัดเรียงตาม File5digit + Lot
+// 📤 Export Excel แบบเดียวกับ UI
 async function exportExcel() {
   if (!allData || allData.length === 0) {
     Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
@@ -609,51 +609,82 @@ async function exportExcel() {
 
   const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
 
-  // ✅ เรียงข้อมูลตาม File5digit และ Lot ก่อน
- const sortedData = [...allData].sort((a, b) => {
-  const f1 = String(a.File5digit || "").localeCompare(String(b.File5digit || ""));
-  const l1 = String(a.Lot || "").localeCompare(String(b.Lot || ""));
-  return f1 !== 0 ? f1 : l1;
-});
-
+  // ✔ เรียงข้อมูลแบบ UI: File → Lot → ID
+  const sortedData = [...allData].sort((a, b) => {
+    const f1 = String(a.File5digit).localeCompare(String(b.File5digit));
+    if (f1 !== 0) return f1;
+    const l1 = String(a.Lot).localeCompare(String(b.Lot));
+    if (l1 !== 0) return l1;
+    return Number(a.ID) - Number(b.ID);
+  });
 
   const exportData = [];
 
+  // ✔ Group ตาม file + lot
+  const mainGroups = {};
   sortedData.forEach(r => {
-    const sumQty = toNum(r["Sum of Qty"] || r.SumOfQty);
-    const actQty = toNum(r.Act_Qty);
-    const hasActData = r.Act_Rack || r.Act_Lot || r.Act_Qty || r.Act_Package;
-
-    let delta = "";
-    if (hasActData) {
-      const diff = actQty - sumQty;
-      if (diff > 0) delta = `▲ +${diff}`;
-      else if (diff < 0) delta = `▼ ${diff}`;
-      else delta = "0";
-    }
-
-    exportData.push({
-      Customer: r.Customer || "",
-      Name: r.Name || "",
-      File5digit: r.File5digit || "",
-      Lot: r.Lot || "",
-      Rack: r.Rack || "",
-      "Sum of Qty": sumQty || "",
-      Act_Rack: r.Act_Rack || "",
-      Act_Lot: r.Act_Lot || "",
-      Act_Qty: r.Act_Qty || "",
-      Act_Package: r.Act_Package || "",
-      "Delta +/-": delta,
-      Timestamp: r.Timestamp ? convertToBangkokTime(r.Timestamp) : ""
-    });
+    const key = `${r.File5digit}_${r.Lot}`;
+    if (!mainGroups[key]) mainGroups[key] = [];
+    mainGroups[key].push(r);
   });
 
-  // ✅ สร้าง Workbook และ Worksheet อย่างถูกลำดับ
+  // ✔ loop ตามกลุ่ม File+Lot
+  for (const key in mainGroups) {
+    const groupRows = mainGroups[key];
+
+    // ✔ Group by Rack (Normalize เหมือน UI)
+    const rackGroups = {};
+    groupRows.forEach(r => {
+      const rackNorm = normalizeRack(r.Rack);
+      if (!rackGroups[rackNorm]) rackGroups[rackNorm] = [];
+      rackGroups[rackNorm].push(r);
+    });
+
+    // ✔ loop ของแต่ละ Rack
+    for (const rackNorm in rackGroups) {
+      const rows = rackGroups[rackNorm].sort((a, b) => Number(a.ID) - Number(b.ID));
+
+      // ✔ base sum qty = ของแถวแรก (ID ต่ำสุด)
+      const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
+
+      rows.forEach(row => {
+        const sumQty = baseSumQty;
+        const actQty = toNum(row.Act_Qty);
+
+        // ✔ Delta ตาม UI logic
+        let delta = "";
+        if (row.Act_Qty !== "" && row.Act_Qty != null) {
+          const diff = actQty - sumQty;
+          if (diff > 0) delta = `▲ +${diff}`;
+          else if (diff < 0) delta = `▼ ${diff}`;
+          else delta = "0";
+        }
+
+        // ✔ Push ลง Excel dataset
+        exportData.push({
+          Customer: row.Customer || "",
+          Name: row.Name || "",
+          File5digit: row.File5digit || "",
+          Lot: row.Lot || "",
+          Rack: displayRack(rackNorm),           // ✔ แสดงชื่อ Rack แบบ UI
+          "Sum of Qty": sumQty,
+          Act_Rack: row.Act_Rack || "",
+          Act_Lot: row.Act_Lot || "",
+          Act_Qty: row.Act_Qty || "",
+          Act_Package: row.Act_Package || "",
+          "Delta +/-": delta,
+          Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
+        });
+      });
+    }
+  }
+
+  // 📝 สร้าง Excel Workbook
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
   XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
 
-  // ✅ ปรับความกว้างอัตโนมัติ
+  // ✔ Auto Width
   const colWidths = Object.keys(exportData[0]).map(key => ({
     wch: Math.max(
       key.length,
@@ -662,22 +693,17 @@ async function exportExcel() {
   }));
   ws["!cols"] = colWidths;
 
-  // ✅ ตั้งชื่อไฟล์
-const now = new Date();
-const yyyy = now.getFullYear();
-const mm = String(now.getMonth() + 1).padStart(2, "0");
-const dd = String(now.getDate()).padStart(2, "0");
-const hh = String(now.getHours()).padStart(2, "0");
-const min = String(now.getMinutes()).padStart(2, "0");
-const ss = String(now.getSeconds()).padStart(2, "0");
+  // ✔ ชื่อไฟล์ (วันที่ + เวลา)
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const hh = String(now.getHours()).padStart(2, "0");
+  const min = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+  const fileName = `WarehouseData_${yyyy}-${mm}-${dd}_${hh}${min}${ss}.xlsx`;
 
-const formattedDateTime = `${yyyy}-${mm}-${dd}_${hh}${min}${ss}`;
-const fileName = `WarehouseData_${formattedDateTime}.xlsx`;
-
-
-  // ✅ เขียนและบันทึกไฟล์
   XLSX.writeFile(wb, fileName);
-
   Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ", "success");
 }
 

@@ -383,16 +383,15 @@ async function searchData() {
 function normalizeRack(rack) {
   if (!rack) return "";
 
-  // ดึงค่าจาก [ ... ]
   const match = rack.match(/\[(.*?)\]/);
-  let clean = match ? match[1].trim() : rack.trim();
+  let clean = (match ? match[1] : rack).trim();
 
-  // 🔥 แปลงชื่อ Rack ที่เขียนต่างกันให้เหมือนกัน
-  clean = clean.replace(/\s+/g, "").toUpperCase();
+  // ลบช่องว่างทั้งหมด และให้เป็นตัวใหญ่
+  let noSpace = clean.replace(/\s+/g, "").toUpperCase();
 
-  // กรณีพิเศษ: PC CHP Area = PCCHPAREA
-  if (clean === "PCCHPAREA" || clean === "PCCHPAREA".replace(/\s/g, "")) {
-    return "PCCHPAREA"; 
+  // Google Sheet มีแค่ "PC AREA" → กลายเป็น "PCAREA"
+  if (noSpace === "PCAREA") {
+    return "PCCHPAREA";
   }
 
   return clean;
@@ -404,12 +403,13 @@ function displayRack(rack) {
   if (!rack) return "";
 
   const match = rack.match(/\[(.*?)\]/);
-  let clean = match ? match[1].trim() : rack.trim();
+  let clean = (match ? match[1] : rack).trim();
 
-  // แสดงชื่อเดียวกัน
-  let normalized = clean.replace(/\s+/g, "").toUpperCase();
+  let noSpace = clean.replace(/\s+/g, "").toUpperCase();
 
-  if (normalized === "PCCHPAREA") return "PCCHPAREA";
+  if (noSpace === "PCAREA") {
+    return "PCCHPAREA";
+  }
 
   return clean;
 }

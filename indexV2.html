@@ -404,22 +404,13 @@ for (const rackNorm in rackGroups) {
 
   const foldId = "rack_" + rackNorm.replace(/\W/g, "_");
 
-// ตรวจว่าแถว rack ถูกซ่อนอยู่หรือไม่ (ตอนแรกจะไม่ซ่อน)
-let rowsHidden = false;
-if (rows.length > 0) {
-  rowsHidden = rows[0].style.display === "none";
-}
-
-const initialArrow = rowsHidden ? "▶" : "▼";
-
-body.innerHTML += `
-  <tr class="rack-header" data-target="${foldId}" style="background:#e2e8f0; cursor:pointer;">
-    <td colspan="${headers.length}" style="font-weight:bold;">
-      <span class="arrow">${initialArrow}</span> Rack: <b>${displayRack(rackNorm)}</b>
-    </td>
-  </tr>
-`;
-
+  body.innerHTML += `
+    <tr class="rack-header" data-target="${foldId}" style="background:#e2e8f0; cursor:pointer;">
+      <td colspan="${headers.length}" style="font-weight:bold;">
+        <span class="arrow">▶</span> Rack: <b>${displayRack(rackNorm)}</b>
+      </td>
+    </tr>
+  `;
 
   // ✔ NEW: logic คำนวณตามสูตรใหม่
   const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty || 0);
@@ -511,11 +502,8 @@ setTimeout(() => {
       const rows = document.querySelectorAll("." + target);
       const arrow = el.querySelector(".arrow");
 
-let isHidden = false;
-if (rows.length > 0) {
-    isHidden = Array.from(rows).every(r => r.style.display === "none");
-}
-
+      // เช็คว่าปัจจุบันซ่อนอยู่หรือไม่
+      let isHidden = rows[0].style.display === "none";
 
       rows.forEach(r => {
         r.style.display = isHidden ? "" : "none";

@@ -552,6 +552,8 @@ for (const rackNorm in rackGroups) {
     if (h === "Delta +/-") return `<td class="${deltaClass}">${deltaText}</td>`;
     if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
     if (h === "Rack") return `<td>${displayRack(row[h])}</td>`;
+if (h === "Act_Rack") return `<td>${displayRack(row[h])}</td>`;
+
 
     return `<td>${row[h] ?? ""}</td>`;
   }).join("");
@@ -703,7 +705,7 @@ exportData.push({
   // ⬇⬇⬇ ซ่อน Sum of Qty ทุกแถว ยกเว้นแถวแรก ⬇⬇⬇
   "Sum of Qty": (row.ID == rows[0].ID) ? baseSumQty : "",
 
-  Act_Rack: row.Act_Rack || "",
+Act_Rack: displayRack(row.Act_Rack) || "",
   Act_Lot: row.Act_Lot || "",
   Act_Qty: row.Act_Qty || "",
   Act_Package: row.Act_Package || "",

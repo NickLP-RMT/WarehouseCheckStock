@@ -513,7 +513,7 @@ setTimeout(() => {
 
 let isHidden = false;
 if (rows.length > 0) {
-    isHidden = rows[0].style.display === "none";
+    isHidden = Array.from(rows).every(r => r.style.display === "none");
 }
 
 

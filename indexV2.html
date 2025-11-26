@@ -513,7 +513,8 @@ setTimeout(() => {
       });
 
       // เปลี่ยนไอคอน
-      arrow.textContent = isHidden ? "▼" : "▶";
+      arrow.className = "arrow";  
+arrow.textContent = isHidden ? "▼" : "▶";
     });
   });
 }, 10); // หน่วงนิดเดียวให้ DOM สร้างก่อน

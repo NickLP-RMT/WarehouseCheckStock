@@ -533,7 +533,15 @@ for (const rackNorm in rackGroups) {
   }
 
   // ⭐ ซ่อนคอลัมน์แถวอื่น (ไม่ใช่แถวแรก)
-  const hideCols = ["Customer", "Name", "File5digit", "Lot", "Rack", "SumOfQty"];
+  const hideCols = [
+  "Customer",
+  "Name",
+  "File5digit",
+  "Lot",
+  "Rack",
+  "SumOfQty",
+  "Sum of Qty" // ← เพิ่มเพื่อรองรับชื่อจริงจาก API/UI
+];
 
   const tds = headers.map(h => {
 

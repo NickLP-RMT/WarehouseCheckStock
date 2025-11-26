@@ -60,6 +60,12 @@
     .delta-zero {
       color: #334155 !important; background-color: #f1f5f9 !important; font-weight: 500;
     }
+    .arrow {
+  color: #6b7280;   /* สีเทา Tailwind Gray-500 */
+  font-weight: bold;
+  padding-right: 6px;
+}
+
   </style>
 </head>
 <body>
@@ -463,14 +469,11 @@ const allEmpty = rows.every(r =>
 );
 
 // ถ้ายังไม่ Check เลย
+// ❌ ไม่ต้องแสดง "ยังไม่ Check" ตรงระดับ Rack อีกแล้ว
 if (allEmpty) {
-  body.innerHTML += `
-    <tr class="rack-row ${foldId}" style="background:#fff7d6; font-weight:bold; color:#b45309;">
-      <td colspan="${headers.length}" class="text-center">ยังไม่ Check</td>
-    </tr>
-  `;
-  continue; // ข้ามไม่ต้องคำนวณ delta
+  continue; 
 }
+
 
 const rackTotal = totalActQty - baseSumQty;
 

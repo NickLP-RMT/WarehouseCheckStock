@@ -424,6 +424,7 @@ function displayRack(rack) {
 function renderGroupedTable(data) {
   const head = document.getElementById("tableHead");
   const body = document.getElementById("tableBody");
+
   body.innerHTML = "";
 
   if (!data || data.length === 0) {
@@ -440,171 +441,145 @@ function renderGroupedTable(data) {
     headers.splice(insertIndex, 0, "Delta +/-");
   }
 
+  // Render header
   head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
 
-// GROUP 1: File + Lot
-const mainGroups = {};
-data.forEach(row => {
-  const key = `${row.File5digit}_${row.Lot}`;
-  if (!mainGroups[key]) mainGroups[key] = [];
-  mainGroups[key].push(row);
-});
+  // ⚡ HTML Buffer
+  let html = "";
 
-for (const key in mainGroups) {
-  const groupRows = mainGroups[key];
-  const [file, lot] = key.split("_");
-
-  // ตรวจว่ากลุ่มนี้ยังไม่ Check ทั้งหมดหรือไม่
-  const allEmptyGroup = groupRows.every(r =>
-    (!r.Act_Rack || r.Act_Rack === "") &&
-    (!r.Act_Lot || r.Act_Lot === "") &&
-    (!r.Act_Qty || r.Act_Qty === "") &&
-    (!r.Act_Package || r.Act_Package === "")
-  );
-
-  // ถ้ายังไม่ Check = แสดงบนบรรทัด Group เลย
-  const groupStatusText = allEmptyGroup ? " -  <span style='color:#b45309;'>ยังไม่ Check</span>" : "";
-
-  body.innerHTML += `
-    <tr class="table-group">
-      <td colspan="${headers.length}">
-        📦 <b>${file}</b> / <b>${lot}</b> ${groupStatusText}
-      </td>
-    </tr>
-  `;
-
-
-// GROUP 2: Rack
-const rackGroups = {};
-groupRows.forEach(r => {
-  const norm = normalizeRack(r.Rack);
-  if (!rackGroups[norm]) rackGroups[norm] = [];
-  rackGroups[norm].push(r);
-});
-
-for (const rackNorm in rackGroups) {
-  let rows = rackGroups[rackNorm];
-
-  rows = rows.sort((a, b) => Number(a.ID) - Number(b.ID));
-
-  const foldId = "rack_" + rackNorm.replace(/\W/g, "_");
-
-body.innerHTML += `
-  <tr class="rack-header" style="background:#e2e8f0;">
-    <td colspan="${headers.length}" style="font-weight:bold;">
-      <span class="arrow">▼</span> Rack: <b>${displayRack(rackNorm)}</b>
-    </td>
-  </tr>
-`;
-
-  // ✔ NEW: logic คำนวณตามสูตรใหม่
-  const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty || 0);
-  let totalActQty = 0;
-
-  rows.forEach((row, idx) => {
-
-  const actQty = toNum(row.Act_Qty);
-  totalActQty += actQty;
-
-  let delta = 0;
-  let deltaText = "";
-  let deltaClass = "";
-
-  // ⭐ แถวแรก (ID 1 ของ Rack)
-  if (idx === 0) {
-    const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty || 0);
-    delta = actQty - sumQty;   // Act_Qty – SumOfQty
-  } 
-  // ⭐ แถวอื่น ๆ
-  else {
-    delta = actQty;            // ใช้ Act_Qty อย่างเดียว
+  // ⚡ GROUP 1: File + Lot
+  const mainGroups = {};
+  for (const row of data) {
+    const key = row.File5digit + "_" + row.Lot;
+    (mainGroups[key] ||= []).push(row);
   }
 
-  // ⭐ กำหนดสี
-  if (delta > 0) {
-    deltaText = `▲ +${delta}`;
-    deltaClass = "delta-positive";
-  } else if (delta < 0) {
-    deltaText = `▼ ${delta}`;
-    deltaClass = "delta-negative";
-  } else {
-    deltaText = "0";
-    deltaClass = "delta-zero";
-  }
+  for (const key in mainGroups) {
+    const groupRows = mainGroups[key];
+    const [file, lot] = key.split("_");
 
-  // ⭐ ซ่อนคอลัมน์แถวอื่น (ไม่ใช่แถวแรก)
-  const hideCols = [
-  "Customer",
-  "Name",
-  "File5digit",
-  "Lot",
-  "Rack",
-  "SumOfQty",
-  "Sum of Qty" // ← เพิ่มเพื่อรองรับชื่อจริงจาก API/UI
-];
+    const allEmptyGroup = groupRows.every(r =>
+      (!r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package)
+    );
 
-  const tds = headers.map(h => {
+    const groupStatusText = allEmptyGroup
+      ? " - <span style='color:#b45309;'>ยังไม่ Check</span>"
+      : "";
 
-    if (idx !== 0 && hideCols.includes(h)) {
-      return `<td></td>`;
+    html += `
+      <tr class="table-group">
+        <td colspan="${headers.length}">
+          📦 <b>${file}</b> / <b>${lot}</b> ${groupStatusText}
+        </td>
+      </tr>
+    `;
+
+    // ⚡ GROUP 2: Rack
+    const rackGroups = {};
+    for (const r of groupRows) {
+      const norm = normalizeRack(r.Rack);
+      (rackGroups[norm] ||= []).push(r);
     }
 
-    if (h === "Delta +/-") return `<td class="${deltaClass}">${deltaText}</td>`;
-    if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
-    if (h === "Rack") return `<td>${displayRack(row[h])}</td>`;
-if (h === "Act_Rack") return `<td>${displayRack(row[h])}</td>`;
+    for (const rackNorm in rackGroups) {
+      const rows = rackGroups[rackNorm]
+        .slice()
+        .sort((a, b) => Number(a.ID) - Number(b.ID));
 
+      html += `
+        <tr class="rack-header" style="background:#e2e8f0;">
+          <td colspan="${headers.length}" style="font-weight:bold;">
+            <span class="arrow">▼</span> Rack: <b>${displayRack(rackNorm)}</b>
+          </td>
+        </tr>
+      `;
 
-    return `<td>${row[h] ?? ""}</td>`;
-  }).join("");
+      // 🚀 FAST: Prepare values first
+      const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty || 0);
 
-body.innerHTML += `
-  <tr class="rack-row">
-      ${tds}
-  </tr>
-`;
-});
+      let totalActQty = 0;
 
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
 
-  // ✔ NEW: ใช้สูตรใหม่
-// ✔ ตรวจว่าทุกแถวยังไม่ Check หรือไม่
-const allEmpty = rows.every(r =>
-  (!r.Act_Rack || r.Act_Rack === "") &&
-  (!r.Act_Lot || r.Act_Lot === "") &&
-  (!r.Act_Qty || r.Act_Qty === "") &&
-  (!r.Act_Package || r.Act_Package === "")
-);
+        const actQty = toNum(row.Act_Qty);
+        totalActQty += actQty;
 
-// ถ้ายังไม่ Check เลย
-// ❌ ไม่ต้องแสดง "ยังไม่ Check" ตรงระดับ Rack อีกแล้ว
-if (allEmpty) {
-  continue; 
-}
+        let delta = 0;
+        if (i === 0) delta = actQty - baseSumQty;
+        else delta = actQty;
 
+        let deltaText = "";
+        let deltaClass = "";
 
-const rackTotal = totalActQty - baseSumQty;
+        if (delta > 0) {
+          deltaText = `▲ +${delta}`;
+          deltaClass = "delta-positive";
+        } else if (delta < 0) {
+          deltaText = `▼ ${delta}`;
+          deltaClass = "delta-negative";
+        } else {
+          deltaText = "0";
+          deltaClass = "delta-zero";
+        }
 
-// เลือก class สี
-let rackTotalClass = "";
-if (rackTotal > 0) rackTotalClass = "delta-positive";
-else if (rackTotal < 0) rackTotalClass = "delta-negative";
-else rackTotalClass = "delta-zero";
+        const hideCols = [
+          "Customer", "Name", "File5digit", "Lot", "Rack",
+          "SumOfQty", "Sum of Qty"
+        ];
 
-body.innerHTML += `
-  <tr class="rack-row ${foldId}" style="background:#f8fafc; font-weight:bold;">
-    <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
-    <td class="${rackTotalClass}">
-      ${rackTotal > 0 ? "▲ +" + rackTotal :
-         rackTotal < 0 ? "▼ " + rackTotal : "0"}
-    </td>
-  </tr>
-`;
+        html += `<tr class="rack-row">`;
 
-}
+        for (const h of headers) {
+          if (i !== 0 && hideCols.includes(h)) {
+            html += "<td></td>";
+            continue;
+          }
 
+          if (h === "Delta +/-") {
+            html += `<td class="${deltaClass}">${deltaText}</td>`;
+          } else if (h === "Timestamp") {
+            html += `<td>${convertToBangkokTime(row[h])}</td>`;
+          } else if (h === "Rack") {
+            html += `<td>${displayRack(row[h])}</td>`;
+          } else if (h === "Act_Rack") {
+            html += `<td>${displayRack(row[h])}</td>`;
+          } else {
+            html += `<td>${row[h] ?? ""}</td>`;
+          }
+        }
+
+        html += `</tr>`;
+      }
+
+      // ⚡ รวม Rack นี้
+      const allEmpty = rows.every(r =>
+        (!r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package)
+      );
+
+      if (!allEmpty) {
+        const rackTotal = totalActQty - baseSumQty;
+        let className = rackTotal > 0
+          ? "delta-positive"
+          : rackTotal < 0
+          ? "delta-negative"
+          : "delta-zero";
+
+        html += `
+          <tr class="rack-row" style="background:#f8fafc; font-weight:bold;">
+            <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
+            <td class="${className}">
+              ${rackTotal > 0 ? "▲ +" + rackTotal :
+                rackTotal < 0 ? "▼ " + rackTotal : "0"}
+            </td>
+          </tr>
+        `;
+      }
+    }
   }
 
-
+  // ⚡ Render HTML ทีเดียว
+  body.innerHTML = html;
 }
 
 

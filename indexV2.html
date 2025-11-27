@@ -489,13 +489,13 @@ for (const rackNorm in rackGroups) {
 
   const foldId = "rack_" + rackNorm.replace(/\W/g, "_");
 
-  body.innerHTML += `
-    <tr class="rack-header" data-target="${foldId}" style="background:#e2e8f0; cursor:pointer;">
-      <td colspan="${headers.length}" style="font-weight:bold;">
-        <span class="arrow">▼</span> Rack: <b>${displayRack(rackNorm)}</b>
-      </td>
-    </tr>
-  `;
+body.innerHTML += `
+  <tr class="rack-header" style="background:#e2e8f0;">
+    <td colspan="${headers.length}" style="font-weight:bold;">
+      <span class="arrow">▼</span> Rack: <b>${displayRack(rackNorm)}</b>
+    </td>
+  </tr>
+`;
 
   // ✔ NEW: logic คำนวณตามสูตรใหม่
   const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty || 0);
@@ -558,11 +558,11 @@ if (h === "Act_Rack") return `<td>${displayRack(row[h])}</td>`;
     return `<td>${row[h] ?? ""}</td>`;
   }).join("");
 
-  body.innerHTML += `
-    <tr class="rack-row ${foldId}">
+body.innerHTML += `
+  <tr class="rack-row">
       ${tds}
-    </tr>
-  `;
+  </tr>
+`;
 });
 
 
@@ -604,27 +604,7 @@ body.innerHTML += `
 
   }
 
-// COLLAPSE EVENT หลังจากวาดตารางเสร็จ
-setTimeout(() => {
-  document.querySelectorAll(".rack-header").forEach(el => {
-    el.addEventListener("click", () => {
-      const target = el.dataset.target;
-      const rows = document.querySelectorAll("." + target);
-      const arrow = el.querySelector(".arrow");
 
-      // เช็คว่าปัจจุบันซ่อนอยู่หรือไม่
-      let isHidden = rows[0].style.display === "none";
-
-      rows.forEach(r => {
-        r.style.display = isHidden ? "" : "none";
-      });
-
-      // เปลี่ยนไอคอน
-      arrow.className = "arrow";  
-arrow.textContent = isHidden ? "▼" : "▶";
-    });
-  });
-}, 10); // หน่วงนิดเดียวให้ DOM สร้างก่อน
 }
 
 

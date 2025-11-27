@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📦 FG Inventory data check (Admin)</title>
 
-  <!-- Library -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -22,470 +21,267 @@
       overflow-y: auto;
     }
 
-    .content { margin-left: 260px; padding: 80px 30px; }
-    .progress { height: 22px; display: none; }
+    .content { margin-left: 260px; padding: 80px 30px; transition: all 0.3s ease; }
+    .progress { height: 22px; margin-top: 10px; display: none; }
     table { font-size: 14px; }
 
-    /* Tabs */
+    /* 🎨 Tabs */
     .nav-tabs { border-bottom: 1px solid #475569; margin-bottom: 15px; }
-    .nav-tabs .nav-link { color: #cbd5e1; background: transparent; }
-    .nav-tabs .nav-link.active { background:#334155; color:#fff; }
-    .nav-tabs .nav-link:hover { background:#475569; color:#fff; }
+    .nav-tabs .nav-link {
+      color: #cbd5e1; border: none; border-radius: 0; background: transparent;
+    }
+    .nav-tabs .nav-link.active {
+      background-color: #334155; color: #ffffff; font-weight: 600;
+    }
+    .nav-tabs .nav-link:hover {
+      background-color: #475569; color: #fff;
+    }
 
     .collapse-content {
-      background: #243043; border-radius: 8px;
-      padding: 10px; margin-bottom: 10px;
+      background-color: #243043;
+      border-radius: 8px; padding: 10px; margin-bottom: 10px;
     }
 
+    /* กลุ่ม */
     .table-group {
       background-color: #dbeafe !important;
-      color: #1e3a8a;
-      font-weight: 600;
-      border-top: 2px solid #93c5fd;
+      color: #1e3a8a; font-weight: 600; border-top: 2px solid #93c5fd;
     }
 
-    .delta-positive { color:#15803d !important; background:#dcfce7 !important; font-weight:600; }
-    .delta-negative { color:#b91c1c !important; background:#fee2e2 !important; font-weight:600; }
-    .delta-zero     { color:#334155 !important; background:#f1f5f9 !important; font-weight:500; }
+    .table-detail:hover { background-color: #f1f5f9; }
 
-    .arrow {
-      color: #6b7280; font-weight: bold;
-      padding-right: 6px;
-      display: inline-block;
-      width: 12px;
+    /* ✅ Delta */
+    .delta-positive {
+      color: #15803d !important; background-color: #dcfce7 !important; font-weight: 600;
     }
+    .delta-negative {
+      color: #b91c1c !important; background-color: #fee2e2 !important; font-weight: 600;
+    }
+    .delta-zero {
+      color: #334155 !important; background-color: #f1f5f9 !important; font-weight: 500;
+    }
+.arrow {
+  color: #6b7280; 
+  font-weight: bold;
+  padding-right: 6px;
+  display: inline-block;   /* <-- ตัวนี้คือคำตอบ */
+  width: 12px;             /* ช่วยให้ไอคอนนิ่ง */
+}
+
+
   </style>
 </head>
-
 <body>
-
-  <!-- NAVBAR -->
   <nav class="navbar navbar-dark fixed-top px-3 d-flex justify-content-between align-items-center">
     <span class="navbar-brand h4 mb-0">📦 FG Inventory data check (Admin)</span>
     <div class="navbar-time" id="currentDateTime">--/--/---- --:--:--</div>
   </nav>
 
-  <!-- SIDEBAR -->
+  <!-- 🧭 Sidebar with Tabs -->
   <div class="sidebar">
-    <ul class="nav nav-tabs nav-justified">
-      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#searchTab">🔍 Search</button></li>
-      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#uploadTab">📤 Upload</button></li>
+    <ul class="nav nav-tabs nav-justified" id="sidebarTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#searchTab" type="button" role="tab">🔍 Search</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#uploadTab" type="button" role="tab">📤 Upload</button>
+      </li>
     </ul>
 
-    <div class="tab-content">
-
-      <!-- SEARCH TAB -->
-      <div class="tab-pane fade show active" id="searchTab">
+    <div class="tab-content" id="sidebarTabContent">
+      <!-- 🔍 Search Tab -->
+      <div class="tab-pane fade show active" id="searchTab" role="tabpanel">
         <div class="collapse-content">
+<label>Start Date</label>
+<input type="date" id="startDate" class="form-control mb-2">
 
-          <label>Start Date</label>
-          <input type="date" id="startDate" class="form-control mb-2">
+<label>End Date</label>
+<input type="date" id="endDate" class="form-control mb-3">
 
-          <label>End Date</label>
-          <input type="date" id="endDate" class="form-control mb-3">
+<label>Customer</label>
+<input type="text" id="searchCustomer" class="form-control mb-3" placeholder="เช่น KKFT">
 
-          <label>Customer</label>
-          <input type="text" id="searchCustomer" class="form-control mb-3" placeholder="เช่น KKFT">
+<label>File5digit</label>
+<input type="text" id="searchFile5" class="form-control mb-2" placeholder="เช่น F0576">
 
-          <label>File5digit</label>
-          <input type="text" id="searchFile5" class="form-control mb-2" placeholder="เช่น F0576">
+<label>Lot</label>
+<input type="text" id="searchLot" class="form-control mb-3" placeholder="เช่น 23100280">
 
-          <label>Lot</label>
-          <input type="text" id="searchLot" class="form-control mb-3" placeholder="เช่น 23100280">
 
           <button class="btn btn-primary w-100 mb-2" onclick="searchData()">Search</button>
           <button class="btn btn-secondary w-100 mb-2" onclick="clearFilters()">Clear Filter</button>
           <button class="btn btn-outline-success w-100" onclick="exportExcel()">Export Excel</button>
-
         </div>
       </div>
 
-      <!-- UPLOAD TAB -->
-      <div class="tab-pane fade" id="uploadTab">
+      <!-- 📤 Upload Tab -->
+      <div class="tab-pane fade" id="uploadTab" role="tabpanel">
         <div class="collapse-content">
-
           <input type="file" id="fileInput" class="form-control mb-3" accept=".xlsx,.csv">
           <button class="btn btn-success w-100 mb-2" onclick="uploadToSheet()">Upload to Database</button>
-
-          <div class="progress mt-2">
-            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info">0%</div>
+          <div class="progress">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width:0%">0%</div>
           </div>
-
           <button class="btn btn-danger w-100 mt-3" onclick="deleteAll()">🗑 Delete Data from Database</button>
-
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- CONTENT -->
   <div class="content">
     <h4>📊 Data Result</h4>
     <div id="resultText" class="mt-3 text-secondary">Please upload Excel file or search data...</div>
 
     <div class="table-responsive mt-3">
-      <table class="table table-striped">
+      <table class="table table-striped" id="dataTable">
         <thead class="table-dark"><tr id="tableHead"></tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
   </div>
 
-<!-- BOOTSTRAP JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  const scriptURL = "https://script.google.com/macros/s/AKfycbzSBnEJ9EfGjmPCXuUS5-rFHWBU79DPGsUSdSpk0O5vnbmUxEKEAeNVOvoAad2v8wDn/exec";
+  let allData = [];
 
-<script>
-/* ============================================
-   CONFIG
-============================================ */
-const scriptURL =
-  "https://script.google.com/macros/s/AKfycbzSBnEJ9EfGjmPCXuUS5-rFHWBU79DPGsUSdSpk0O5vnbmUxEKEAeNVOvoAad2v8wDn/exec";
-
-let allData = [];          // ข้อมูลทั้งหมดที่ได้จาก Google Sheet
-let filteredData = [];     // ข้อมูลหลัง filter
-let renderedRows = [];     // ข้อมูลที่เตรียมแล้วสำหรับ render
-let headers = [];          // Header columns
-
-/* Pagination */
-let currentPage = 1;
-const rowsPerPage = 100;
-
-/* ============================================
-   Utility: เวลาไทย
-============================================ */
-function convertToBangkokTime(utcString) {
-  if (!utcString) return "";
-  return new Date(utcString).toLocaleString("th-TH", {
-    timeZone: "Asia/Bangkok",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false
-  }).replace(",", "");
-}
-
-function updateDateTime() {
-  document.getElementById("currentDateTime").textContent =
-    new Date().toLocaleString("th-TH", {
-      year:"numeric", month:"2-digit", day:"2-digit",
-      hour:"2-digit", minute:"2-digit", second:"2-digit"
-    });
-}
-setInterval(updateDateTime, 1000);
-updateDateTime();
-
-/* ============================================
-   Normalize Rack
-============================================ */
-function normalizeRack(rack) {
-  if (!rack) return "";
-  const match = rack.match(/\[(.*?)\]/);
-  let clean = (match ? match[1] : rack).trim().replace(/\s+/g, "").toUpperCase();
-  if (clean === "PCCHPAREA") return "PCCHPAREA";
-  return clean;
-}
-
-function displayRack(rack) {
-  if (!rack) return "";
-  const match = rack.match(/\[(.*?)\]/);
-  let clean = (match ? match[1] : rack).trim();
-  if (clean.replace(/\s+/g, "").toUpperCase() === "PCCHPAREA") return "PCCHPAREA";
-  return clean;
-}
-
-const toNum = v => Number(String(v || "0").replace(/,/g, "")) || 0;
-
-
-/* ============================================
-   Search Data
-============================================ */
-async function searchData() {
-  Swal.fire({ title: "Searching...", didOpen: () => Swal.showLoading() });
-
-  const s = document.getElementById("startDate").value;
-  const e = document.getElementById("endDate").value;
-  const cus = document.getElementById("searchCustomer").value.toLowerCase();
-  const f5 = document.getElementById("searchFile5").value.toLowerCase();
-  const lot = document.getElementById("searchLot").value.toLowerCase();
-
-  try {
-    const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
-    const data = await res.json();
-    allData = data;
-
-    const parseDate = ts =>
-      ts ? ts.split(" ")[0].split("/").reverse().join("-") : "";
-
-    filteredData = data.filter(r => {
-      const d = parseDate(r.Timestamp || "");
-
-      return (!s || d >= s) &&
-             (!e || d <= e) &&
-             (!cus || (r.Customer || "").toLowerCase().includes(cus)) &&
-             (!f5  || (r.File5digit || "").toLowerCase().includes(f5)) &&
-             (!lot || (r.Lot || "").toLowerCase().includes(lot));
-    });
-
-    Swal.close();
-
-    prepareRenderData(filteredData);
-    currentPage = 1;
-    renderPage();
-
-    document.getElementById("resultText").innerHTML =
-      filteredData.length
-        ? `🔎 พบข้อมูล <b>${filteredData.length}</b> แถว`
-        : `❌ ไม่พบข้อมูล`;
-
-  } catch (err) {
-    Swal.fire("❌", "Error fetching data", "error");
-  }
-}
-
-
-/* ============================================
-   PREPROCESS → สร้างข้อมูลที่พร้อม Render
-============================================ */
-function prepareRenderData(data) {
-  renderedRows = [];
-  if (!data.length) return;
-
-  /* Header */
-  headers = Object.keys(data[0]).filter(h => h !== "ID");
-  if (!headers.includes("Delta +/-")) {
-    headers.splice(headers.indexOf("Act_Package") + 1, 0, "Delta +/-");
+  // 🕒 เวลาไทย
+  function convertToBangkokTime(utcString) {
+    if (!utcString) return "";
+    const date = new Date(utcString);
+    return date.toLocaleString("th-TH", {
+      timeZone: "Asia/Bangkok",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false
+    }).replace(",", "");
   }
 
-  /* Group by File + Lot */
-  const groups = {};
-  data.forEach(r => {
-    const k = `${r.File5digit}_${r.Lot}`;
-    if (!groups[k]) groups[k] = [];
-    groups[k].push(r);
-  });
-
-  /* Loop File+Lot groups */
-  for (const key in groups) {
-    const group = groups[key];
-    const [file, lot] = key.split("_");
-
-    const allEmpty = group.every(r =>
-      !r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package
-    );
-
-    renderedRows.push({
-      type: "group",
-      html: `
-        <tr class="table-group">
-          <td colspan="${headers.length}">
-            📦 <b>${file}</b> / <b>${lot}</b>
-            ${allEmpty ? " - <span style='color:#b45309;'>ยังไม่ Check</span>" : ""}
-          </td>
-        </tr>
-      `
+  // 🕓 อัปเดตเวลา Navbar
+  function updateDateTime() {
+    const now = new Date();
+    const formatted = now.toLocaleString('th-TH', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
-
-    /* Group by Rack */
-    const rackGroups = {};
-    group.forEach(r => {
-      const k = normalizeRack(r.Rack);
-      if (!rackGroups[k]) rackGroups[k] = [];
-      rackGroups[k].push(r);
-    });
-
-    /* Loop Rack */
-    for (const rackNorm in rackGroups) {
-      const rows = rackGroups[rackNorm].sort((a,b)=>a.ID-b.ID);
-
-      /* Rack Header */
-      renderedRows.push({
-        type:"rack-header",
-        html: `
-          <tr style="background:#e2e8f0;">
-            <td colspan="${headers.length}">
-              <span class="arrow">▼</span>
-              Rack: <b>${displayRack(rackNorm)}</b>
-            </td>
-          </tr>
-        `
-      });
-
-      /* Row Detail */
-      const baseSum = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
-      let totalAct = 0;
-
-      rows.forEach((r, i) => {
-        const act = toNum(r.Act_Qty);
-        totalAct += act;
-
-        const delta = i === 0 ? act - baseSum : act;
-        const dClass = delta > 0 ? "delta-positive"
-                    : delta < 0 ? "delta-negative"
-                    : "delta-zero";
-
-        const hide = [
-          "Customer","Name","File5digit",
-          "Lot","Rack","SumOfQty","Sum of Qty"
-        ];
-
-        const tds = headers.map(h=>{
-          if (i!==0 && hide.includes(h)) return `<td></td>`;
-          if (h==="Delta +/-")
-            return `<td class="${dClass}">${delta>0?"▲ +"+delta:(delta<0?"▼ "+delta:"0")}</td>`;
-          if (h==="Timestamp") return `<td>${convertToBangkokTime(r.Timestamp)}</td>`;
-          if (h==="Rack") return `<td>${displayRack(r.Rack)}</td>`;
-          if (h==="Act_Rack") return `<td>${displayRack(r.Act_Rack)}</td>`;
-          return `<td>${r[h] || ""}</td>`;
-        }).join("");
-
-        renderedRows.push({
-          type:"row",
-          html:`<tr>${tds}</tr>`
-        });
-      });
-
-      /* Rack Total */
-      const empty = rows.every(r =>
-        !r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package
-      );
-      if (!empty) {
-        const rt = totalAct - baseSum;
-        const cls = rt>0?"delta-positive":rt<0?"delta-negative":"delta-zero";
-
-        renderedRows.push({
-          type:"rack-total",
-          html: `
-            <tr style="background:#f8fafc; font-weight:bold;">
-              <td colspan="${headers.length-1}" class="text-end">รวม Rack นี้:</td>
-              <td class="${cls}">
-                ${rt>0?"▲ +"+rt:(rt<0?"▼ "+rt:"0")}
-              </td>
-            </tr>
-          `
-        });
-      }
-    }
+    document.getElementById('currentDateTime').textContent = formatted;
   }
-}
+  setInterval(updateDateTime, 1000); updateDateTime();
 
-
-/* ============================================
-   RENDER PAGE (Pagination)
-============================================ */
-function renderPage() {
-  const body = document.getElementById("tableBody");
-  const head = document.getElementById("tableHead");
-  if (!headers.length) { head.innerHTML=""; return; }
-
-  head.innerHTML = headers.map(h=>`<th>${h}</th>`).join("");
-
-  const start = (currentPage - 1) * rowsPerPage;
-  const end = start + rowsPerPage;
-
-  const pageRows = renderedRows.slice(start, end);
-  body.innerHTML = pageRows.map(r=>r.html).join("");
-
-  renderPagination();
-}
-
-
-/* ============================================
-   Pagination Buttons
-============================================ */
-function renderPagination() {
-  const totalPages = Math.ceil(renderedRows.length / rowsPerPage);
-  const container = document.getElementById("paginationBar");
-
-  if (!container) {
-    const div = document.createElement("div");
-    div.id = "paginationBar";
-    div.className = "mt-3 d-flex justify-content-center gap-2";
-    document.querySelector(".content").appendChild(div);
-  }
-
-  const bar = document.getElementById("paginationBar");
-  bar.innerHTML = `
-    <button class="btn btn-sm btn-secondary" onclick="changePage(-1)" ${currentPage===1?"disabled":""}>⬅ Prev</button>
-    <span class="mx-2">Page ${currentPage} / ${totalPages}</span>
-    <button class="btn btn-sm btn-secondary" onclick="changePage(1)" ${currentPage===totalPages?"disabled":""}>Next ➡</button>
-  `;
-}
-
-function changePage(offset){
-  const totalPages = Math.ceil(renderedRows.length / rowsPerPage);
-  currentPage += offset;
-  if (currentPage < 1) currentPage = 1;
-  if (currentPage > totalPages) currentPage = totalPages;
-  renderPage();
-}
-
-
-/* ============================================
-   Clear Filter
-============================================ */
-function clearFilters() {
-  ["startDate","endDate","searchCustomer","searchFile5","searchLot"]
-    .forEach(id=>document.getElementById(id).value="");
-  Swal.fire("🧹","ล้างเรียบร้อย","success");
-}
-</script>
-<script>
-/* ============================================
-   Upload Excel
-============================================ */
+  // 📤 Upload Excel
+// 📤 Upload Excel
 async function uploadToSheet() {
   const file = document.getElementById("fileInput").files[0];
   if (!file) return Swal.fire("⚠️", "Please select a file!", "warning");
 
+  const progress = document.querySelector(".progress");
   const bar = document.getElementById("progressBar");
-  document.querySelector(".progress").style.display = "block";
+  progress.style.display = "block";
   bar.style.width = "0%"; 
   bar.innerText = "0%";
 
-  Swal.fire({ title:"Uploading...", didOpen:()=>Swal.showLoading() });
+  Swal.fire({ title: "Uploading...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
   const reader = new FileReader();
   reader.onload = async e => {
-    const workbook = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { header:1, blankrows:true, defval:"" });
 
-    /* 1) Validate columns <= 6 */
-    for (let i=0;i<rows.length;i++){
-      if (rows[i].filter(x=>x!=="").length > 6){
-        return Swal.fire("❌ Error",`แถว ${i+1} มีจำนวนคอลัมน์เกิน 6`,"error");
+    const rawRows = XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      blankrows: true,
+      defval: ""
+    });
+
+    // -----------------------------------------------------
+    // 📌 1) ตรวจจำนวนคอลัมน์ของทุกแถว (ต้องเท่ากับ 6)
+    // -----------------------------------------------------
+    for (let i = 0; i < rawRows.length; i++) {
+      const r = rawRows[i];
+      const colCount = r.filter(x => x !== "").length;
+
+      if (colCount > 6) {
+        return Swal.fire({
+          icon: "error",
+          title: "รูปแบบไฟล์ไม่ถูกต้อง",
+          html: `
+            ❌ ตรวจพบแถวที่มีจำนวนคอลัมน์เกิน 6<br>
+            <b>แถวที่ ${i + 1}</b><br><br>
+            ระบบไม่สามารถอัปโหลดไฟล์นี้ได้
+          `
+        });
       }
     }
 
-    /* 2) Validate Header */
-    const header = ["Customer","Name","File5digit","Lot","Rack","SumOfQty"];
-    if (header.some((h,i)=>rows[0][i]?.trim()!==h)){
-      return Swal.fire("⚠️ Header ผิด",`ต้องเป็น: ${header.join(" | ")}`,"warning");
+    // -----------------------------------------------------
+    // 📌 2) ตรวจ Header ให้ตรงตาม Template
+    // -----------------------------------------------------
+    const expectedHeader = [
+      "Customer", "Name", "File5digit", "Lot", "Rack", "SumOfQty"
+    ];
+
+    const header = rawRows[0];
+
+    const isHeaderMismatch = header.some((val, i) => {
+      if (!val) return true;
+      return val.trim() !== expectedHeader[i];
+    });
+
+    if (isHeaderMismatch) {
+      return Swal.fire({
+        icon: "warning",
+        title: "Header ไม่ตรงกับ Template",
+        html: `
+          ❌ กรุณาตรวจสอบว่า Header ต้องเป็น:<br>
+          <b>${expectedHeader.join(" | ")}</b><br><br>
+          และห้ามมีช่อง merge หรือ format พิเศษ
+        `
+      });
     }
 
-    /* 3) Build payload */
-    const payload = rows.slice(1).map(r => ({
-      Customer:r[0], Name:r[1], File5digit:r[2],
-      Lot:r[3], Rack:r[4], SumOfQty:r[5]
+    // -----------------------------------------------------
+    // 📌 3) Normalize → ลดคอลัมน์ให้เหลือ 6 และเติมให้ครบ
+    // -----------------------------------------------------
+    const fixedRows = rawRows
+      .map(r => {
+        if (r.length > 6) r = r.slice(0, 6); 
+        while (r.length < 6) r.push("");
+        return r;
+      })
+      .filter(r => r.some(col => col !== ""));
+
+    // -----------------------------------------------------
+    // 📌 4) สร้าง Payload เพื่อส่งไปยัง Google Script
+    // -----------------------------------------------------
+    const payload = fixedRows.slice(1).map(r => ({
+      Customer: String(r[0]).trim(),
+      Name: String(r[1]).trim(),
+      File5digit: String(r[2]).trim(),
+      Lot: String(r[3]).trim(),
+      Rack: String(r[4]).trim(),
+      SumOfQty: String(r[5]).trim()
     }));
 
+    console.log("UPLOAD PAYLOAD:", payload);
+
     try {
-      await fetch(`${scriptURL}?page=uploadData`, {
-        method:"POST",
-        body:JSON.stringify(payload)
+      const res = await fetch(`${scriptURL}?page=uploadData`, {
+        method: "POST",
+        body: JSON.stringify(payload)
       });
+      const json = await res.json();
 
-      Swal.fire("✅","Upload สำเร็จ","success");
-      bar.style.width = "100%"; 
-      bar.innerText = "100%"; 
-      bar.classList.replace("bg-info","bg-success");
+      Swal.fire("✅", json.message, "success");
 
-    } catch(err){
-      Swal.fire("❌ Error","Upload Failed","error");
+      document.getElementById("resultText").textContent = json.message;
+      bar.style.width = "100%";
+      bar.innerText = "100%";
+      bar.classList.remove("bg-info");
+      bar.classList.add("bg-success");
+
+    } catch (err) {
+      Swal.fire("❌", "Error uploading data", "error");
     }
   };
 
@@ -493,116 +289,443 @@ async function uploadToSheet() {
 }
 
 
-/* ============================================
-   Delete All Data
-============================================ */
-async function deleteAll() {
-  const ok = await Swal.fire({
-    title:"⚠️ Delete All?",
-    text:"ข้อมูลทั้งหมดจะถูกลบ",
-    icon:"warning",
-    showCancelButton:true,
-    confirmButtonText:"Delete"
-  });
-  if (!ok.isConfirmed) return;
+  // 🗑 Delete All
+  async function deleteAll() {
+    const confirm = await Swal.fire({
+      title: "⚠️ ลบข้อมูลทั้งหมด?", text: "การลบนี้จะล้างข้อมูลทุกแถวในชีต WarehouseData",
+      icon: "warning", showCancelButton: true,
+      confirmButtonText: "ใช่, ลบเลย", cancelButtonText: "ยกเลิก"
+    });
+    if (!confirm.isConfirmed) return;
+    Swal.fire({ title: "กำลังลบข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-  Swal.fire({ title:"Deleting...", didOpen:()=>Swal.showLoading() });
+    try {
+      const res = await fetch(`${scriptURL}?page=deleteAll`, { method: "POST" });
+      const json = await res.json();
+      Swal.fire(json.success ? "✅" : "❌", json.message, json.success ? "success" : "error");
+    } catch { Swal.fire("❌", "เกิดข้อผิดพลาดระหว่างลบข้อมูล", "error"); }
+  }
+
+    
+async function searchData() {
+  const resultText = document.getElementById("resultText");
+  resultText.textContent = "";
+
+  const start = document.getElementById("startDate").value;
+  const end = document.getElementById("endDate").value;
+  const customer = document.getElementById("searchCustomer").value.trim().toLowerCase();
+  const file5 = document.getElementById("searchFile5").value.trim().toLowerCase();
+  const lot = document.getElementById("searchLot").value.trim().toLowerCase();
+
+  Swal.fire({ title: "กำลังค้นหา...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
   try {
-    const res = await fetch(`${scriptURL}?page=deleteAll`, { method:"POST" });
-    const json = await res.json();
-    Swal.fire("✅", json.message, "success");
-  } catch {
-    Swal.fire("❌ Error","Cannot delete","error");
+    const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
+    const data = await res.json();
+    Swal.close();
+
+    const parseDate = ts => {
+      if (!ts) return "";
+      const [d, m, y] = ts.split(" ")[0].split("/");
+      return `${y}-${m}-${d}`;
+    };
+
+    const filtered = data.filter(row => {
+      const ts = row.Timestamp || "";
+      const date = parseDate(ts);
+
+      const customerMatch =
+        !customer || (row.Customer || "").toLowerCase().includes(customer);
+
+      const file5Match =
+        !file5 || (row.File5digit || "").toLowerCase().includes(file5);
+
+      const lotMatch =
+        !lot || (row.Lot || "").toLowerCase().includes(lot);
+
+      const dateMatch =
+        (!start || date >= start) && (!end || date <= end);
+
+      return dateMatch && customerMatch && file5Match && lotMatch;
+    });
+
+    allData = filtered;
+
+    renderGroupedTable(filtered);
+
+    if (filtered.length > 0) {
+      resultText.innerHTML = `🔎 พบข้อมูล <b>${filtered.length}</b> แถวจากฐานข้อมูล`;
+      resultText.classList.remove("text-secondary");
+      resultText.classList.add("text-success");
+    } else {
+      resultText.innerHTML = `❌ ไม่พบข้อมูลตามเงื่อนไขการค้นหา`;
+      resultText.classList.remove("text-success");
+      resultText.classList.add("text-danger");
+    }
+
+  } catch (err) {
+    console.error(err);
+    Swal.fire("❌", "Error fetching data", "error");
   }
 }
 
 
-/* ============================================
-   Export Excel (ตาม UI ทั้งหมด)
-============================================ */
-async function exportExcel() {
-  if (!filteredData.length)
-    return Swal.fire("ℹ️","ไม่มีข้อมูลให้ส่งออก","info");
+  // 🧹 Clear Filter
+  function clearFilters() {
+    document.getElementById("startDate").value = "";
+    document.getElementById("endDate").value = "";
+    document.getElementById("searchFile5").value = "";
+    document.getElementById("searchLot").value = "";
+    document.getElementById("searchCustomer").value = "";
+    Swal.fire("🧹", "เคลียร์ช่องค้นหาทั้งหมดเรียบร้อย", "success");
+  }
 
-  const sorted = [...filteredData].sort((a,b)=>
-    a.File5digit.localeCompare(b.File5digit) ||
-    a.Lot.localeCompare(b.Lot) ||
-    a.ID - b.ID
+function normalizeRack(rack) {
+  if (!rack) return "";
+
+  // ดึงค่าจาก [ ... ]
+  const match = rack.match(/\[(.*?)\]/);
+  let clean = match ? match[1].trim() : rack.trim();
+
+  // 🔥 แปลงชื่อ Rack ที่เขียนต่างกันให้เหมือนกัน
+  clean = clean.replace(/\s+/g, "").toUpperCase();
+
+  // กรณีพิเศษ: PC CHP Area = PCCHPAREA
+  if (clean === "PCCHPAREA" || clean === "PCCHPAREA".replace(/\s/g, "")) {
+    return "PCCHPAREA"; 
+  }
+
+  return clean;
+}
+
+
+// สำหรับแสดงผลใน UI
+function displayRack(rack) {
+  if (!rack) return "";
+
+  const match = rack.match(/\[(.*?)\]/);
+  let clean = match ? match[1].trim() : rack.trim();
+
+  // แสดงชื่อเดียวกัน
+  let normalized = clean.replace(/\s+/g, "").toUpperCase();
+
+  if (normalized === "PCCHPAREA") return "PCCHPAREA";
+
+  return clean;
+}
+
+
+    function toNum(v) {
+  if (v === undefined || v === null) return 0;
+  return Number(String(v).replace(/,/g, "")) || 0;
+}
+
+    // สำหรับแสดงผลใน UI
+function renderGroupedTable(data) {
+  const head = document.getElementById("tableHead");
+  const body = document.getElementById("tableBody");
+  body.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    head.innerHTML = "";
+    body.innerHTML = "<tr><td colspan='20' class='text-center text-muted'>No data found</td></tr>";
+    return;
+  }
+
+  const headersRaw = Object.keys(data[0]);
+  const headers = headersRaw.filter(h => h !== "ID");
+
+  if (!headers.includes("Delta +/-")) {
+    const insertIndex = headers.indexOf("Act_Package") + 1;
+    headers.splice(insertIndex, 0, "Delta +/-");
+  }
+
+  head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
+
+// GROUP 1: File + Lot
+const mainGroups = {};
+data.forEach(row => {
+  const key = `${row.File5digit}_${row.Lot}`;
+  if (!mainGroups[key]) mainGroups[key] = [];
+  mainGroups[key].push(row);
+});
+
+for (const key in mainGroups) {
+  const groupRows = mainGroups[key];
+  const [file, lot] = key.split("_");
+
+  // ตรวจว่ากลุ่มนี้ยังไม่ Check ทั้งหมดหรือไม่
+  const allEmptyGroup = groupRows.every(r =>
+    (!r.Act_Rack || r.Act_Rack === "") &&
+    (!r.Act_Lot || r.Act_Lot === "") &&
+    (!r.Act_Qty || r.Act_Qty === "") &&
+    (!r.Act_Package || r.Act_Package === "")
   );
 
-  const exportRows = [];
-  const mainGroups = {};
+  // ถ้ายังไม่ Check = แสดงบนบรรทัด Group เลย
+  const groupStatusText = allEmptyGroup ? " -  <span style='color:#b45309;'>ยังไม่ Check</span>" : "";
 
-  /* GROUP BY File + Lot */
-  sorted.forEach(r => {
-    const k = `${r.File5digit}_${r.Lot}`;
-    if (!mainGroups[k]) mainGroups[k] = [];
-    mainGroups[k].push(r);
+  body.innerHTML += `
+    <tr class="table-group">
+      <td colspan="${headers.length}">
+        📦 <b>${file}</b> / <b>${lot}</b> ${groupStatusText}
+      </td>
+    </tr>
+  `;
+
+
+// GROUP 2: Rack
+const rackGroups = {};
+groupRows.forEach(r => {
+  const norm = normalizeRack(r.Rack);
+  if (!rackGroups[norm]) rackGroups[norm] = [];
+  rackGroups[norm].push(r);
+});
+
+for (const rackNorm in rackGroups) {
+  let rows = rackGroups[rackNorm];
+
+  rows = rows.sort((a, b) => Number(a.ID) - Number(b.ID));
+
+  const foldId = "rack_" + rackNorm.replace(/\W/g, "_");
+
+body.innerHTML += `
+  <tr class="rack-header" style="background:#e2e8f0;">
+    <td colspan="${headers.length}" style="font-weight:bold;">
+      <span class="arrow">▼</span> Rack: <b>${displayRack(rackNorm)}</b>
+    </td>
+  </tr>
+`;
+
+  // ✔ NEW: logic คำนวณตามสูตรใหม่
+  const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty || 0);
+  let totalActQty = 0;
+
+  rows.forEach((row, idx) => {
+
+  const actQty = toNum(row.Act_Qty);
+  totalActQty += actQty;
+
+  let delta = 0;
+  let deltaText = "";
+  let deltaClass = "";
+
+  // ⭐ แถวแรก (ID 1 ของ Rack)
+  if (idx === 0) {
+    const sumQty = toNum(row["Sum of Qty"] || row.SumOfQty || 0);
+    delta = actQty - sumQty;   // Act_Qty – SumOfQty
+  } 
+  // ⭐ แถวอื่น ๆ
+  else {
+    delta = actQty;            // ใช้ Act_Qty อย่างเดียว
+  }
+
+  // ⭐ กำหนดสี
+  if (delta > 0) {
+    deltaText = `▲ +${delta}`;
+    deltaClass = "delta-positive";
+  } else if (delta < 0) {
+    deltaText = `▼ ${delta}`;
+    deltaClass = "delta-negative";
+  } else {
+    deltaText = "0";
+    deltaClass = "delta-zero";
+  }
+
+  // ⭐ ซ่อนคอลัมน์แถวอื่น (ไม่ใช่แถวแรก)
+  const hideCols = [
+  "Customer",
+  "Name",
+  "File5digit",
+  "Lot",
+  "Rack",
+  "SumOfQty",
+  "Sum of Qty" // ← เพิ่มเพื่อรองรับชื่อจริงจาก API/UI
+];
+
+  const tds = headers.map(h => {
+
+    if (idx !== 0 && hideCols.includes(h)) {
+      return `<td></td>`;
+    }
+
+    if (h === "Delta +/-") return `<td class="${deltaClass}">${deltaText}</td>`;
+    if (h === "Timestamp") return `<td>${convertToBangkokTime(row[h])}</td>`;
+    if (h === "Rack") return `<td>${displayRack(row[h])}</td>`;
+if (h === "Act_Rack") return `<td>${displayRack(row[h])}</td>`;
+
+
+    return `<td>${row[h] ?? ""}</td>`;
+  }).join("");
+
+body.innerHTML += `
+  <tr class="rack-row">
+      ${tds}
+  </tr>
+`;
+});
+
+
+  // ✔ NEW: ใช้สูตรใหม่
+// ✔ ตรวจว่าทุกแถวยังไม่ Check หรือไม่
+const allEmpty = rows.every(r =>
+  (!r.Act_Rack || r.Act_Rack === "") &&
+  (!r.Act_Lot || r.Act_Lot === "") &&
+  (!r.Act_Qty || r.Act_Qty === "") &&
+  (!r.Act_Package || r.Act_Package === "")
+);
+
+// ถ้ายังไม่ Check เลย
+// ❌ ไม่ต้องแสดง "ยังไม่ Check" ตรงระดับ Rack อีกแล้ว
+if (allEmpty) {
+  continue; 
+}
+
+
+const rackTotal = totalActQty - baseSumQty;
+
+// เลือก class สี
+let rackTotalClass = "";
+if (rackTotal > 0) rackTotalClass = "delta-positive";
+else if (rackTotal < 0) rackTotalClass = "delta-negative";
+else rackTotalClass = "delta-zero";
+
+body.innerHTML += `
+  <tr class="rack-row ${foldId}" style="background:#f8fafc; font-weight:bold;">
+    <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
+    <td class="${rackTotalClass}">
+      ${rackTotal > 0 ? "▲ +" + rackTotal :
+         rackTotal < 0 ? "▼ " + rackTotal : "0"}
+    </td>
+  </tr>
+`;
+
+}
+
+  }
+
+
+}
+
+
+// 📤 Export Excel แบบเดียวกับ UI
+async function exportExcel() {
+  if (!allData || allData.length === 0) {
+    Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
+    return;
+  }
+
+  const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
+
+  // ✔ เรียงข้อมูลแบบ UI: File → Lot → ID
+  const sortedData = [...allData].sort((a, b) => {
+    const f1 = String(a.File5digit).localeCompare(String(b.File5digit));
+    if (f1 !== 0) return f1;
+    const l1 = String(a.Lot).localeCompare(String(b.Lot));
+    if (l1 !== 0) return l1;
+    return Number(a.ID) - Number(b.ID);
   });
 
-  /* Loop file/lot */
-  for (const key in mainGroups) {
-    const group = mainGroups[key];
+  const exportData = [];
 
-    /* Rack group */
+  // ✔ Group ตาม file + lot
+  const mainGroups = {};
+  sortedData.forEach(r => {
+    const key = `${r.File5digit}_${r.Lot}`;
+    if (!mainGroups[key]) mainGroups[key] = [];
+    mainGroups[key].push(r);
+  });
+
+  // ✔ loop ตามกลุ่ม File+Lot
+  for (const key in mainGroups) {
+    const groupRows = mainGroups[key];
+
+    // ✔ Group by Rack (Normalize เหมือน UI)
     const rackGroups = {};
-    group.forEach(r => {
-      const k = normalizeRack(r.Rack);
-      if (!rackGroups[k]) rackGroups[k] = [];
-      rackGroups[k].push(r);
+    groupRows.forEach(r => {
+      const rackNorm = normalizeRack(r.Rack);
+      if (!rackGroups[rackNorm]) rackGroups[rackNorm] = [];
+      rackGroups[rackNorm].push(r);
     });
 
-    /* Loop rack */
+    // ✔ loop ของแต่ละ Rack
     for (const rackNorm in rackGroups) {
-      const rows = rackGroups[rackNorm].sort((a,b)=>a.ID-b.ID);
+      const rows = rackGroups[rackNorm].sort((a, b) => Number(a.ID) - Number(b.ID));
 
-      const base = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
+   // ✔ base sum qty = ของแถวแรก (ID ต่ำสุด)
+const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
 
-      rows.forEach(r => {
-        const act = toNum(r.Act_Qty);
-        const diff = (r.ID === rows[0].ID)
-          ? act - base 
-          : act;
+rows.forEach(row => {
+  const actQty = toNum(row.Act_Qty);
 
-        exportRows.push({
-          Customer: r.Customer || "",
-          Name: r.Name || "",
-          File5digit: r.File5digit || "",
-          Lot: r.Lot || "",
-          Rack: displayRack(rackNorm),
-          "Sum of Qty": (r.ID === rows[0].ID) ? base : "",
-          Act_Rack: displayRack(r.Act_Rack) || "",
-          Act_Lot: r.Act_Lot || "",
-          Act_Qty: r.Act_Qty || "",
-          Act_Package: r.Act_Package || "",
-          "Delta +/-": diff > 0 ? `▲ +${diff}` : diff < 0 ? `▼ ${diff}` : "0",
-          Timestamp: r.Timestamp ? convertToBangkokTime(r.Timestamp) : ""
-        });
+  // ✔ UI Delta logic
+  let diff = 0;
+  if (row.ID == rows[0].ID) {
+    diff = actQty - baseSumQty;   // แถวแรก
+  } else {
+    diff = actQty;                // แถวลูก
+  }
+
+  let delta = "";
+  if (row.Act_Qty !== "" && row.Act_Qty != null) {
+    if (diff > 0) delta = `▲ +${diff}`;
+    else if (diff < 0) delta = `▼ ${diff}`;
+    else delta = "0";
+  }
+
+
+        // ✔ Push ลง Excel dataset
+exportData.push({
+  Customer: row.Customer || "",
+  Name: row.Name || "",
+  File5digit: row.File5digit || "",
+  Lot: row.Lot || "",
+  Rack: displayRack(rackNorm),
+
+  // ⬇⬇⬇ ซ่อน Sum of Qty ทุกแถว ยกเว้นแถวแรก ⬇⬇⬇
+  "Sum of Qty": (row.ID == rows[0].ID) ? baseSumQty : "",
+
+Act_Rack: displayRack(row.Act_Rack) || "",
+  Act_Lot: row.Act_Lot || "",
+  Act_Qty: row.Act_Qty || "",
+  Act_Package: row.Act_Package || "",
+  "Delta +/-": delta,
+  Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
+});
+
+
       });
     }
   }
 
-  /* Generate Excel */
+  // 📝 สร้าง Excel Workbook
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(exportRows);
+  const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
   XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
 
-  /* Auto Width */
-  ws["!cols"] = Object.keys(exportRows[0]).map(key => ({
+  // ✔ Auto Width
+  const colWidths = Object.keys(exportData[0]).map(key => ({
     wch: Math.max(
       key.length,
-      ...exportRows.map(r => (r[key] ? r[key].toString().length : 0))
+      ...exportData.map(r => (r[key] ? r[key].toString().length : 0))
     ) + 2
   }));
+  ws["!cols"] = colWidths;
 
+  // ✔ ชื่อไฟล์ (วันที่ + เวลา)
   const now = new Date();
-  const filename = `Warehouse_${now.toISOString().replace(/[:\-T]/g,"").slice(0,14)}.xlsx`;
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const hh = String(now.getHours()).padStart(2, "0");
+  const min = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+  const fileName = `WarehouseData_${yyyy}-${mm}-${dd}_${hh}${min}${ss}.xlsx`;
 
-  XLSX.writeFile(wb, filename);
-  Swal.fire("✅","ส่งออกสำเร็จ","success");
+  XLSX.writeFile(wb, fileName);
+  Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ", "success");
 }
-</script>
 
+  </script>
 </body>
 </html>

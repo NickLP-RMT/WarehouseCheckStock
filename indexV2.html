@@ -441,16 +441,16 @@ function renderGroupedTable(data) {
     headers.splice(insertIndex, 0, "Delta +/-");
   }
 
-  // Render header
-head.innerHTML =
-  headers.map(h => `<th>${h}</th>`).join("") +
-  `<th style="width:80px;">Delete</th>`;
+  // ✔ เพิ่มคอลัมน์สำหรับ Delete
+  head.innerHTML =
+    headers.map(h => `<th>${h}</th>`).join("") +
+    `<th style="width:80px;">Delete</th>`;
 
-
-  // ⚡ HTML Buffer
   let html = "";
 
-  // ⚡ GROUP 1: File + Lot
+  // --------------------------------------------------------
+  // GROUP 1 → File + Lot
+  // --------------------------------------------------------
   const mainGroups = {};
   for (const row of data) {
     const key = row.File5digit + "_" + row.Lot;
@@ -471,13 +471,15 @@ head.innerHTML =
 
     html += `
       <tr class="table-group">
-        <td colspan="${headers.length}">
+        <td colspan="${headers.length + 1}">
           📦 <b>${file}</b> / <b>${lot}</b> ${groupStatusText}
         </td>
       </tr>
     `;
 
-    // ⚡ GROUP 2: Rack
+    // --------------------------------------------------------
+    // GROUP 2 → Rack
+    // --------------------------------------------------------
     const rackGroups = {};
     for (const r of groupRows) {
       const norm = normalizeRack(r.Rack);
@@ -491,62 +493,99 @@ head.innerHTML =
 
       html += `
         <tr class="rack-header" style="background:#e2e8f0;">
-          <td colspan="${headers.length}" style="font-weight:bold;">
+          <td colspan="${headers.length + 1}" style="font-weight:bold;">
             <span class="arrow">▼</span> Rack: <b>${displayRack(rackNorm)}</b>
           </td>
         </tr>
       `;
 
-      // 🚀 FAST: Prepare values first
+      // 🎯 Base Sum (แถวแรกเท่านั้น)
       const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty || 0);
 
       let totalActQty = 0;
 
-for (let i = 0; i < rows.length; i++) {
-  const row = rows[i];
+      // --------------------------------------------------------
+      // LOOP ROWS
+      // --------------------------------------------------------
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
 
-  html += `<tr class="rack-row">`;
+        const actQty = toNum(row.Act_Qty);
+        totalActQty += actQty;
 
-  for (const h of headers) {
+        // 🎯 คำนวณ Delta แบบใหม่ (ไม่ crash)
+        let delta = 0;
+        if (i === 0) delta = actQty - baseSumQty;
+        else delta = actQty;
 
-    if (i !== 0 && ["Customer","Name","File5digit","Lot","Rack","SumOfQty","Sum of Qty"].includes(h)) {
-      html += "<td></td>";
-      continue;
-    }
+        let deltaText = "";
+        let deltaClass = "";
 
-    if (h === "Delta +/-") {
-      html += `<td class="${deltaClass}">${deltaText}</td>`;
-    } else if (h === "Timestamp") {
-      html += `<td>${convertToBangkokTime(row[h])}</td>`;
-    } else if (h === "Rack") {
-      html += `<td>${displayRack(row[h])}</td>`;
-    } else if (h === "Act_Rack") {
-      html += `<td>${displayRack(row[h])}</td>`;
-    } else {
-      html += `<td>${row[h] ?? ""}</td>`;
-    }
-  }
+        if (delta > 0) {
+          deltaText = `▲ +${delta}`;
+          deltaClass = "delta-positive";
+        } else if (delta < 0) {
+          deltaText = `▼ ${delta}`;
+          deltaClass = "delta-negative";
+        } else {
+          deltaText = "0";
+          deltaClass = "delta-zero";
+        }
 
-  // ➕ ตรงนี้คือปุ่มลบ (ถูกตำแหน่งที่สุด)
-  html += `
-    <td>
-      <button class="btn btn-sm btn-danger" onclick="deleteRow('${row.ID}')">
-        ลบ
-      </button>
-    </td>
-  `;
+        html += `<tr class="rack-row">`;
 
-  html += `</tr>`;
-}
+        for (const h of headers) {
+          // 🎯 แถวที่ไม่ใช่แถวแรก → ซ่อนคอลัมน์ต้นฉบับ
+          if (i !== 0 &&
+            ["Customer", "Name", "File5digit", "Lot", "Rack", "SumOfQty", "Sum of Qty"].includes(h)
+          ) {
+            html += "<td></td>";
+            continue;
+          }
 
+          if (h === "Delta +/-") {
+            html += `<td class="${deltaClass}">${deltaText}</td>`;
+          }
 
-      // ⚡ รวม Rack นี้
+          else if (h === "Timestamp") {
+            html += `<td>${convertToBangkokTime(row[h])}</td>`;
+          }
+
+          else if (h === "Rack") {
+            html += `<td>${displayRack(row[h])}</td>`;
+          }
+
+          else if (h === "Act_Rack") {
+            html += `<td>${displayRack(row[h])}</td>`;
+          }
+
+          else {
+            html += `<td>${row[h] ?? ""}</td>`;
+          }
+        }
+
+        // ✔ ปุ่มลบแถว
+        html += `
+          <td>
+            <button class="btn btn-sm btn-danger" onclick="deleteRow('${row.ID}')">
+              ลบ
+            </button>
+          </td>
+        `;
+
+        html += `</tr>`;
+      }
+
+      // --------------------------------------------------------
+      // รวม Rack นี้
+      // --------------------------------------------------------
       const allEmpty = rows.every(r =>
         (!r.Act_Rack && !r.Act_Lot && !r.Act_Qty && !r.Act_Package)
       );
 
       if (!allEmpty) {
         const rackTotal = totalActQty - baseSumQty;
+
         let className = rackTotal > 0
           ? "delta-positive"
           : rackTotal < 0
@@ -555,7 +594,7 @@ for (let i = 0; i < rows.length; i++) {
 
         html += `
           <tr class="rack-row" style="background:#f8fafc; font-weight:bold;">
-            <td colspan="${headers.length - 1}" class="text-end">รวม Rack นี้:</td>
+            <td colspan="${headers.length}" class="text-end">รวม Rack นี้:</td>
             <td class="${className}">
               ${rackTotal > 0 ? "▲ +" + rackTotal :
                 rackTotal < 0 ? "▼ " + rackTotal : "0"}
@@ -566,9 +605,9 @@ for (let i = 0; i < rows.length; i++) {
     }
   }
 
-  // ⚡ Render HTML ทีเดียว
   body.innerHTML = html;
 }
+
 
 
 // 📤 Export Excel แบบเดียวกับ UI

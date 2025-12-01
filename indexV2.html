@@ -67,7 +67,6 @@
   display: inline-block;   /* <-- ตัวนี้คือคำตอบ */
   width: 12px;             /* ช่วยให้ไอคอนนิ่ง */
 }
-<style>
 /* เพิ่มความกว้าง popup เป็น 700px */
 .swal-wide {
   width: 700px !important;
@@ -299,6 +298,7 @@ if (!json.success) {
   bar.innerText = "0%";
   return;
 }
+
 
 
 Swal.fire("✅", json.message, "success");

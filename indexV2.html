@@ -442,7 +442,10 @@ function renderGroupedTable(data) {
   }
 
   // Render header
-  head.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
+head.innerHTML =
+  headers.map(h => `<th>${h}</th>`).join("") +
+  `<th style="width:80px;">Delete</th>`;
+
 
   // ⚡ HTML Buffer
   let html = "";
@@ -499,58 +502,43 @@ function renderGroupedTable(data) {
 
       let totalActQty = 0;
 
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
+for (let i = 0; i < rows.length; i++) {
+  const row = rows[i];
 
-        const actQty = toNum(row.Act_Qty);
-        totalActQty += actQty;
+  html += `<tr class="rack-row">`;
 
-        let delta = 0;
-        if (i === 0) delta = actQty - baseSumQty;
-        else delta = actQty;
+  for (const h of headers) {
 
-        let deltaText = "";
-        let deltaClass = "";
+    if (i !== 0 && ["Customer","Name","File5digit","Lot","Rack","SumOfQty","Sum of Qty"].includes(h)) {
+      html += "<td></td>";
+      continue;
+    }
 
-        if (delta > 0) {
-          deltaText = `▲ +${delta}`;
-          deltaClass = "delta-positive";
-        } else if (delta < 0) {
-          deltaText = `▼ ${delta}`;
-          deltaClass = "delta-negative";
-        } else {
-          deltaText = "0";
-          deltaClass = "delta-zero";
-        }
+    if (h === "Delta +/-") {
+      html += `<td class="${deltaClass}">${deltaText}</td>`;
+    } else if (h === "Timestamp") {
+      html += `<td>${convertToBangkokTime(row[h])}</td>`;
+    } else if (h === "Rack") {
+      html += `<td>${displayRack(row[h])}</td>`;
+    } else if (h === "Act_Rack") {
+      html += `<td>${displayRack(row[h])}</td>`;
+    } else {
+      html += `<td>${row[h] ?? ""}</td>`;
+    }
+  }
 
-        const hideCols = [
-          "Customer", "Name", "File5digit", "Lot", "Rack",
-          "SumOfQty", "Sum of Qty"
-        ];
+  // ➕ ตรงนี้คือปุ่มลบ (ถูกตำแหน่งที่สุด)
+  html += `
+    <td>
+      <button class="btn btn-sm btn-danger" onclick="deleteRow('${row.ID}')">
+        ลบ
+      </button>
+    </td>
+  `;
 
-        html += `<tr class="rack-row">`;
+  html += `</tr>`;
+}
 
-        for (const h of headers) {
-          if (i !== 0 && hideCols.includes(h)) {
-            html += "<td></td>";
-            continue;
-          }
-
-          if (h === "Delta +/-") {
-            html += `<td class="${deltaClass}">${deltaText}</td>`;
-          } else if (h === "Timestamp") {
-            html += `<td>${convertToBangkokTime(row[h])}</td>`;
-          } else if (h === "Rack") {
-            html += `<td>${displayRack(row[h])}</td>`;
-          } else if (h === "Act_Rack") {
-            html += `<td>${displayRack(row[h])}</td>`;
-          } else {
-            html += `<td>${row[h] ?? ""}</td>`;
-          }
-        }
-
-        html += `</tr>`;
-      }
 
       // ⚡ รวม Rack นี้
       const allEmpty = rows.every(r =>
@@ -700,6 +688,46 @@ Act_Rack: displayRack(row.Act_Rack) || "",
   XLSX.writeFile(wb, fileName);
   Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ", "success");
 }
+    async function deleteRow(id) {
+  if (!id) return;
+
+  const confirm = await Swal.fire({
+    title: "ลบข้อมูล?",
+    text: `ต้องการลบข้อมูลแถว ID: ${id} หรือไม่?`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบเลย",
+    cancelButtonText: "ยกเลิก"
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  Swal.fire({
+    title: "กำลังลบ...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  try {
+    const res = await fetch(`${scriptURL}?page=deleteRow`, {
+      method: "POST",
+      body: JSON.stringify({ ID: id }),
+    });
+
+    const json = await res.json();
+
+    if (json.success) {
+      Swal.fire("✔️ ลบสำเร็จ", json.message, "success");
+      searchData();   // refresh table
+    } else {
+      Swal.fire("❌ ลบไม่สำเร็จ", json.message, "error");
+    }
+
+  } catch (e) {
+    Swal.fire("❌ Error", "ไม่สามารถลบข้อมูลได้", "error");
+  }
+}
+
 
   </script>
 </body>

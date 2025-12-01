@@ -478,6 +478,18 @@ function renderGroupedTable(data) {
 
   let html = "";
 
+
+
+  // 🧹 ลบแถวว่างออกก่อน Group
+data = data.filter(r =>
+  (r.Customer && r.Customer.trim() !== "") ||
+  (r.Name && r.Name.trim() !== "") ||
+  (r.File5digit && r.File5digit.trim() !== "") ||
+  (r.Lot && r.Lot.trim() !== "") ||
+  (r.Rack && r.Rack.trim() !== "") ||
+  (r.SumOfQty && r.SumOfQty.trim() !== "")
+);
+
   // --------------------------------------------------------
   // GROUP 1 → File + Lot
   // --------------------------------------------------------

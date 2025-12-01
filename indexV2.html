@@ -537,32 +537,36 @@ function renderGroupedTable(data) {
       // --------------------------------------------------------
       // LOOP ROWS
       // --------------------------------------------------------
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
+for (let i = 0; i < rows.length; i++) {
 
-        const actQty = toNum(row.Act_Qty);
-        totalActQty += actQty;
+  // 🛑 ถ้า Rack นี้มีแค่ 1 row → ไม่มีแถวลูก
+  if (rows.length === 1 && i > 0) continue;
 
-        // 🎯 คำนวณ Delta แบบใหม่ (ไม่ crash)
-        let delta = 0;
-        if (i === 0) delta = actQty - baseSumQty;
-        else delta = actQty;
+  const row = rows[i];
 
-        let deltaText = "";
-        let deltaClass = "";
+  const actQty = toNum(row.Act_Qty);
+  totalActQty += actQty;
 
-        if (delta > 0) {
-          deltaText = `▲ +${delta}`;
-          deltaClass = "delta-positive";
-        } else if (delta < 0) {
-          deltaText = `▼ ${delta}`;
-          deltaClass = "delta-negative";
-        } else {
-          deltaText = "0";
-          deltaClass = "delta-zero";
-        }
+  let delta = 0;
+  if (i === 0) delta = actQty - baseSumQty;
+  else delta = actQty;
 
-        html += `<tr class="rack-row">`;
+  let deltaText = "";
+  let deltaClass = "";
+
+  if (delta > 0) {
+    deltaText = `▲ +${delta}`;
+    deltaClass = "delta-positive";
+  } else if (delta < 0) {
+    deltaText = `▼ ${delta}`;
+    deltaClass = "delta-negative";
+  } else {
+    deltaText = "0";
+    deltaClass = "delta-zero";
+  }
+
+  html += `<tr class="rack-row">`;
+
 
         for (const h of headers) {
           // 🎯 แถวที่ไม่ใช่แถวแรก → ซ่อนคอลัมน์ต้นฉบับ

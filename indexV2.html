@@ -67,8 +67,18 @@
   display: inline-block;   /* <-- ตัวนี้คือคำตอบ */
   width: 12px;             /* ช่วยให้ไอคอนนิ่ง */
 }
+/* เพิ่มความกว้าง popup เป็น 700px */
+.swal-wide {
+  width: 700px !important;
+  max-width: 90% !important;
+}
 
-
+/* เพิ่มความสูง popup เป็น auto + scroll เมื่อข้อความเยอะ */
+.swal2-html-container {
+  text-align: left !important;
+  max-height: 60vh;
+  overflow-y: auto;
+}
   </style>
 </head>
 <body>
@@ -272,14 +282,15 @@ async function uploadToSheet() {
       });
       const json = await res.json();
 
-      if (!json.success) {
+if (!json.success) {
   Swal.fire({
     icon: "error",
     title: "อัปโหลดไม่สำเร็จ",
-    html: json.message.replace(/\n/g, "<br>")
+    html: json.message.replace(/\n/g, "<br>"),
+    customClass: "swal-wide"
   });
 
-  progress.style.display = "none";  // ซ่อน progress bar
+  progress.style.display = "none";
   bar.style.width = "0%";
   bar.innerText = "0%";
   return;

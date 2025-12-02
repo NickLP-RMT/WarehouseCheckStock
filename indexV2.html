@@ -622,14 +622,15 @@ async function confirmDeleteAll() {
       return;
     }
 
-    await Swal.fire("✔️ สำเร็จ", "ลบข้อมูลทั้งหมดเรียบร้อย", "success");
-
-    openDeleteTable(); // โหลด popup ใหม่
+    Swal.fire("✔️ สำเร็จ", "ลบข้อมูลทั้งหมดเรียบร้อย", "success").then(() => {
+      showDeletePage();   // ← โหลดตารางแบบใหม่ (ไม่มี popup)
+    });
 
   } catch (err) {
     Swal.fire("❌ Error", "เกิดข้อผิดพลาดระหว่างลบ", "error");
   }
 }
+
 
 async function deleteAll() {
   const confirm = await Swal.fire({

@@ -810,8 +810,9 @@ async function deleteGroup(rowKey) {
     const json = await res.json();
 
     if (json.success) {
-      Swal.fire("✔️ สำเร็จ", json.message, "success");
-      showDeletePage();        // โหลดใหม่ทันที
+      Swal.fire("✔️ สำเร็จ", json.message, "success").then(() => {
+        showDeletePage();    // ← Refresh ตารางหลังลบเสร็จ
+      });
     } else {
       Swal.fire("❌", json.message, "error");
     }
@@ -820,7 +821,6 @@ async function deleteGroup(rowKey) {
     Swal.fire("❌ Error", "ลบไม่สำเร็จ", "error");
   }
 }
-
 
 
     // สำหรับแสดงผลใน UI

@@ -314,7 +314,7 @@ button {
               <option value="B">B</option>
               <option value="C">C</option>
               <option value="D">D</option>
-              <option value="PC AREA">PC AREA</option>
+              <option value="PCCHPAREA">PCCHPAREA</option>
               <option value="BKK AREA">BKK AREA</option>
               <option value="SUBSTORE AREA">SUBSTORE AREA</option>
             </select>
@@ -570,7 +570,7 @@ function showDetail() {
                 <option value="B">B</option>
                 <option value="C">C</option>
                 <option value="D">D</option>
-                <option value="PC AREA">PC AREA</option>
+                <option value="PCCHPAREA">PCCHPAREA</option>
                 <option value="BKK AREA">BKK AREA</option>
                 <option value="SUBSTORE AREA">SUBSTORE AREA</option>
               </select>
@@ -688,7 +688,7 @@ function showDetail() {
                 <option value="B" ${actRack.startsWith("B") ? "selected" : ""}>B</option>
                 <option value="C" ${actRack.startsWith("C") ? "selected" : ""}>C</option>
                 <option value="D" ${actRack.startsWith("D") ? "selected" : ""}>D</option>
-                <option value="PC AREA" ${actRack === "PC AREA" ? "selected" : ""}>PC AREA</option>
+                <option value="PCCHPAREA" ${actRack === "PCCHPAREA" ? "selected" : ""}>PCCHPAREA</option>
                 <option value="BKK AREA" ${actRack === "BKK AREA" ? "selected" : ""}>BKK AREA</option>
                 <option value="SUBSTORE AREA" ${actRack === "SUBSTORE AREA" ? "selected" : ""}>SUBSTORE AREA</option>
               </select>
@@ -760,7 +760,7 @@ function showDetail() {
                 <option value="B">B</option>
                 <option value="C">C</option>
                 <option value="D">D</option>
-                <option value="PC AREA">PC AREA</option>
+                <option value="PCCHPAREA">PCCHPAREA</option>
                 <option value="BKK AREA">BKK AREA</option>
                 <option value="SUBSTORE AREA">SUBSTORE AREA</option>
               </select>
@@ -811,7 +811,7 @@ function updateRackSub(select) {
   const subSelect = select.closest(".rack-set").querySelector(".rackSub");
   const group = select.value;
 
-  if (group === "PC AREA" || group === "BKK AREA" || group === "SUBSTORE AREA") {
+  if (group === "PCCHPAREA" || group === "BKK AREA" || group === "SUBSTORE AREA") {
     subSelect.innerHTML = `<option value="${group}" selected>${group}</option>`;
     return;
   }
@@ -853,7 +853,7 @@ function addRackSet() {
           <option value="B">B</option>
           <option value="C">C</option>
           <option value="D">D</option>
-          <option value="PC AREA">PC AREA</option>
+          <option value="PCCHPAREA">PCCHPAREA</option>
           <option value="BKK AREA">BKK AREA</option>
           <option value="SUBSTORE AREA">SUBSTORE AREA</option>
         </select>
@@ -1146,7 +1146,7 @@ function clearForm() {
             <option value="B">B</option>
             <option value="C">C</option>
             <option value="D">D</option>
-            <option value="PC AREA">PC AREA</option>
+            <option value="PCCHPAREA">PCCHPAREA</option>
             <option value="BKK AREA">BKK AREA</option>
             <option value="SUBSTORE AREA">SUBSTORE AREA</option>
           </select>
@@ -1228,7 +1228,7 @@ function filterItemsByCustomer() {
             <option value="B">B</option>
             <option value="C">C</option>
             <option value="D">D</option>
-            <option value="PC AREA">PC AREA</option>
+            <option value="PCCHPAREA">PCCHPAREA</option>
             <option value="BKK AREA">BKK AREA</option>
             <option value="SUBSTORE AREA">SUBSTORE AREA</option>
           </select>

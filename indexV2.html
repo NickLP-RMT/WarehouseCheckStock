@@ -607,6 +607,7 @@ function displayRack(rack) {
 
     
 async function showAllDataPopup() {
+
   Swal.fire({
     title: "📄 รายการทั้งหมดในฐานข้อมูล",
     width: "90%",
@@ -623,7 +624,7 @@ async function showAllDataPopup() {
         <div style="margin-top:10px; color:#475569;">กำลังโหลดข้อมูล...</div>
       </div>
 
-      <!-- ตาราง (จะถูกแทนที่เมื่อโหลดเสร็จ) -->
+      <!-- ตาราง -->
       <div id="popupTableContainer" style="display:none; max-height:600px; overflow-y:auto; text-align:left;">
         <table class="table table-bordered table-striped" id="popupTable">
           <thead>
@@ -651,46 +652,49 @@ async function showAllDataPopup() {
     confirmButtonText: "ปิดหน้าต่าง",
   });
 
-  try {
-    // ⭐ ดึงข้อมูลจาก Google Sheet
-    const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
-    const rows = await res.json();
+  // ❗ ให้ Swal มีเวลาวาด popup ก่อน
+  setTimeout(async () => {
 
-    // ซ่อน Loading, แสดงตาราง
-    document.getElementById("popupLoading").style.display = "none";
-    const container = document.getElementById("popupTableContainer");
-    container.style.display = "block";
+    try {
+      const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
+      const rows = await res.json();
 
-    const body = document.getElementById("popupTableBody");
-    body.innerHTML = "";
+      document.getElementById("popupLoading").style.display = "none";
+      const container = document.getElementById("popupTableContainer");
+      container.style.display = "block";
 
-    rows.forEach(r => {
-      body.innerHTML += `
-        <tr>
-          <td>${r.ID}</td>
-          <td>${r.Customer}</td>
-          <td>${r.Name}</td>
-          <td>${r.File5digit}</td>
-          <td>${r.Lot}</td>
-          <td>${r.Rack}</td>
-          <td>${r.SumOfQty || r["Sum of Qty"]}</td>
-          <td>${r.Act_Rack}</td>
-          <td>${r.Act_Lot}</td>
-          <td>${r.Act_Qty}</td>
-          <td>${r.Act_Package}</td>
-          <td>${convertToBangkokTime(r.Timestamp)}</td>
-          <td>
-            <button class="btn btn-sm btn-danger" onclick="deleteRowFromPopup('${r.ID}')">
-              ลบ
-            </button>
-          </td>
-        </tr>
-      `;
-    });
+      const body = document.getElementById("popupTableBody");
+      body.innerHTML = "";
 
-  } catch (err) {
-    Swal.fire("❌ Error", "ไม่สามารถโหลดข้อมูลทั้งหมดได้", "error");
-  }
+      rows.forEach(r => {
+        body.innerHTML += `
+          <tr>
+            <td>${r.ID}</td>
+            <td>${r.Customer}</td>
+            <td>${r.Name}</td>
+            <td>${r.File5digit}</td>
+            <td>${r.Lot}</td>
+            <td>${r.Rack}</td>
+            <td>${r.SumOfQty || r["Sum of Qty"]}</td>
+            <td>${r.Act_Rack}</td>
+            <td>${r.Act_Lot}</td>
+            <td>${r.Act_Qty}</td>
+            <td>${r.Act_Package}</td>
+            <td>${convertToBangkokTime(r.Timestamp)}</td>
+            <td>
+              <button class="btn btn-sm btn-danger" onclick="deleteRowFromPopup('${r.ID}')">
+                ลบ
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+    } catch (err) {
+      Swal.fire("❌ Error", "โหลดข้อมูลไม่สำเร็จ", "error");
+    }
+
+  }, 150); // ⏳ ช่วยให้ spinner แสดงทัน
 }
 
     

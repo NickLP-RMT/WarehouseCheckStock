@@ -617,7 +617,14 @@ async function showAllDataPopup() {
         </button>
       </div>
 
-      <div style="max-height:600px; overflow-y:auto; text-align:left;">
+      <!-- 🔄 Loading spinner -->
+      <div id="popupLoading" style="padding:40px; text-align:center;">
+        <div class="spinner-border text-primary" role="status" style="width:3rem; height:3rem;"></div>
+        <div style="margin-top:10px; color:#475569;">กำลังโหลดข้อมูล...</div>
+      </div>
+
+      <!-- ตาราง (จะถูกแทนที่เมื่อโหลดเสร็จ) -->
+      <div id="popupTableContainer" style="display:none; max-height:600px; overflow-y:auto; text-align:left;">
         <table class="table table-bordered table-striped" id="popupTable">
           <thead>
             <tr>
@@ -645,8 +652,14 @@ async function showAllDataPopup() {
   });
 
   try {
+    // ⭐ ดึงข้อมูลจาก Google Sheet
     const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
     const rows = await res.json();
+
+    // ซ่อน Loading, แสดงตาราง
+    document.getElementById("popupLoading").style.display = "none";
+    const container = document.getElementById("popupTableContainer");
+    container.style.display = "block";
 
     const body = document.getElementById("popupTableBody");
     body.innerHTML = "";
@@ -679,7 +692,6 @@ async function showAllDataPopup() {
     Swal.fire("❌ Error", "ไม่สามารถโหลดข้อมูลทั้งหมดได้", "error");
   }
 }
-
 
     
 async function deleteRowFromPopup(id) {

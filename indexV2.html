@@ -136,9 +136,10 @@
           <div class="progress">
             <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width:0%">0%</div>
           </div>
-          <button class="btn btn-danger w-100 mt-3" onclick="openDeleteTable()">
+<button class="btn btn-danger w-100 mt-3" onclick="showDeletePage()">
   🗑 Delete Data from Database
 </button>
+
 
         </div>
       </div>
@@ -176,6 +177,28 @@
   </div>
 </div> <!-- ✅ ปิด contentUpload ให้ถูกต้อง -->
 
+<!-- ===================== CONTENT: DELETE ===================== -->
+<div id="contentDelete" class="content" style="display:none;">
+  <h4>🗑 Delete Data</h4>
+  <div class="mb-2 text-end">
+    <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">Delete All</button>
+  </div>
+
+  <div class="table-responsive mt-3">
+    <table class="table table-striped" id="deleteTable">
+      <thead class="table-dark">
+        <tr>
+          <th>File</th>
+          <th>Lot</th>
+          <th>Rack</th>
+          <th>Sum Qty</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody id="deleteTableBody"></tbody>
+    </table>
+  </div>
+</div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
@@ -210,6 +233,54 @@ function extractRack(rack) {
   const match = String(rack).match(/\[(.*?)\]/);
   let clean = match ? match[1] : rack;
   return clean.trim().replace(/\s+/g, "").toUpperCase();
+}
+async function showDeletePage() {
+  // 1) เปลี่ยนหน้า
+  document.getElementById("contentSearch").style.display = "none";
+  document.getElementById("contentUpload").style.display = "none";
+  document.getElementById("contentDelete").style.display = "block";
+
+  // 2) โหลดข้อมูลทั้งหมด
+  try {
+    const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
+    const rows = await res.json();
+
+    const body = document.getElementById("deleteTableBody");
+    body.innerHTML = "";
+
+    if (!rows || rows.length === 0) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center text-muted">ไม่มีข้อมูลในฐานข้อมูล</td>
+        </tr>
+      `;
+      return;
+    }
+
+    rows.forEach(r => {
+      const rackNorm = normalizeRack(r.Rack);
+      const rowKey = `${r.File5digit}|${r.Lot}|${rackNorm}`;
+
+      body.innerHTML += `
+        <tr>
+          <td>${r.File5digit}</td>
+          <td>${r.Lot}</td>
+          <td>${rackNorm}</td>
+          <td>${r.SumOfQty || r["Sum of Qty"]}</td>
+
+          <td>
+            <button class="btn btn-sm btn-danger"
+              onclick="deleteGroup('${rowKey}')">
+              ลบ
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+  } catch (err) {
+    Swal.fire("❌ Error", "โหลดข้อมูลไม่สำเร็จ", "error");
+  }
 }
 
     
@@ -700,15 +771,15 @@ function displayRack(rack) {
 
     
 async function deleteGroup(rowKey) {
-
   const confirm = await Swal.fire({
+    title: "ลบข้อมูลนี้?",
+    text: "ระบบจะลบทุกแถวที่มี File + Lot + Rack เดียวกัน",
     icon: "warning",
-    title: "ลบข้อมูลชุดนี้?",
-    text: rowKey,
     showCancelButton: true,
-    confirmButtonText: "ลบเลย",
+    confirmButtonText: "ลบ",
     cancelButtonText: "ยกเลิก"
   });
+
   if (!confirm.isConfirmed) return;
 
   Swal.fire({
@@ -717,21 +788,26 @@ async function deleteGroup(rowKey) {
     didOpen: () => Swal.showLoading()
   });
 
-  const res = await fetch(`${scriptURL}?page=adminDeleteGroup`, {
-    method: "POST",
-    body: new URLSearchParams({ rowKey })
-  });
+  try {
+    const res = await fetch(`${scriptURL}?page=adminDeleteGroup`, {
+      method: "POST",
+      body: new URLSearchParams({ rowKey })
+    });
 
-  const json = await res.json();
-  Swal.close();
+    const json = await res.json();
 
-  if (json.success) {
-    Swal.fire("🗑️ สำเร็จ", "ลบข้อมูลแล้ว", "success");
-    openDeleteTable(); // refresh popup
-  } else {
-    Swal.fire("❌", json.message, "error");
+    if (json.success) {
+      Swal.fire("✔️ สำเร็จ", json.message, "success");
+      showDeletePage();        // โหลดใหม่ทันที
+    } else {
+      Swal.fire("❌", json.message, "error");
+    }
+
+  } catch (err) {
+    Swal.fire("❌ Error", "ลบไม่สำเร็จ", "error");
   }
 }
+
 
 
     // สำหรับแสดงผลใน UI
@@ -1015,16 +1091,19 @@ Act_Rack: displayRack(row.Act_Rack) || "",
   XLSX.writeFile(wb, fileName);
   Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ", "success");
 }
-// ================= TAB SWITCH (IMPORTANT) =================
+// ปิดหน้า Delete ตอนสลับ tab
 document.getElementById("search-tab").addEventListener("click", () => {
   document.getElementById("contentSearch").style.display = "block";
   document.getElementById("contentUpload").style.display = "none";
+  document.getElementById("contentDelete").style.display = "none";
 });
 
 document.getElementById("upload-tab").addEventListener("click", () => {
   document.getElementById("contentSearch").style.display = "none";
   document.getElementById("contentUpload").style.display = "block";
+  document.getElementById("contentDelete").style.display = "none";
 });
+
     
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");

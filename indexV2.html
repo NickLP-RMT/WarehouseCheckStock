@@ -402,9 +402,11 @@ async function openDeleteTable() {
           <td>${r.Act_Package}</td>
           <td>${convertToBangkokTime(r.Timestamp)}</td>
           <td>
-            <button class="btn btn-sm btn-danger" onclick="deleteRowFromPopup('${r.ID}')">
-              ลบ
-            </button>
+<button class="btn btn-sm btn-danger"
+  onclick="deleteRowFromPopup('${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${r.Rack}||${r.SumOfQty || r["Sum of Qty"]}')">
+  ลบ
+</button>
+
           </td>
         </tr>
       `;
@@ -698,10 +700,10 @@ async function showAllDataPopup() {
 }
 
     
-async function deleteRowFromPopup(id) {
+async function deleteRowFromPopup(rowKey) {
   const confirm = await Swal.fire({
     title: "ลบข้อมูล?",
-    text: `ต้องการลบแถว ID: ${id} ไหม?`,
+    text: `ต้องการลบแถวนี้ไหม?`,
     icon: "warning",
     showCancelButton: true,
     confirmButtonText: "ลบ",
@@ -715,18 +717,17 @@ async function deleteRowFromPopup(id) {
   try {
     const res = await fetch(`${scriptURL}?page=deleteRow`, {
       method: "POST",
-      body: JSON.stringify({ ID: id })
+      body: JSON.stringify({ rowKey })
     });
 
     const json = await res.json();
 
     if (json.success) {
       Swal.fire("✔️ สำเร็จ", "ลบข้อมูลแล้ว", "success");
-      showAllDataPopup();   // โหลด popup ใหม่หลังลบ
+      showAllDataPopup();
     } else {
       Swal.fire("❌", json.message, "error");
     }
-
   } catch (err) {
     Swal.fire("❌ Error", "ลบไม่สำเร็จ", "error");
   }

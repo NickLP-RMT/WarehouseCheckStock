@@ -201,6 +201,14 @@
   }
   setInterval(updateDateTime, 1000); updateDateTime();
 
+function extractRack(rack) {
+  if (!rack) return "";
+  const match = String(rack).match(/\[(.*?)\]/);
+  return match ? match[1].trim() : rack.trim();
+}
+
+
+    
 // 📤 Upload Excel
 async function uploadToSheet() {
   const file = document.getElementById("fileInput").files[0];
@@ -286,14 +294,15 @@ async function uploadToSheet() {
     // -----------------------------------------------------
     // 📌 4) สร้าง Payload เพื่อส่งไปยัง Google Script
     // -----------------------------------------------------
-    const payload = fixedRows.slice(1).map(r => ({
-      Customer: String(r[0]).trim(),
-      Name: String(r[1]).trim(),
-      File5digit: String(r[2]).trim(),
-      Lot: String(r[3]).trim(),
-      Rack: String(r[4]).trim(),
-      SumOfQty: String(r[5]).trim()
-    }));
+const payload = fixedRows.slice(1).map(r => ({
+  Customer: String(r[0]).trim(),
+  Name: String(r[1]).trim(),
+  File5digit: String(r[2]).trim(),
+  Lot: String(r[3]).trim(),
+  Rack: extractRack(r[4]),  // ⬅️ ใช้ฟังก์ชันใหม่
+  SumOfQty: String(r[5]).trim()
+}));
+
 
     console.log("UPLOAD PAYLOAD:", payload);
 

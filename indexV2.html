@@ -348,13 +348,13 @@ async function openDeleteTable() {
         </button>
       </div>
 
-      <!-- 🔄 Loading shown first -->
+      <!-- 🔄 Loading -->
       <div id="popupLoading" style="padding:40px; text-align:center;">
         <div class="spinner-border text-primary" role="status" style="width:3rem; height:3rem;"></div>
         <div style="margin-top:10px; color:#475569;">กำลังโหลดข้อมูล...</div>
       </div>
 
-      <!-- Table area -->
+      <!-- Table -->
       <div id="popupTableContainer" style="display:none; max-height:600px; overflow-y:auto;">
         <table class="table table-bordered table-striped" id="popupTable">
           <thead>
@@ -382,23 +382,30 @@ async function openDeleteTable() {
     confirmButtonText: "ปิดหน้าต่าง",
   });
 
-  // ❗ Delay เพื่อให้ Swal วาด popup ก่อน แล้วค่อย fetch
   setTimeout(async () => {
-
     try {
       const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
       const rows = await res.json();
 
-      // hide loader
-      document.getElementById("popupLoading").style.display = "none";
-
-      // show table
-      const container = document.getElementById("popupTableContainer");
-      container.style.display = "block";
-
+      const loading = document.getElementById("popupLoading");
+      const tableContainer = document.getElementById("popupTableContainer");
       const body = document.getElementById("popupTableBody");
-      body.innerHTML = "";
 
+      loading.style.display = "none";
+      tableContainer.style.display = "block";
+
+      // 🟦 ไม่มีข้อมูล
+      if (!rows || rows.length === 0) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="13" class="text-center text-muted">ไม่มีข้อมูลในฐานข้อมูล</td>
+          </tr>
+        `;
+        return;
+      }
+
+      // 🟩 มีข้อมูล → render table
+      body.innerHTML = "";
       rows.forEach(r => {
         const rowKey = `${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${r.Rack}||${r.SumOfQty || r["Sum of Qty"]}`;
 
@@ -416,10 +423,8 @@ async function openDeleteTable() {
             <td>${r.Act_Qty}</td>
             <td>${r.Act_Package}</td>
             <td>${convertToBangkokTime(r.Timestamp)}</td>
-
             <td>
-              <button class="btn btn-sm btn-danger"
-                onclick="deleteRowFromPopup('${rowKey}')">
+              <button class="btn btn-sm btn-danger" onclick="deleteRowFromPopup('${rowKey}')">
                 ลบ
               </button>
             </td>
@@ -431,11 +436,10 @@ async function openDeleteTable() {
       Swal.fire("❌ Error", "โหลดข้อมูลไม่สำเร็จ", "error");
     }
 
-  }, 150); // ให้ spinner แสดงทัน
+  }, 150);
 }
 
-
-  async function loadPopupTable() {
+async function loadPopupTable() {
   try {
     const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
     const rows = await res.json();
@@ -443,6 +447,17 @@ async function openDeleteTable() {
     const body = document.getElementById("popupTableBody");
     body.innerHTML = "";
 
+    // 🟦 ไม่มีข้อมูล
+    if (!rows || rows.length === 0) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="13" class="text-center text-muted">ไม่มีข้อมูลในฐานข้อมูล</td>
+        </tr>
+      `;
+      return;
+    }
+
+    // 🟩 มีข้อมูล
     rows.forEach(r => {
       body.innerHTML += `
         <tr>
@@ -459,16 +474,12 @@ async function openDeleteTable() {
           <td>${r.Act_Package}</td>
           <td>${convertToBangkokTime(r.Timestamp)}</td>
           <td>
-<button class="btn btn-sm btn-danger"
-  onclick="deleteRowFromPopup(
-    '${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${r.Rack}||${r.SumOfQty || r["Sum of Qty"]}'
-  )">
-  ลบ
-</button>
-
-
-
-
+            <button class="btn btn-sm btn-danger"
+              onclick="deleteRowFromPopup(
+                '${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${r.Rack}||${r.SumOfQty || r["Sum of Qty"]}'
+              )">
+              ลบ
+            </button>
           </td>
         </tr>
       `;
@@ -478,7 +489,7 @@ async function openDeleteTable() {
     Swal.fire("❌ Error", "โหลดข้อมูลไม่สำเร็จ", "error");
   }
 }
-  
+
 async function confirmDeleteAll() {
 
   const confirm = await Swal.fire({

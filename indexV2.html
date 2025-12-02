@@ -208,9 +208,9 @@
 function extractRack(rack) {
   if (!rack) return "";
   const match = String(rack).match(/\[(.*?)\]/);
-  return match ? match[1].trim() : rack.trim();
+  let clean = match ? match[1] : rack;
+  return clean.trim().replace(/\s+/g, "").toUpperCase();
 }
-
 
     
 // 📤 Upload Excel
@@ -389,23 +389,16 @@ async function openDeleteTable() {
       <!-- Table -->
       <div id="popupTableContainer" style="display:none; max-height:600px; overflow-y:auto;">
         <table class="table table-bordered table-striped" id="popupTable">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Customer</th>
-              <th>Name</th>
-              <th>File5digit</th>
-              <th>Lot</th>
-              <th>Rack</th>
-              <th>SumOfQty</th>
-              <th>Act_Rack</th>
-              <th>Act_Lot</th>
-              <th>Act_Qty</th>
-              <th>Act_Package</th>
-              <th>Timestamp</th>
-              <th>Delete</th>
-            </tr>
-          </thead>
+<thead>
+  <tr>
+    <th>File</th>
+    <th>Lot</th>
+    <th>Rack</th>
+    <th>Sum Qty</th>
+    <th>Delete</th>
+  </tr>
+</thead>
+
           <tbody id="popupTableBody"></tbody>
         </table>
       </div>
@@ -438,31 +431,24 @@ async function openDeleteTable() {
 
       // 🟩 มีข้อมูล → render table
       body.innerHTML = "";
-      rows.forEach(r => {
-        const rowKey = `${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${r.Rack}||${r.SumOfQty || r["Sum of Qty"]}`;
+rows.forEach(r => {
+  const rowKey = `${r.File5digit}|${r.Lot}|${extractRack(r.Rack)}`;
 
-        body.innerHTML += `
-          <tr>
-            <td>${r.ID}</td>
-            <td>${r.Customer}</td>
-            <td>${r.Name}</td>
-            <td>${r.File5digit}</td>
-            <td>${r.Lot}</td>
-            <td>${r.Rack}</td>
-            <td>${r.SumOfQty || r["Sum of Qty"]}</td>
-            <td>${r.Act_Rack}</td>
-            <td>${r.Act_Lot}</td>
-            <td>${r.Act_Qty}</td>
-            <td>${r.Act_Package}</td>
-            <td>${convertToBangkokTime(r.Timestamp)}</td>
-            <td>
-              <button class="btn btn-sm btn-danger" onclick="deleteRowFromPopup('${rowKey}')">
-                ลบ
-              </button>
-            </td>
-          </tr>
-        `;
-      });
+  body.innerHTML += `
+    <tr>
+      <td>${r.File5digit}</td>
+      <td>${r.Lot}</td>
+      <td>${extractRack(r.Rack)}</td>
+      <td>${r.SumOfQty || r["Sum of Qty"] || 0}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="deleteGroup('${rowKey}')">
+          ลบ
+        </button>
+      </td>
+    </tr>
+  `;
+});
+
 
     } catch (err) {
       Swal.fire("❌ Error", "โหลดข้อมูลไม่สำเร็จ", "error");
@@ -713,35 +699,37 @@ function displayRack(rack) {
 }
 
     
-async function deleteRowFromPopup(rowKey) {
+async function deleteGroup(rowKey) {
+
   const confirm = await Swal.fire({
-    title: "ลบข้อมูล?",
-    text: "ต้องการลบข้อมูลแถวนี้หรือไม่?",
     icon: "warning",
+    title: "ลบข้อมูลชุดนี้?",
+    text: rowKey,
     showCancelButton: true,
-    confirmButtonText: "ลบ",
+    confirmButtonText: "ลบเลย",
     cancelButtonText: "ยกเลิก"
   });
   if (!confirm.isConfirmed) return;
 
-  Swal.fire({ title: "กำลังลบ...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  Swal.fire({
+    title: "กำลังลบ...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
 
-  try {
-    const res = await fetch(`${scriptURL}?page=deleteRow`, {
-      method: "POST",
-      body: JSON.stringify({ rowKey })
-    });
+  const res = await fetch(`${scriptURL}?page=adminDeleteGroup`, {
+    method: "POST",
+    body: new URLSearchParams({ rowKey })
+  });
 
-    const json = await res.json();
+  const json = await res.json();
+  Swal.close();
 
-    if (json.success) {
-      Swal.fire("✔️ สำเร็จ", "ลบข้อมูลแล้ว", "success");
-      openDeleteTable();   // โหลด popup ใหม่หลังลบ
-    } else {
-      Swal.fire("❌", json.message, "error");
-    }
-  } catch (err) {
-    Swal.fire("❌ Error", "ลบไม่สำเร็จ", "error");
+  if (json.success) {
+    Swal.fire("🗑️ สำเร็จ", "ลบข้อมูลแล้ว", "success");
+    openDeleteTable(); // refresh popup
+  } else {
+    Swal.fire("❌", json.message, "error");
   }
 }
 
@@ -1042,16 +1030,28 @@ const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 
 fileInput.addEventListener("change", () => {
-  if (fileInput.files.length > 0) {
-    uploadBtn.disabled = false;
-    uploadBtn.style.opacity = "1";
-    uploadBtn.style.cursor = "pointer";
-  } else {
+  if (fileInput.files.length === 0) {
     uploadBtn.disabled = true;
     uploadBtn.style.opacity = "0.5";
     uploadBtn.style.cursor = "not-allowed";
+    return;
   }
+
+  const name = fileInput.files[0].name.toLowerCase();
+  if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
+    Swal.fire("⚠️", "กรุณาเลือกไฟล์ Excel (.xlsx / .xls)", "warning");
+    fileInput.value = "";
+    uploadBtn.disabled = true;
+    uploadBtn.style.opacity = "0.5";
+    uploadBtn.style.cursor = "not-allowed";
+    return;
+  }
+
+  uploadBtn.disabled = false;
+  uploadBtn.style.opacity = "1";
+  uploadBtn.style.cursor = "pointer";
 });
+
 
   </script>
 </body>

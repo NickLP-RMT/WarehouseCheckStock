@@ -895,25 +895,26 @@ function addRackSet() {
   refreshRackSets();
 }
 
-
-
 async function removeRackSet(btn) {
   const rackSet = btn.closest(".rack-set");
   const isMaster = rackSet.dataset.master === "true";
   if (isMaster) return;
 
-  const actRack = rackSet.querySelector(".rackSub").value.trim();
-  const file = file5digit.value.trim();
-  const lotVal = lot.value.trim();
-  const name = nameSelect.value.trim();
-  const originalRack = rack.value.trim();
   const rackId = rackSet.dataset.id;
 
-  if (!actRack || !rackId) {
+  // ⭐ ถ้าเป็นชุดใหม่ (ID = new) → ลบ UI อย่างเดียว ไม่เรียก API
+  if (!rackId || rackId === "new") {
     rackSet.remove();
     refreshRackSets();
     return;
   }
+
+  // ⭐ ถ้าเป็น ID จริง → ค่อยลบใน Google Sheet
+  const actRack = rackSet.querySelector(".rackSub").value.trim();
+  const file = file5digit.value.trim();
+  const lotVal = lot.value.trim();
+  const name = nameSelect.value.trim();
+  const originalRack = rack.value.replace(/\[.*?\]/g, "").trim();
 
   const confirm = await Swal.fire({
     title: "ยืนยันการลบ?",
@@ -959,6 +960,7 @@ async function removeRackSet(btn) {
     console.error(err);
   }
 }
+
 
 function toggleEdit(btn) {
   const rack = btn.closest(".rack-set");

@@ -1275,20 +1275,46 @@ function filterItemsByCustomer() {
   const rows = currentItems.filter(r => r.Customer === customerSel);
 
   // ✅ ใส่ data-done="yes/no" เพื่อให้ showDetail() รู้ว่าอันไหน DONE
-  list.innerHTML += rows
-    .filter(r => String(r.ID) === "1")   // แสดงเฉพาะ ID = 1
-    .map(r => {
-      const isDone = !!r.Act_Qty;                      // มี Act_Qty = DONE
-      const icon = isDone ? "✅" : "⚪️";               // ไอคอนแสดงผล
-      const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
-      return `
-        <option value="${r.File5digit}|${r.Lot}|${cleanRack}"
-                data-done="${isDone ? "yes" : "no"}">
-          ${icon} ${r.File5digit} (${r.Lot}) [${cleanRack}]
-        </option>
-      `;
-    })
-    .join("");
+list.innerHTML += rows
+  .filter(r => String(r.ID) === "1")
+  .map(r => {
+    const cleanRack = (r.Rack || "").replace(/\[.*?\]/g, "").trim();
+
+    // ค่า Q'ty จากต้นทาง
+    const sumQty = Number(r["Sum of Qty"] || r.SumOfQty || 0);
+
+    // หา Act ทั้งหมดของ File + Lot + Rack นี้
+    const related = currentItems.filter(item =>
+      String(item.File5digit).trim() === String(r.File5digit).trim() &&
+      String(item.Lot).trim()        === String(r.Lot).trim() &&
+      String(item.Rack).replace(/\[.*?\]/g, "").trim() === cleanRack
+    );
+
+    // รวม Act_Qty ทุกชุด
+    const totalActQty = related.reduce((sum, it) => {
+      return sum + Number(it.Act_Qty || 0);
+    }, 0);
+
+    // -----------------------------
+    // 🔥 เลือกสัญลักษณ์ตามเงื่อนไขใหม่
+    // -----------------------------
+    let icon = "⚪️";   // ยังไม่ทำ
+
+    if (totalActQty > 0) {
+      if (totalActQty === sumQty) icon = "✅";   // ทำครบ ถูกต้อง
+      else icon = "🔴";                             // ทำแล้ว แต่ผิดจำนวน
+    }
+
+    return `
+      <option value="${r.File5digit}|${r.Lot}|${cleanRack}"
+              data-total="${totalActQty}"
+              data-sum="${sumQty}">
+        ${icon} ${r.File5digit} (${r.Lot}) [${cleanRack}]
+      </option>
+    `;
+  })
+  .join("");
+
 }
 
 </script>

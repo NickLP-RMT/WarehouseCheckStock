@@ -335,21 +335,34 @@ Swal.fire("✅", json.message, "success");
 
 
   // 🗑 Delete All
-  async function deleteAll() {
-    const confirm = await Swal.fire({
-      title: "⚠️ ลบข้อมูลทั้งหมด?", text: "การลบนี้จะล้างข้อมูลทุกแถวในชีต WarehouseData",
-      icon: "warning", showCancelButton: true,
-      confirmButtonText: "ใช่, ลบเลย", cancelButtonText: "ยกเลิก"
-    });
-    if (!confirm.isConfirmed) return;
-    Swal.fire({ title: "กำลังลบข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+async function deleteAll() {
+  const confirm = await Swal.fire({
+    title: "⚠️ ลบข้อมูลทั้งหมด?",
+    text: "การลบนี้จะล้างข้อมูลทุกแถวในชีต WarehouseData",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ใช่, ลบเลย",
+    cancelButtonText: "ยกเลิก"
+  });
+  if (!confirm.isConfirmed) return;
 
-    try {
-      const res = await fetch(`${scriptURL}?page=deleteAll`, { method: "POST" });
-      const json = await res.json();
-      Swal.fire(json.success ? "✅" : "❌", json.message, json.success ? "success" : "error");
-    } catch { Swal.fire("❌", "เกิดข้อผิดพลาดระหว่างลบข้อมูล", "error"); }
+  Swal.fire({ title: "กำลังลบข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  try {
+    const res = await fetch(`${scriptURL}?page=deleteAll`, { method: "POST" });
+    const json = await res.json();
+
+    if (json.success) {
+      Swal.fire("✔️ ลบสำเร็จ", json.message, "success");
+      showAllDataPopup();   // ⭐ เปิดหน้าต่างดูข้อมูลทั้งหมด
+    } else {
+      Swal.fire("❌", json.message, "error");
+    }
+
+  } catch {
+    Swal.fire("❌", "เกิดข้อผิดพลาดระหว่างลบข้อมูล", "error");
   }
+}
 
     
 async function searchData() {
@@ -463,6 +476,106 @@ function displayRack(rack) {
     function toNum(v) {
   if (v === undefined || v === null) return 0;
   return Number(String(v).replace(/,/g, "")) || 0;
+}
+async function showAllDataPopup() {
+  Swal.fire({
+    title: "📄 รายการทั้งหมดในฐานข้อมูล",
+    width: "90%",
+    html: `
+      <div style="max-height:600px; overflow-y:auto; text-align:left;">
+        <table class="table table-bordered table-striped" id="popupTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Name</th>
+              <th>File5digit</th>
+              <th>Lot</th>
+              <th>Rack</th>
+              <th>SumOfQty</th>
+              <th>Act_Rack</th>
+              <th>Act_Lot</th>
+              <th>Act_Qty</th>
+              <th>Act_Package</th>
+              <th>Timestamp</th>
+              <th>Delete</th>
+            </tr>
+          </thead>
+          <tbody id="popupTableBody"></tbody>
+        </table>
+      </div>
+    `,
+    showConfirmButton: true,
+    confirmButtonText: "ปิดหน้าต่าง",
+  });
+
+  try {
+    const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
+    const rows = await res.json();
+
+    const body = document.getElementById("popupTableBody");
+    body.innerHTML = "";
+
+    rows.forEach(r => {
+      body.innerHTML += `
+        <tr>
+          <td>${r.ID}</td>
+          <td>${r.Customer}</td>
+          <td>${r.Name}</td>
+          <td>${r.File5digit}</td>
+          <td>${r.Lot}</td>
+          <td>${r.Rack}</td>
+          <td>${r.SumOfQty || r["Sum of Qty"]}</td>
+          <td>${r.Act_Rack}</td>
+          <td>${r.Act_Lot}</td>
+          <td>${r.Act_Qty}</td>
+          <td>${r.Act_Package}</td>
+          <td>${convertToBangkokTime(r.Timestamp)}</td>
+          <td>
+            <button class="btn btn-sm btn-danger" onclick="deleteRowFromPopup('${r.ID}')">
+              ลบ
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+  } catch (err) {
+    Swal.fire("❌ Error", "ไม่สามารถโหลดข้อมูลทั้งหมดได้", "error");
+  }
+}
+async function deleteRowFromPopup(id) {
+  const confirm = await Swal.fire({
+    title: "ลบข้อมูล?",
+    text: `ต้องการลบแถว ID: ${id} ไหม?`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบ",
+    cancelButtonText: "ยกเลิก"
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  Swal.fire({ title: "กำลังลบ...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  try {
+    const res = await fetch(`${scriptURL}?page=deleteRow`, {
+      method: "POST",
+      body: JSON.stringify({ ID: id })
+    });
+
+    const json = await res.json();
+
+    if (json.success) {
+      Swal.fire("✔️ สำเร็จ", "ลบข้อมูลแล้ว", "success");
+      showAllDataPopup();   // โหลด popup ใหม่หลังลบ
+    } else {
+      Swal.fire("❌", json.message, "error");
+    }
+
+  } catch (err) {
+    Swal.fire("❌ Error", "ลบไม่สำเร็จ", "error");
+  }
 }
 
     // สำหรับแสดงผลใน UI

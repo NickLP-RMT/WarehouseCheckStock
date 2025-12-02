@@ -327,15 +327,29 @@ if (!json.success) {
   return;
 }
 
+// ก่อนปิด Swal แสดง progress สุดท้าย
+bar.style.width = "100%";
+bar.innerText = "100%";
+bar.classList.remove("bg-info");
+bar.classList.add("bg-success");
 
+Swal.fire("✅", json.message, "success").then(() => {
 
-Swal.fire("✅", json.message, "success");
+  // 🟢 เคลียร์ไฟล์
+  document.getElementById("fileInput").value = "";
 
- 
-      bar.style.width = "100%";
-      bar.innerText = "100%";
-      bar.classList.remove("bg-info");
-      bar.classList.add("bg-success");
+  // 🟢 ซ่อน progress bar
+  progress.style.display = "none";
+
+  // 🟢 Reset progress bar
+  bar.style.width = "0%";
+  bar.innerText = "0%";
+
+  // 🟢 คืนสี progress bar รอบใหม่
+  bar.classList.remove("bg-success");
+  bar.classList.add("bg-info");
+});
+
 
     } catch (err) {
       Swal.fire("❌", "Error uploading data", "error");

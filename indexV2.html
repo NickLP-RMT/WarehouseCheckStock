@@ -236,6 +236,16 @@ function extractRack(rack) {
 }
     
 async function showDeletePage() {
+
+    // 🟢 แสดง popup โหลดข้อมูล (เหมือนกดปุ่ม Search)
+  Swal.fire({
+    title: "กำลังค้นหาข้อมูล...",
+    text: "กรุณารอสักครู่",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  
   document.getElementById("contentSearch").style.display = "none";
   document.getElementById("contentUpload").style.display = "none";
   document.getElementById("contentDelete").style.display = "block";
@@ -243,7 +253,9 @@ async function showDeletePage() {
   try {
     const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
     const rows = await res.json();
-
+// ปิด popup loading
+Swal.close();
+    
     const body = document.getElementById("deleteTableBody");
     body.innerHTML = "";
 
@@ -259,24 +271,25 @@ async function showDeletePage() {
       return;
     }
 
-    filtered.forEach(r => {
-      const rackNorm = normalizeRack(r.Rack);
-      const rowKey = `${r.File5digit}|${r.Lot}|${rackNorm}`;
+  filtered.forEach(r => {
+  const rackNorm = extractRack(r.Rack);   // ✔ ใช้ extractRack
+  const rowKey = `${r.File5digit}|${r.Lot}|${rackNorm}`;
 
-      body.innerHTML += `
-        <tr>
-          <td>${r.File5digit}</td>
-          <td>${r.Lot}</td>
-          <td>${rackNorm}</td>
-          <td>${r.SumOfQty || r["Sum of Qty"]}</td>
-          <td>
-            <button class="btn btn-sm btn-danger" onclick="deleteGroup('${rowKey}')">
-              ลบ
-            </button>
-          </td>
-        </tr>
-      `;
-    });
+  body.innerHTML += `
+    <tr>
+      <td>${r.File5digit}</td>
+      <td>${r.Lot}</td>
+      <td>${rackNorm}</td>
+      <td>${r.SumOfQty || r["Sum of Qty"]}</td>
+      <td>
+        <button class="btn btn-sm btn-danger" onclick="deleteGroup('${rowKey}')">
+          ลบ
+        </button>
+      </td>
+    </tr>
+  `;
+});
+
 
   } catch (err) {
     Swal.fire("❌ Error", "โหลดข้อมูลไม่สำเร็จ", "error");

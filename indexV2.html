@@ -334,7 +334,6 @@ Swal.fire("✅", json.message, "success");
 }
 
 
-  // 🗑 Delete All
 async function deleteAll() {
   const confirm = await Swal.fire({
     title: "⚠️ ลบข้อมูลทั้งหมด?",
@@ -346,24 +345,34 @@ async function deleteAll() {
   });
   if (!confirm.isConfirmed) return;
 
-  Swal.fire({ title: "กำลังลบข้อมูล...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  Swal.fire({
+    title: "กำลังลบข้อมูล...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
 
   try {
     const res = await fetch(`${scriptURL}?page=deleteAll`, { method: "POST" });
     const json = await res.json();
 
-    if (json.success) {
-      Swal.fire("✔️ ลบสำเร็จ", json.message, "success");
-      showAllDataPopup();   // ⭐ เปิดหน้าต่างดูข้อมูลทั้งหมด
-    } else {
+    if (!json.success) {
       Swal.fire("❌", json.message, "error");
+      return;
     }
 
-  } catch {
+    // ⭐ ปิดหน้าต่างกำลังโหลดก่อน
+    Swal.close();
+
+    // ⭐ หน่วงเวลาให้ Google Sheet อัปเดตจริง
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // ⭐ ค่อยเปิด Popup แสดงข้อมูลทั้งหมด
+    showAllDataPopup();
+
+  } catch (err) {
     Swal.fire("❌", "เกิดข้อผิดพลาดระหว่างลบข้อมูล", "error");
   }
 }
-
     
 async function searchData() {
   const resultText = document.getElementById("searchResultText");

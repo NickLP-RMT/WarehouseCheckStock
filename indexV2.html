@@ -403,7 +403,8 @@ async function openDeleteTable() {
           <td>${convertToBangkokTime(r.Timestamp)}</td>
           <td>
 <button class="btn btn-sm btn-danger"
-  onclick="deleteRowFromPopup('${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${r.Rack}||${r.SumOfQty || r["Sum of Qty"]}')">
+  onclick="deleteRowFromPopup('${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${normalizeRack(r.Rack)}||${r.SumOfQty || r["Sum of Qty"]}'
+)">
   ลบ
 </button>
 
@@ -684,7 +685,11 @@ async function showAllDataPopup() {
             <td>${r.Act_Package}</td>
             <td>${convertToBangkokTime(r.Timestamp)}</td>
             <td>
-              <button class="btn btn-sm btn-danger" onclick="deleteRowFromPopup('${r.ID}')">
+              <button class="btn btn-sm btn-danger" onclick="deleteRowFromPopup(
+  '${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${normalizeRack(r.Rack)}||${r.SumOfQty || r["Sum of Qty"]}'
+
+)"
+
                 ลบ
               </button>
             </td>
@@ -703,13 +708,12 @@ async function showAllDataPopup() {
 async function deleteRowFromPopup(rowKey) {
   const confirm = await Swal.fire({
     title: "ลบข้อมูล?",
-    text: `ต้องการลบแถวนี้ไหม?`,
+    text: "ต้องการลบข้อมูลแถวนี้หรือไม่?",
     icon: "warning",
     showCancelButton: true,
     confirmButtonText: "ลบ",
     cancelButtonText: "ยกเลิก"
   });
-
   if (!confirm.isConfirmed) return;
 
   Swal.fire({ title: "กำลังลบ...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -724,7 +728,7 @@ async function deleteRowFromPopup(rowKey) {
 
     if (json.success) {
       Swal.fire("✔️ สำเร็จ", "ลบข้อมูลแล้ว", "success");
-      showAllDataPopup();
+      showAllDataPopup();   // โหลดใหม่หลังลบ
     } else {
       Swal.fire("❌", json.message, "error");
     }
@@ -732,6 +736,7 @@ async function deleteRowFromPopup(rowKey) {
     Swal.fire("❌ Error", "ลบไม่สำเร็จ", "error");
   }
 }
+
 
     // สำหรับแสดงผลใน UI
 function renderGroupedTable(data) {

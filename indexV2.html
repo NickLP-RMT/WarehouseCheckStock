@@ -327,26 +327,20 @@ if (!json.success) {
   return;
 }
 
-// ก่อนส่งข้อมูลเสร็จ
-bar.style.width = "100%";
-bar.innerText = "100%";
-bar.classList.remove("bg-info");
-bar.classList.add("bg-success");
 
-Swal.fire("✅", json.message, "success").then(() => {
 
-  // ล้าง input file
-  document.getElementById("fileInput").value = "";
+Swal.fire("✅", json.message, "success");
 
-  // รีเซ็ต progress bar
-  progress.style.display = "none";
-  bar.style.width = "0%";
-  bar.innerText = "0%";
+ 
+      bar.style.width = "100%";
+      bar.innerText = "100%";
+      bar.classList.remove("bg-info");
+      bar.classList.add("bg-success");
 
-  // คืนสี progress bar สำหรับรอบถัดไป
-  bar.classList.remove("bg-success");
-  bar.classList.add("bg-info");
-});
+    } catch (err) {
+      Swal.fire("❌", "Error uploading data", "error");
+    }
+  };
 
   reader.readAsArrayBuffer(file);
 }

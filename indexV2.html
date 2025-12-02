@@ -403,10 +403,12 @@ async function openDeleteTable() {
           <td>${convertToBangkokTime(r.Timestamp)}</td>
           <td>
 <button class="btn btn-sm btn-danger"
-  onclick="deleteRowFromPopup('${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${normalizeRack(r.Rack)}||${r.SumOfQty || r["Sum of Qty"]}'
-)">
+  onclick="deleteRowFromPopup(
+    '${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${r.Rack}||${r.SumOfQty || r["Sum of Qty"]}'
+  ')">
   ลบ
 </button>
+
 
           </td>
         </tr>
@@ -686,12 +688,11 @@ async function showAllDataPopup() {
             <td>${convertToBangkokTime(r.Timestamp)}</td>
             <td>
               <button class="btn btn-sm btn-danger" onclick="deleteRowFromPopup(
-  '${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${normalizeRack(r.Rack)}||${r.SumOfQty || r["Sum of Qty"]}'
+  '${r.Customer}||${r.Name}||${r.File5digit}||${r.Lot}||${r.Rack}||${r.SumOfQty || r["Sum of Qty"]}'
+)">
+  ลบ
+</button>
 
-)"
-
-                ลบ
-              </button>
             </td>
           </tr>
         `;

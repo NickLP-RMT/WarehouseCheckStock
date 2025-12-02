@@ -234,13 +234,12 @@ function extractRack(rack) {
   let clean = match ? match[1] : rack;
   return clean.trim().replace(/\s+/g, "").toUpperCase();
 }
+    
 async function showDeletePage() {
-  // 1) เปลี่ยนหน้า
   document.getElementById("contentSearch").style.display = "none";
   document.getElementById("contentUpload").style.display = "none";
   document.getElementById("contentDelete").style.display = "block";
 
-  // 2) โหลดข้อมูลทั้งหมด
   try {
     const res = await fetch(`${scriptURL}?page=getDataByName&name=ALL`);
     const rows = await res.json();
@@ -248,7 +247,10 @@ async function showDeletePage() {
     const body = document.getElementById("deleteTableBody");
     body.innerHTML = "";
 
-    if (!rows || rows.length === 0) {
+    // 🟢 แสดงเฉพาะ ID = 1
+    const filtered = rows.filter(r => String(r.ID).trim() === "1");
+
+    if (filtered.length === 0) {
       body.innerHTML = `
         <tr>
           <td colspan="5" class="text-center text-muted">ไม่มีข้อมูลในฐานข้อมูล</td>
@@ -257,7 +259,7 @@ async function showDeletePage() {
       return;
     }
 
-    rows.forEach(r => {
+    filtered.forEach(r => {
       const rackNorm = normalizeRack(r.Rack);
       const rowKey = `${r.File5digit}|${r.Lot}|${rackNorm}`;
 
@@ -267,10 +269,8 @@ async function showDeletePage() {
           <td>${r.Lot}</td>
           <td>${rackNorm}</td>
           <td>${r.SumOfQty || r["Sum of Qty"]}</td>
-
           <td>
-            <button class="btn btn-sm btn-danger"
-              onclick="deleteGroup('${rowKey}')">
+            <button class="btn btn-sm btn-danger" onclick="deleteGroup('${rowKey}')">
               ลบ
             </button>
           </td>

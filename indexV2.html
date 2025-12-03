@@ -918,6 +918,7 @@ function renderDeleteTable(list) {
 }
 
 
+// 📤 Export Excel แบบเดียวกับ UI
 // 📤 Export Excel แบบ UI + รองรับสี DeltaValue (Conditional Formatting)
 async function exportExcel() {
   if (!allData || allData.length === 0) {
@@ -937,7 +938,7 @@ async function exportExcel() {
 
   const exportData = [];
 
-  // Group
+  // Group data
   const mainGroups = {};
   sortedData.forEach(r => {
     const key = `${r.File5digit}_${r.Lot}`;
@@ -964,16 +965,8 @@ async function exportExcel() {
         const actQty = toNum(row.Act_Qty);
 
         let delta = 0;
-        if (row.ID == rows[0].ID) delta = actQty - baseSumQty;
+        if (row.ID == rows[0].ID) delta = actQty - baseSumQty; 
         else delta = actQty;
-
-        // แสดงเฉพาะ ▲ หรือ ▼
-        let deltaText = "";
-        if (row.Act_Qty !== "" && row.Act_Qty != null) {
-          if (delta > 0) deltaText = `▲`;
-          else if (delta < 0) deltaText = `▼`;
-          else deltaText = `0`;
-        }
 
         const isMainRow = (row.ID == rows[0].ID);
 
@@ -990,16 +983,19 @@ async function exportExcel() {
           Act_Qty: row.Act_Qty || "",
           Act_Package: row.Act_Package || "",
 
-          DeltaValue: delta,     
-          "Delta +/-": deltaText, 
+          DeltaValue: delta,           // ⭐ ตัวเลขจริง (สำหรับ Sum)
+          "Delta +/-": 
+              row.Act_Qty === "" || row.Act_Qty == null
+                ? ""
+                : (delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : "0"),
+
           Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
         });
-
       });
     }
   }
 
-  // สร้าง Workbook
+  // สร้าง Workbook + Sheet
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
 
@@ -1011,35 +1007,35 @@ async function exportExcel() {
     ) + 2
   }));
 
-  // -----------------------------
-  // ⭐ Conditional Formatting XML
-  // -----------------------------
+  // ⭐⭐ เพิ่ม Conditional Formatting ใน Excel ⭐⭐
   const deltaColIndex = Object.keys(exportData[0]).indexOf("DeltaValue");
-  const colLetter = XLSX.utils.encode_col(deltaColIndex);
+  const deltaColLetter = XLSX.utils.encode_col(deltaColIndex); // เช่น "L"
   const startRow = 2;
   const endRow = exportData.length + 1;
 
-  ws['!ref'] = `A1:${colLetter}${endRow}`;
+  ws['!condfmt'] = [
+    {
+      ref: `${deltaColLetter}${startRow}:${deltaColLetter}${endRow}`,
+      rules: [
+        // > 0 → Green
+        {
+          type: "cellIs",
+          operator: "greaterThan",
+          formula: ["0"],
+          style: { font: { color: { rgb: "008000" }, bold: true } }
+        },
+        // < 0 → Red
+        {
+          type: "cellIs",
+          operator: "lessThan",
+          formula: ["0"],
+          style: { font: { color: { rgb: "FF0000" }, bold: true } }
+        }
+      ]
+    }
+  ];
 
-  ws['!comments'] = []; // Excel-safe placeholder
-
-  ws['!condfmt'] = [{
-    ref: `${colLetter}${startRow}:${colLetter}${endRow}`,
-    rules: [
-      {
-        type: "greaterThan",
-        formula: ["0"],
-        style: { font: { color: { rgb: "008000" }, bold: true } }
-      },
-      {
-        type: "lessThan",
-        formula: ["0"],
-        style: { font: { color: { rgb: "FF0000" }, bold: true } }
-      }
-    ]
-  }];
-
-  XLSX.utils.book_append_sheet(wb, ws, "FG Summary");
+  XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
 
   // File name
   const now = new Date();
@@ -1053,7 +1049,7 @@ async function exportExcel() {
   const fileName = `FGInventoryDataCheck_${yyyy}-${mm}-${dd}_${hh}${min}${ss}.xlsx`;
 
   XLSX.writeFile(wb, fileName);
-  Swal.fire("✅ สำเร็จ", "ส่งออกไฟล์ Excel เรียบร้อย", "success");
+  Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ", "success");
 }
 
     

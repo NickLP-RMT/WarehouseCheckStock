@@ -730,58 +730,66 @@ const body = document.getElementById("searchTableBody");
 
       let totalActQty = 0;
 
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
+for (let i = 0; i < rows.length; i++) {
+  const row = rows[i];
 
-        const actQty = toNum(row.Act_Qty);
-        totalActQty += actQty;
+  let deltaText = "";
+  let deltaClass = "";
 
-        let delta = 0;
-        if (i === 0) delta = actQty - baseSumQty;
-        else delta = actQty;
+  // ❗ ตรวจว่ากลุ่มนี้ยังไม่ Check
+  const isNotChecked =
+    (!row.Act_Rack && !row.Act_Lot && !row.Act_Qty && !row.Act_Package);
 
-        let deltaText = "";
-        let deltaClass = "";
+  // ถ้ายังไม่ Check → ไม่คิด Delta, ไม่คิดรวม, ไม่คิด totalActQty
+  if (!isNotChecked) {  
+    const actQty = toNum(row.Act_Qty);
+    totalActQty += actQty;
 
-        if (delta > 0) {
-          deltaText = `▲ +${delta}`;
-          deltaClass = "delta-positive";
-        } else if (delta < 0) {
-          deltaText = `▼ ${delta}`;
-          deltaClass = "delta-negative";
-        } else {
-          deltaText = "0";
-          deltaClass = "delta-zero";
-        }
+    let delta = 0;
+    if (i === 0) delta = actQty - baseSumQty;
+    else delta = actQty;
 
-        const hideCols = [
-          "Customer", "Name", "File5digit", "Lot", "Rack",
-          "SumOfQty", "Sum of Qty"
-        ];
+    if (delta > 0) {
+      deltaText = `▲ +${delta}`;
+      deltaClass = "delta-positive";
+    } else if (delta < 0) {
+      deltaText = `▼ ${delta}`;
+      deltaClass = "delta-negative";
+    } else {
+      deltaText = "0";
+      deltaClass = "delta-zero";
+    }
+  }
 
-        html += `<tr class="rack-row">`;
+  const hideCols = [
+    "Customer", "Name", "File5digit", "Lot", "Rack",
+    "SumOfQty", "Sum of Qty"
+  ];
 
-        for (const h of headers) {
-          if (i !== 0 && hideCols.includes(h)) {
-            html += "<td></td>";
-            continue;
-          }
+  html += `<tr class="rack-row">`;
 
-          if (h === "Delta +/-") {
-            html += `<td class="${deltaClass}">${deltaText}</td>`;
-          } else if (h === "Timestamp") {
-            html += `<td>${convertToBangkokTime(row[h])}</td>`;
-          } else if (h === "Rack") {
-            html += `<td>${displayRack(row[h])}</td>`;
-          } else if (h === "Act_Rack") {
-            html += `<td>${displayRack(row[h])}</td>`;
-          } else {
-            html += `<td>${row[h] ?? ""}</td>`;
-          }
-        }
+  for (const h of headers) {
+    if (i !== 0 && hideCols.includes(h)) {
+      html += "<td></td>";
+      continue;
+    }
 
-        html += `</tr>`;
-      }
+    if (h === "Delta +/-") {
+      html += `<td class="${deltaClass}">${deltaText}</td>`;
+    } else if (h === "Timestamp") {
+      html += `<td>${convertToBangkokTime(row[h])}</td>`;
+    } else if (h === "Rack") {
+      html += `<td>${displayRack(row[h])}</td>`;
+    } else if (h === "Act_Rack") {
+      html += `<td>${displayRack(row[h])}</td>`;
+    } else {
+      html += `<td>${row[h] ?? ""}</td>`;
+    }
+  }
+
+  html += `</tr>`;
+}
+
 
       // ⚡ รวม Rack นี้
       const allEmpty = rows.every(r =>

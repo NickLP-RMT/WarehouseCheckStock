@@ -961,36 +961,50 @@ async function exportExcel() {
 
       const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
 
+      
       rows.forEach(row => {
         const actQty = toNum(row.Act_Qty);
 
-        let delta = 0;
-        if (row.ID == rows[0].ID) delta = actQty - baseSumQty; 
-        else delta = actQty;
+// ตรวจว่าแถวนี้ยังไม่เชค
+// ตรวจว่าแถวนี้ยังไม่เชค
+const notChecked =
+  (!row.Act_Rack && !row.Act_Lot && !row.Act_Qty && !row.Act_Package);
 
-        const isMainRow = (row.ID == rows[0].ID);
+let delta = "";
+if (!notChecked) {
+  // คำนวนเฉพาะแถวที่เชคแล้ว
+  if (row.ID == rows[0].ID) {
+    delta = actQty - baseSumQty;
+  } else {
+    delta = actQty;
+  }
+}
 
-        exportData.push({
-          Customer: isMainRow ? (row.Customer || "") : "",
-          Name: isMainRow ? (row.Name || "") : "",
-          File5digit: isMainRow ? (row.File5digit || "") : "",
-          Lot: isMainRow ? (row.Lot || "") : "",
-          Rack: isMainRow ? displayRack(rackNorm) : "",
-          "Sum of Qty": isMainRow ? baseSumQty : "",
+const isMainRow = (row.ID == rows[0].ID);
 
-          Act_Rack: displayRack(row.Act_Rack) || "",
-          Act_Lot: row.Act_Lot || "",
-          Act_Qty: row.Act_Qty || "",
-          Act_Package: row.Act_Package || "",
+exportData.push({
+  Customer: isMainRow ? (row.Customer || "") : "",
+  Name: isMainRow ? (row.Name || "") : "",
+  File5digit: isMainRow ? (row.File5digit || "") : "",
+  Lot: isMainRow ? (row.Lot || "") : "",
+  Rack: isMainRow ? displayRack(rackNorm) : "",
+  "Sum of Qty": isMainRow ? baseSumQty : "",
 
-          DeltaValue: delta,           // ⭐ ตัวเลขจริง (สำหรับ Sum)
-          "Delta +/-": 
-              row.Act_Qty === "" || row.Act_Qty == null
-                ? ""
-                : (delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : "0"),
+  Act_Rack: displayRack(row.Act_Rack) || "",
+  Act_Lot: row.Act_Lot || "",
+  Act_Qty: row.Act_Qty || "",
+  Act_Package: row.Act_Package || "",
 
-          Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
-        });
+  // ⭐ ถ้ายังไม่ Check → ค่าว่าง
+  DeltaValue: delta === "" ? "" : delta,
+
+  "Delta +/-":
+    delta === "" ? "" :
+    (delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : "0"),
+
+  Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
+});
+
       });
     }
   }

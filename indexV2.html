@@ -93,8 +93,18 @@
   background: white;
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
   border-left: 6px solid #3b82f6; /* default blue */
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+}
+
+.summary-card.active {
+  box-shadow: 0 0 0 2px #3b82f6 inset;
+}
 .summary-title {
   font-size: 15px;
   font-weight: 600;
@@ -186,30 +196,36 @@ Delete Data</button>
 <div id="summaryBox" style="display:none;">
   <div class="summary-grid">
 
-    <div class="summary-card card-blue">
-      <div class="summary-title">🔵 Total Records</div>
-      <div class="summary-value" id="sumTotal">0</div>
-    </div>
+<div class="summary-card card-blue" id="cardTotal"
+     onclick="filterByCard('ALL', this)">
+  <div class="summary-title">🔵 Total Records</div>
+  <div class="summary-value" id="sumTotal">0</div>
+</div>
 
-    <div class="summary-card card-green">
-      <div class="summary-title">🟢 Check OK</div>
-      <div class="summary-value" id="sumOK">0</div>
-    </div>
+<div class="summary-card card-green" id="cardOK"
+     onclick="filterByCard('OK', this)">
+  <div class="summary-title">🟢 Check OK</div>
+  <div class="summary-value" id="sumOK">0</div>
+</div>
 
-    <div class="summary-card card-red">
-      <div class="summary-title">🔴 Over (▲)</div>
-      <div class="summary-value" id="sumOver">0</div>
-    </div>
+<div class="summary-card card-red" id="cardOver"
+     onclick="filterByCard('OVER', this)">
+  <div class="summary-title">🔴 Over (▲)</div>
+  <div class="summary-value" id="sumOver">0</div>
+</div>
 
-    <div class="summary-card card-orange">
-      <div class="summary-title">🟠 Under (▼)</div>
-      <div class="summary-value" id="sumUnder">0</div>
-    </div>
+<div class="summary-card card-orange" id="cardUnder"
+     onclick="filterByCard('UNDER', this)">
+  <div class="summary-title">🟠 Under (▼)</div>
+  <div class="summary-value" id="sumUnder">0</div>
+</div>
 
-    <div class="summary-card card-gray">
-      <div class="summary-title">⚪ Not Checked</div>
-      <div class="summary-value" id="sumNotCheck">0</div>
-    </div>
+<div class="summary-card card-gray" id="cardNotCheck"
+     onclick="filterByCard('NOTCHECK', this)">
+  <div class="summary-title">⚪ Not Checked</div>
+  <div class="summary-value" id="sumNotCheck">0</div>
+</div>
+
 
   </div>
 </div>
@@ -282,6 +298,7 @@ Delete Data</button>
   const scriptURL = "https://script.google.com/macros/s/AKfycbxBwkDPnkxWm5L6hkSBXvT6BUV3cImZLHMO71GnxLx5ymspHmps6s2S7W2kZsGiZ5o/exec";
   let allData = [];
   let deleteData = [];
+  let summaryGroups = {};  // key = File|Lot|RackNorm → { totalDelta, checked }
 
   // 🕒 เวลาไทย
   function convertToBangkokTime(utcString) {
@@ -1121,30 +1138,30 @@ fileInput.addEventListener("change", () => {
 function updateSummary(data) {
   if (!data || data.length === 0) {
     document.getElementById("summaryBox").style.display = "none";
+    summaryGroups = {};
     return;
   }
 
-  // 1) นับแถวที่เป็น ID = 1
+  // reset กลุ่มทุกครั้งที่ search ใหม่
+  summaryGroups = {};
+  document.querySelectorAll(".summary-card").forEach(c => c.classList.remove("active"));
+
   const id1Rows = data.filter(r => String(r.ID).trim() === "1");
 
   let groups = [];
 
-  // group โดยใช้ File+Lot+Rack
   for (const r of id1Rows) {
     const rackNorm = normalizeRack(r.Rack);
     const key = `${r.File5digit}|${r.Lot}|${rackNorm}`;
 
-    // หาลูกทั้งหมดของ rack นี้
     const childRows = data.filter(row =>
       row.File5digit === r.File5digit &&
       row.Lot === r.Lot &&
       normalizeRack(row.Rack) === rackNorm
     );
 
-    // baseSumQty = ของแถว ID = 1
     const baseSumQty = Number(r.SumOfQty || r["Sum of Qty"] || 0);
 
-    // รวม Act_Qty ทุกแถว
     let totalAct = 0;
     let hasCheck = false;
 
@@ -1156,29 +1173,53 @@ function updateSummary(data) {
 
     const totalDelta = totalAct - baseSumQty;
 
-    groups.push({
-      key,
-      totalDelta,
-      checked: hasCheck
-    });
+    const g = { key, totalDelta, checked: hasCheck };
+    groups.push(g);
+    summaryGroups[key] = g;  // ← เก็บไว้ใช้เวลา filterByCard
   }
 
-  // summary calc
-  const total = id1Rows.length;
+  const total = groups.length;
   const ok = groups.filter(g => g.checked && g.totalDelta === 0).length;
   const over = groups.filter(g => g.checked && g.totalDelta > 0).length;
   const under = groups.filter(g => g.checked && g.totalDelta < 0).length;
   const notChecked = groups.filter(g => !g.checked).length;
 
-  // update UI
   document.getElementById("sumTotal").textContent = total;
   document.getElementById("sumOK").textContent = ok;
   document.getElementById("sumOver").textContent = over;
   document.getElementById("sumUnder").textContent = under;
   document.getElementById("sumNotCheck").textContent = notChecked;
 
-  // show box
   document.getElementById("summaryBox").style.display = "block";
+}
+function filterByCard(type, el) {
+  if (!allData || allData.length === 0) return;
+
+  // เคลียร์ active เดิม แล้ว set active ให้การ์ดที่กด
+  document.querySelectorAll(".summary-card").forEach(c => c.classList.remove("active"));
+  if (el) el.classList.add("active");
+
+  // กรณี Total Records → แสดงทั้งหมดตามผล search ปกติ
+  if (type === "ALL") {
+    renderGroupedTable(allData);
+    return;
+  }
+
+  const filtered = allData.filter(row => {
+    const rackNorm = normalizeRack(row.Rack);
+    const key = `${row.File5digit}|${row.Lot}|${rackNorm}`;
+    const g = summaryGroups[key];
+    if (!g) return false;
+
+    if (type === "OK")      return g.checked && g.totalDelta === 0;
+    if (type === "OVER")    return g.checked && g.totalDelta > 0;
+    if (type === "UNDER")   return g.checked && g.totalDelta < 0;
+    if (type === "NOTCHECK")return !g.checked;
+
+    return true;
+  });
+
+  renderGroupedTable(filtered);
 }
 
   </script>

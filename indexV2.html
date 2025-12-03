@@ -185,15 +185,15 @@ Delete Data</button>
 
   <div class="table-responsive mt-3">
     <table class="table table-striped" id="deleteTable">
-      <thead class="table-dark">
-        <tr>
-          <th>File</th>
-          <th>Lot</th>
-          <th>Rack</th>
-          <th>Sum Qty</th>
-          <th>Delete</th>
-        </tr>
-      </thead>
+<thead class="table-dark">
+  <tr>
+    <th>Customer</th>
+    <th>File</th>
+    <th>Lot</th>
+    <th>Rack</th>
+    <th>Delete</th>
+  </tr>
+</thead>
       <tbody id="deleteTableBody"></tbody>
     </table>
   </div>
@@ -274,19 +274,19 @@ Swal.close();
   const rackNorm = extractRack(r.Rack);   // ✔ ใช้ extractRack
   const rowKey = `${r.File5digit}|${r.Lot}|${rackNorm}`;
 
-  body.innerHTML += `
-    <tr>
-      <td>${r.File5digit}</td>
-      <td>${r.Lot}</td>
-      <td>${rackNorm}</td>
-      <td>${r.SumOfQty || r["Sum of Qty"]}</td>
-      <td>
-        <button class="btn btn-sm btn-danger" onclick="deleteGroup('${rowKey}')">
-          ลบ
-        </button>
-      </td>
-    </tr>
-  `;
+body.innerHTML += `
+  <tr>
+    <td>${r.Customer}</td>
+    <td>${r.File5digit}</td>
+    <td>${r.Lot}</td>
+    <td>${rackNorm}</td>
+    <td>
+      <button class="btn btn-sm btn-danger" onclick="deleteGroup('${rowKey}')">
+        ลบ
+      </button>
+    </td>
+  </tr>
+`;
 });
 
 

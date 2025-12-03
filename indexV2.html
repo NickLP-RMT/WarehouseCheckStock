@@ -1027,27 +1027,35 @@ exportData.push({
   const startRow = 2;
   const endRow = exportData.length + 1;
 
-  ws['!condfmt'] = [
-    {
-      ref: `${deltaColLetter}${startRow}:${deltaColLetter}${endRow}`,
-      rules: [
-        // > 0 → Green
-        {
-          type: "cellIs",
-          operator: "greaterThan",
-          formula: ["0"],
-          style: { font: { color: { rgb: "008000" }, bold: true } }
-        },
-        // < 0 → Red
-        {
-          type: "cellIs",
-          operator: "lessThan",
-          formula: ["0"],
-          style: { font: { color: { rgb: "FF0000" }, bold: true } }
+ws['!condfmt'] = [
+  {
+    ref: `${deltaColLetter}${startRow}:${deltaColLetter}${endRow}`,
+    rules: [
+      // > 0 → Green fill
+      {
+        type: "cellIs",
+        operator: "greaterThan",
+        formula: ["0"],
+        style: {
+          fill: { patternType: "solid", fgColor: { rgb: "C6EFCE" } }, // เขียวอ่อน
+          font: { color: { rgb: "006100" }, bold: true }
         }
-      ]
-    }
-  ];
+      },
+
+      // < 0 → Red fill
+      {
+        type: "cellIs",
+        operator: "lessThan",
+        formula: ["0"],
+        style: {
+          fill: { patternType: "solid", fgColor: { rgb: "FFC7CE" } }, // แดงอ่อน
+          font: { color: { rgb: "9C0006" }, bold: true }
+        }
+      }
+    ]
+  }
+];
+
 
   XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
 

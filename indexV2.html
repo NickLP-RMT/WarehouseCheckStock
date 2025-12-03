@@ -220,7 +220,7 @@ Delete Data</button>
       <tbody id="searchTableBody"></tbody>
     </table>
   </div>
-</div>  
+</div>   <!-- ✅ ต้องมี -->
 
 <!-- ===================== CONTENT: UPLOAD ===================== -->
 <div id="contentUpload" class="content" style="display:none;">
@@ -605,9 +605,15 @@ async function searchData() {
     renderGroupedTable(filtered);
     updateSummary(filtered);
 
- // ไม่ต้องแสดงข้อความอะไรอีก
-resultText.innerHTML = "";
-resultText.className = "";
+    if (filtered.length > 0) {
+      resultText.innerHTML = `🔎 พบข้อมูล <b>${filtered.length}</b> แถวจากฐานข้อมูล`;
+      resultText.classList.remove("text-secondary");
+      resultText.classList.add("text-success");
+    } else {
+      resultText.innerHTML = `❌ ไม่พบข้อมูลตามเงื่อนไขการค้นหา`;
+      resultText.classList.remove("text-success");
+      resultText.classList.add("text-danger");
+    }
 
   } catch (err) {
     console.error(err);

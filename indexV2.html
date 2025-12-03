@@ -196,35 +196,41 @@ Delete Data</button>
 <div id="summaryBox" style="display:none;">
   <div class="summary-grid">
 
+<!-- Total -->
 <div class="summary-card card-blue" id="cardTotal"
      onclick="filterByCard('ALL', this)">
   <div class="summary-title">🔵 Total Records</div>
   <div class="summary-value" id="sumTotal">0</div>
 </div>
 
-<div class="summary-card card-green" id="cardOK"
+<!-- Check OK = GRAY -->
+<div class="summary-card card-gray" id="cardOK"
      onclick="filterByCard('OK', this)">
-  <div class="summary-title">🟢 Check OK</div>
+  <div class="summary-title">⚪ Check OK</div>
   <div class="summary-value" id="sumOK">0</div>
 </div>
 
-<div class="summary-card card-red" id="cardOver"
+<!-- Over = GREEN -->
+<div class="summary-card card-green" id="cardOver"
      onclick="filterByCard('OVER', this)">
-  <div class="summary-title">🔴 Over (▲)</div>
+  <div class="summary-title">🟢 Over (▲)</div>
   <div class="summary-value" id="sumOver">0</div>
 </div>
 
-<div class="summary-card card-orange" id="cardUnder"
+<!-- Under = RED -->
+<div class="summary-card card-red" id="cardUnder"
      onclick="filterByCard('UNDER', this)">
-  <div class="summary-title">🟠 Under (▼)</div>
+  <div class="summary-title">🔴 Under (▼)</div>
   <div class="summary-value" id="sumUnder">0</div>
 </div>
 
-<div class="summary-card card-gray" id="cardNotCheck"
+<!-- Not Checked = ORANGE -->
+<div class="summary-card card-orange" id="cardNotCheck"
      onclick="filterByCard('NOTCHECK', this)">
-  <div class="summary-title">⚪ Not Checked</div>
+  <div class="summary-title">🟠 Not Checked</div>
   <div class="summary-value" id="sumNotCheck">0</div>
 </div>
+
 
 
   </div>

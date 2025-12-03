@@ -148,6 +148,15 @@ Delete Data</button>
 <!-- ===================== CONTENT: SEARCH ===================== -->
 <div id="contentSearch" class="content">
   <h4>🔍 Search Result</h4>
+  <div id="summaryBox" class="alert alert-info" style="display:none;">
+  <b>Summary</b><br>
+  พบข้อมูลทั้งหมด: <span id="sumTotal">0</span> รายการ<br>
+  Check OK: <span id="sumOK">0</span><br>
+  งานเกิน (▲): <span id="sumOver">0</span><br>
+  งานขาด (▼): <span id="sumUnder">0</span><br>
+  ยังไม่ Check: <span id="sumNotCheck">0</span><br>
+</div>
+
   <div id="searchResultText" class="mt-3 text-secondary">
     กรุณากรอกข้อมูลค้นหา…
   </div>
@@ -541,6 +550,7 @@ async function searchData() {
     allData = filtered;
 
     renderGroupedTable(filtered);
+    updateSummary(filtered);
 
     if (filtered.length > 0) {
       resultText.innerHTML = `🔎 พบข้อมูล <b>${filtered.length}</b> แถวจากฐานข้อมูล`;
@@ -1026,6 +1036,68 @@ fileInput.addEventListener("change", () => {
   uploadBtn.style.cursor = "pointer";
 });
 
+function updateSummary(data) {
+  if (!data || data.length === 0) {
+    document.getElementById("summaryBox").style.display = "none";
+    return;
+  }
+
+  // 1) นับแถวที่เป็น ID = 1
+  const id1Rows = data.filter(r => String(r.ID).trim() === "1");
+
+  let groups = [];
+
+  // group โดยใช้ File+Lot+Rack
+  for (const r of id1Rows) {
+    const rackNorm = normalizeRack(r.Rack);
+    const key = `${r.File5digit}|${r.Lot}|${rackNorm}`;
+
+    // หาลูกทั้งหมดของ rack นี้
+    const childRows = data.filter(row =>
+      row.File5digit === r.File5digit &&
+      row.Lot === r.Lot &&
+      normalizeRack(row.Rack) === rackNorm
+    );
+
+    // baseSumQty = ของแถว ID = 1
+    const baseSumQty = Number(r.SumOfQty || r["Sum of Qty"] || 0);
+
+    // รวม Act_Qty ทุกแถว
+    let totalAct = 0;
+    let hasCheck = false;
+
+    childRows.forEach(c => {
+      const act = Number(c.Act_Qty || 0);
+      if (act) hasCheck = true;
+      totalAct += act;
+    });
+
+    const totalDelta = totalAct - baseSumQty;
+
+    groups.push({
+      key,
+      totalDelta,
+      checked: hasCheck
+    });
+  }
+
+  // summary calc
+  const total = id1Rows.length;
+  const ok = groups.filter(g => g.checked && g.totalDelta === 0).length;
+  const over = groups.filter(g => g.checked && g.totalDelta > 0).length;
+  const under = groups.filter(g => g.checked && g.totalDelta < 0).length;
+  const notChecked = groups.filter(g => !g.checked).length;
+
+  // update UI
+  document.getElementById("sumTotal").textContent = total;
+  document.getElementById("sumOK").textContent = ok;
+  document.getElementById("sumOver").textContent = over;
+  document.getElementById("sumUnder").textContent = under;
+  document.getElementById("sumNotCheck").textContent = notChecked;
+
+  // show box
+  document.getElementById("summaryBox").style.display = "block";
+}
 
   </script>
 </body>

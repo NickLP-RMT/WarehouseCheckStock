@@ -983,12 +983,15 @@ if (!notChecked) {
 const isMainRow = (row.ID == rows[0].ID);
 
 exportData.push({
-  Customer: isMainRow ? (row.Customer || "") : "",
-  Name: isMainRow ? (row.Name || "") : "",
-  File5digit: isMainRow ? (row.File5digit || "") : "",
-  Lot: isMainRow ? (row.Lot || "") : "",
-  Rack: isMainRow ? displayRack(rackNorm) : "",
-  "Sum of Qty": isMainRow ? baseSumQty : "",
+Customer: row.Customer || "",
+Name: row.Name || "",
+File5digit: row.File5digit || "",
+Lot: row.Lot || "",
+Rack: displayRack(rackNorm) || "",
+
+// ⭐ Sum of Qty ต้องแสดงเฉพาะ ID = 1 เท่านั้น
+"Sum of Qty": isMainRow ? baseSumQty : "",
+
 
   Act_Rack: displayRack(row.Act_Rack) || "",
   Act_Lot: row.Act_Lot || "",

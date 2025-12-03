@@ -556,9 +556,7 @@ async function confirmDeleteAll() {
   }
 }
 
-
-    
-async function searchData() {
+  async function searchData() {
 
   const start = document.getElementById("startDate").value;
   const end = document.getElementById("endDate").value;
@@ -602,16 +600,6 @@ async function searchData() {
 
     renderGroupedTable(filtered);
     updateSummary(filtered);
-
-    if (filtered.length > 0) {
-      resultText.innerHTML = `🔎 พบข้อมูล <b>${filtered.length}</b> แถวจากฐานข้อมูล`;
-      resultText.classList.remove("text-secondary");
-      resultText.classList.add("text-success");
-    } else {
-      resultText.innerHTML = `❌ ไม่พบข้อมูลตามเงื่อนไขการค้นหา`;
-      resultText.classList.remove("text-success");
-      resultText.classList.add("text-danger");
-    }
 
   } catch (err) {
     console.error(err);

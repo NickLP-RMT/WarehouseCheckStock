@@ -821,9 +821,27 @@ function updateRackSub(select) {
     return;
   }
 
-  subSelect.innerHTML = group
-    ? rackMap[group].map(v => `<option value="${v}">${v}</option>`).join("")
-    : "";
+if (group) {
+  const sorted = rackMap[group].sort((a, b) => {
+    const pa = a.split("-");
+    const pb = b.split("-");
+    const sectionA = pa[1].substring(0, 1);
+    const sectionB = pb[1].substring(0, 1);
+    const numA = parseInt(pa[1].substring(1), 10);
+    const numB = parseInt(pb[1].substring(1), 10);
+
+    // เรียง A → B → C → D ก่อน
+    if (sectionA !== sectionB) return sectionA.localeCompare(sectionB);
+    // ถ้าอยู่ในโซนเดียวกัน ให้เรียงตามเลข
+    return numA - numB;
+  });
+
+  subSelect.innerHTML = sorted
+    .map(v => `<option value="${v}">${v}</option>`)
+    .join("");
+} else {
+  subSelect.innerHTML = "";
+}
 }
 
 function calcActQty(input) {

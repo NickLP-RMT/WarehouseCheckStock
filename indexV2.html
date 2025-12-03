@@ -919,6 +919,7 @@ function renderDeleteTable(list) {
 
 
 // 📤 Export Excel แบบเดียวกับ UI
+// 📤 Export Excel แบบ UI + รองรับสี DeltaValue (Conditional Formatting)
 async function exportExcel() {
   if (!allData || allData.length === 0) {
     Swal.fire("ℹ️", "ไม่มีข้อมูลให้ส่งออก", "info");
@@ -927,7 +928,6 @@ async function exportExcel() {
 
   const toNum = v => Number(String(v ?? 0).replace(/,/g, "")) || 0;
 
-  // ✔ เรียงข้อมูลแบบ UI: File → Lot → ID
   const sortedData = [...allData].sort((a, b) => {
     const f1 = String(a.File5digit).localeCompare(String(b.File5digit));
     if (f1 !== 0) return f1;
@@ -938,7 +938,7 @@ async function exportExcel() {
 
   const exportData = [];
 
-  // ✔ Group ตาม file + lot
+  // Group data
   const mainGroups = {};
   sortedData.forEach(r => {
     const key = `${r.File5digit}_${r.Lot}`;
@@ -946,11 +946,9 @@ async function exportExcel() {
     mainGroups[key].push(r);
   });
 
-  // ✔ loop ตามกลุ่ม File+Lot
   for (const key in mainGroups) {
     const groupRows = mainGroups[key];
 
-    // ✔ Group by Rack (Normalize เหมือน UI)
     const rackGroups = {};
     groupRows.forEach(r => {
       const rackNorm = normalizeRack(r.Rack);
@@ -958,72 +956,88 @@ async function exportExcel() {
       rackGroups[rackNorm].push(r);
     });
 
-    // ✔ loop ของแต่ละ Rack
     for (const rackNorm in rackGroups) {
       const rows = rackGroups[rackNorm].sort((a, b) => Number(a.ID) - Number(b.ID));
 
-   // ✔ base sum qty = ของแถวแรก (ID ต่ำสุด)
-const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
+      const baseSumQty = toNum(rows[0]["Sum of Qty"] || rows[0].SumOfQty);
 
-rows.forEach(row => {
-  const actQty = toNum(row.Act_Qty);
+      rows.forEach(row => {
+        const actQty = toNum(row.Act_Qty);
 
-  // ✔ UI Delta logic
-  let diff = 0;
-  if (row.ID == rows[0].ID) {
-    diff = actQty - baseSumQty;   // แถวแรก
-  } else {
-    diff = actQty;                // แถวลูก
-  }
+        let delta = 0;
+        if (row.ID == rows[0].ID) delta = actQty - baseSumQty; 
+        else delta = actQty;
 
-  let delta = "";
-  if (row.Act_Qty !== "" && row.Act_Qty != null) {
-    if (diff > 0) delta = `▲ +${diff}`;
-    else if (diff < 0) delta = `▼ ${diff}`;
-    else delta = "0";
-  }
+        const isMainRow = (row.ID == rows[0].ID);
 
+        exportData.push({
+          Customer: isMainRow ? (row.Customer || "") : "",
+          Name: isMainRow ? (row.Name || "") : "",
+          File5digit: isMainRow ? (row.File5digit || "") : "",
+          Lot: isMainRow ? (row.Lot || "") : "",
+          Rack: isMainRow ? displayRack(rackNorm) : "",
+          "Sum of Qty": isMainRow ? baseSumQty : "",
 
-const isMainRow = (row.ID == rows[0].ID);
+          Act_Rack: displayRack(row.Act_Rack) || "",
+          Act_Lot: row.Act_Lot || "",
+          Act_Qty: row.Act_Qty || "",
+          Act_Package: row.Act_Package || "",
 
-exportData.push({
-  Customer: isMainRow ? (row.Customer || "") : "",
-  Name: isMainRow ? (row.Name || "") : "",
-  File5digit: isMainRow ? (row.File5digit || "") : "",
-  Lot: isMainRow ? (row.Lot || "") : "",
-  Rack: isMainRow ? displayRack(rackNorm) : "",
+          DeltaValue: delta,           // ⭐ ตัวเลขจริง (สำหรับ Sum)
+          "Delta +/-": 
+              row.Act_Qty === "" || row.Act_Qty == null
+                ? ""
+                : (delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : "0"),
 
-  // Sum only for main row
-  "Sum of Qty": isMainRow ? baseSumQty : "",
-
-  Act_Rack: displayRack(row.Act_Rack) || "",
-  Act_Lot: row.Act_Lot || "",
-  Act_Qty: row.Act_Qty || "",
-  Act_Package: row.Act_Package || "",
-  "Delta +/-": delta,
-  Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
-});
-
-
+          Timestamp: row.Timestamp ? convertToBangkokTime(row.Timestamp) : ""
+        });
       });
     }
   }
 
-  // 📝 สร้าง Excel Workbook
+  // สร้าง Workbook + Sheet
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(exportData, { origin: "A1" });
-  XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
 
-  // ✔ Auto Width
-  const colWidths = Object.keys(exportData[0]).map(key => ({
+  // Auto width
+  ws["!cols"] = Object.keys(exportData[0]).map(key => ({
     wch: Math.max(
       key.length,
       ...exportData.map(r => (r[key] ? r[key].toString().length : 0))
     ) + 2
   }));
-  ws["!cols"] = colWidths;
 
-  // ✔ ชื่อไฟล์ (วันที่ + เวลา)
+  // ⭐⭐ เพิ่ม Conditional Formatting ใน Excel ⭐⭐
+  const deltaColIndex = Object.keys(exportData[0]).indexOf("DeltaValue");
+  const deltaColLetter = XLSX.utils.encode_col(deltaColIndex); // เช่น "L"
+  const startRow = 2;
+  const endRow = exportData.length + 1;
+
+  ws['!condfmt'] = [
+    {
+      ref: `${deltaColLetter}${startRow}:${deltaColLetter}${endRow}`,
+      rules: [
+        // > 0 → Green
+        {
+          type: "cellIs",
+          operator: "greaterThan",
+          formula: ["0"],
+          style: { font: { color: { rgb: "008000" }, bold: true } }
+        },
+        // < 0 → Red
+        {
+          type: "cellIs",
+          operator: "lessThan",
+          formula: ["0"],
+          style: { font: { color: { rgb: "FF0000" }, bold: true } }
+        }
+      ]
+    }
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, "WarehouseData");
+
+  // File name
   const now = new Date();
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -1031,11 +1045,14 @@ exportData.push({
   const hh = String(now.getHours()).padStart(2, "0");
   const min = String(now.getMinutes()).padStart(2, "0");
   const ss = String(now.getSeconds()).padStart(2, "0");
-  const fileName = `WarehouseData_${yyyy}-${mm}-${dd}_${hh}${min}${ss}.xlsx`;
+
+  const fileName = `FGInventoryDataCheck_${yyyy}-${mm}-${dd}_${hh}${min}${ss}.xlsx`;
 
   XLSX.writeFile(wb, fileName);
   Swal.fire("✅", "ส่งออกไฟล์ Excel สำเร็จ", "success");
 }
+
+    
 // ปิดหน้า Delete ตอนสลับ tab
 document.getElementById("search-tab").addEventListener("click", () => {
   document.getElementById("contentSearch").style.display = "block";

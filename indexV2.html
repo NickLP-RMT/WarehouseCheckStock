@@ -92,10 +92,17 @@
   border-radius: 12px;
   background: white;
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-  border-left: 6px solid #3b82f6; /* default blue */
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border-left: 6px solid transparent;   /* default = transparent */
 }
+
+/* 🎨 Color Themes */
+.card-blue { border-left-color: #3b82f6 !important; }   /* Total Records */
+.card-gray { border-left-color: #6b7280 !important; }   /* Check OK */
+.card-green { border-left-color: #22c55e !important; }  /* Over ▲ */
+.card-red { border-left-color: #ef4444 !important; }    /* Under ▼ */
+.card-orange { border-left-color: #f97316 !important; } /* Not Checked */
+
 
 .summary-card:hover {
   transform: translateY(-2px);

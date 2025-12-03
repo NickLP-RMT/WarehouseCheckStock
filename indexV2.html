@@ -984,18 +984,19 @@ rows.forEach(row => {
   }
 
 
-        // ✔ Push ลง Excel dataset
+const isMainRow = (row.ID == rows[0].ID);
+
 exportData.push({
-  Customer: row.Customer || "",
-  Name: row.Name || "",
-  File5digit: row.File5digit || "",
-  Lot: row.Lot || "",
-  Rack: displayRack(rackNorm),
+  Customer: isMainRow ? (row.Customer || "") : "",
+  Name: isMainRow ? (row.Name || "") : "",
+  File5digit: isMainRow ? (row.File5digit || "") : "",
+  Lot: isMainRow ? (row.Lot || "") : "",
+  Rack: isMainRow ? displayRack(rackNorm) : "",
 
-  // ⬇⬇⬇ ซ่อน Sum of Qty ทุกแถว ยกเว้นแถวแรก ⬇⬇⬇
-  "Sum of Qty": (row.ID == rows[0].ID) ? baseSumQty : "",
+  // Sum only for main row
+  "Sum of Qty": isMainRow ? baseSumQty : "",
 
-Act_Rack: displayRack(row.Act_Rack) || "",
+  Act_Rack: displayRack(row.Act_Rack) || "",
   Act_Lot: row.Act_Lot || "",
   Act_Qty: row.Act_Qty || "",
   Act_Package: row.Act_Package || "",

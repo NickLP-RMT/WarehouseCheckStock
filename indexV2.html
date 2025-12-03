@@ -179,6 +179,22 @@ Delete Data</button>
 <!-- ===================== CONTENT: DELETE ===================== -->
 <div id="contentDelete" class="content" style="display:none;">
   <h4>🗑 Delete Data</h4>
+  <!-- 🔍 Search Filter -->
+<div class="row mb-3">
+  <div class="col-md-4">
+    <input type="text" id="delSearchCustomer" class="form-control"
+      placeholder="ค้นหา Customer…" oninput="filterDeleteTable()">
+  </div>
+  <div class="col-md-4">
+    <input type="text" id="delSearchFile" class="form-control"
+      placeholder="ค้นหา File…" oninput="filterDeleteTable()">
+  </div>
+  <div class="col-md-4">
+    <input type="text" id="delSearchLot" class="form-control"
+      placeholder="ค้นหา Lot…" oninput="filterDeleteTable()">
+  </div>
+</div>
+
   <div class="mb-2 text-end">
     <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">Delete All</button>
   </div>
@@ -203,6 +219,7 @@ Delete Data</button>
   <script>
   const scriptURL = "https://script.google.com/macros/s/AKfycbxBwkDPnkxWm5L6hkSBXvT6BUV3cImZLHMO71GnxLx5ymspHmps6s2S7W2kZsGiZ5o/exec";
   let allData = [];
+  let deleteData = [];
 
   // 🕒 เวลาไทย
   function convertToBangkokTime(utcString) {
@@ -270,24 +287,9 @@ Swal.close();
       return;
     }
 
-  filtered.forEach(r => {
-  const rackNorm = extractRack(r.Rack);   // ✔ ใช้ extractRack
-  const rowKey = `${r.File5digit}|${r.Lot}|${rackNorm}`;
+deleteData = rows.filter(r => String(r.ID).trim() === "1");
+renderDeleteTable(deleteData);
 
-body.innerHTML += `
-  <tr>
-    <td>${r.Customer}</td>
-    <td>${r.File5digit}</td>
-    <td>${r.Lot}</td>
-    <td>${rackNorm}</td>
-    <td>
-      <button class="btn btn-sm btn-danger" onclick="deleteGroup('${rowKey}')">
-        ลบ
-      </button>
-    </td>
-  </tr>
-`;
-});
 
 
   } catch (err) {
@@ -809,6 +811,53 @@ const body = document.getElementById("searchTableBody");
 
   // ⚡ Render HTML ทีเดียว
   body.innerHTML = html;
+}
+function renderDeleteTable(list) {
+  const body = document.getElementById("deleteTableBody");
+  body.innerHTML = "";
+
+  if (!list || list.length === 0) {
+    body.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center text-muted">ไม่พบข้อมูล</td>
+      </tr>
+    `;
+    return;
+  }
+
+  list.forEach(r => {
+    const rackNorm = extractRack(r.Rack);
+    const rowKey = `${r.File5digit}|${r.Lot}|${rackNorm}`;
+
+    body.innerHTML += `
+      <tr>
+        <td>${r.Customer}</td>
+        <td>${r.File5digit}</td>
+        <td>${r.Lot}</td>
+        <td>${rackNorm}</td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="deleteGroup('${rowKey}')">
+            ลบ
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+    function filterDeleteTable() {
+  const c = document.getElementById("delSearchCustomer").value.trim().toLowerCase();
+  const f = document.getElementById("delSearchFile").value.trim().toLowerCase();
+  const l = document.getElementById("delSearchLot").value.trim().toLowerCase();
+
+  const filtered = deleteData.filter(r => {
+    const cMatch = !c || (r.Customer || "").toLowerCase().includes(c);
+    const fMatch = !f || (r.File5digit || "").toLowerCase().includes(f);
+    const lMatch = !l || (r.Lot || "").toLowerCase().includes(l);
+    return cMatch && fMatch && lMatch;
+  });
+
+  renderDeleteTable(filtered);
 }
 
 

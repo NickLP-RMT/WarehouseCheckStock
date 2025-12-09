@@ -316,7 +316,7 @@ button {
               <option value="D">D</option>
               <option value="PCCHPAREA">PCCHPAREA</option>
               <option value="PCBKKAREA">PCBKKAREA</option>
-              <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+              <option value="PCSUBSTORE">PCSUBSTORE</option>
             </select>
           </div>
           <div class="col">
@@ -577,7 +577,7 @@ function showDetail() {
                 <option value="D">D</option>
                 <option value="PCCHPAREA">PCCHPAREA</option>
                 <option value="PCBKKAREA">PCBKKAREA</option>
-                <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+                <option value="PCSUBSTORE">PCSUBSTORE</option>
               </select>
             </div>
             <div class="col"><select class="rackSub"></select></div>
@@ -695,7 +695,7 @@ function showDetail() {
                 <option value="D" ${actRack.startsWith("D") ? "selected" : ""}>D</option>
                 <option value="PCCHPAREA" ${actRack === "PCCHPAREA" ? "selected" : ""}>PCCHPAREA</option>
                 <option value="PCBKKAREA" ${actRack === "PCBKKAREA" ? "selected" : ""}>PCBKKAREA</option>
-                <option value="SUBSTORE AREA" ${actRack === "SUBSTORE AREA" ? "selected" : ""}>SUBSTORE AREA</option>
+                <option value="PCSUBSTORE" ${actRack === "PCSUBSTORE" ? "selected" : ""}>PCSUBSTORE</option>
               </select>
             </div>
             <div class="col">
@@ -767,7 +767,7 @@ function showDetail() {
                 <option value="D">D</option>
                 <option value="PCCHPAREA">PCCHPAREA</option>
                 <option value="PCBKKAREA">PCBKKAREA</option>
-                <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+                <option value="PCSUBSTORE">PCSUBSTORE</option>
               </select>
             </div>
             <div class="col"><select class="rackSub"></select></div>
@@ -816,7 +816,7 @@ function updateRackSub(select) {
   const subSelect = select.closest(".rack-set").querySelector(".rackSub");
   const group = select.value;
 
-  if (group === "PCCHPAREA" || group === "PCBKKAREA" || group === "SUBSTORE AREA") {
+  if (group === "PCCHPAREA" || group === "PCBKKAREA" || group === "PCSUBSTORE") {
     subSelect.innerHTML = `<option value="${group}" selected>${group}</option>`;
     return;
   }
@@ -878,7 +878,7 @@ function addRackSet() {
           <option value="D">D</option>
           <option value="PCCHPAREA">PCCHPAREA</option>
           <option value="PCBKKAREA">PCBKKAREA</option>
-          <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+          <option value="PCSUBSTORE">PCSUBSTORE</option>
         </select>
       </div>
       <div class="col"><select class="rackSub"></select></div>
@@ -1171,7 +1171,7 @@ function clearForm() {
             <option value="D">D</option>
             <option value="PCCHPAREA">PCCHPAREA</option>
             <option value="PCBKKAREA">PCBKKAREA</option>
-            <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+            <option value="PCSUBSTORE">PCSUBSTORE</option>
           </select>
         </div>
         <div class="col"><select class="rackSub"></select></div>
@@ -1253,7 +1253,7 @@ function filterItemsByCustomer() {
             <option value="D">D</option>
             <option value="PCCHPAREA">PCCHPAREA</option>
             <option value="PCBKKAREA">PCBKKAREA</option>
-            <option value="SUBSTORE AREA">SUBSTORE AREA</option>
+            <option value="PCSUBSTORE">PCSUBSTORE</option>
           </select>
         </div>
         <div class="col"><select class="rackSub"></select></div>

@@ -1309,22 +1309,49 @@ function openEditSumQty(row) {
       }
       return v;
     }
-  }).then(res => {
+  }).then(async (res) => {
     if (!res.isConfirmed) return;
 
-    // 🔧 ตอนนี้ยังไม่ยิง backend
-    console.log("EDIT SUM QTY:", {
-      Customer: row.Customer,
-      File5digit: row.File5digit,
-      Lot: row.Lot,
-      Rack: row.Rack,
-      NewSumQty: res.value
+    Swal.fire({
+      title: "กำลังบันทึก...",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
     });
 
-    Swal.fire("✅ Saved (Frontend)", "ค่าถูกส่งเตรียมบันทึกแล้ว", "success");
+    try {
+      const params = new URLSearchParams({
+        page: "adminUpdateSumQty",
+        customer: row.Customer,
+        file5digit: row.File5digit,
+        lot: row.Lot,
+        rack: row.Rack,
+        sumQty: res.value
+      });
+
+      const resp = await fetch(scriptURL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params
+      });
+
+      const json = await resp.json();
+      Swal.close();
+
+      if (!json.success) {
+        Swal.fire("❌ Error", json.message, "error");
+        return;
+      }
+
+      Swal.fire("✅ สำเร็จ", "อัปเดต Sum of Qty แล้ว", "success");
+      searchData(); // refresh ตาราง
+
+    } catch (err) {
+      Swal.fire("❌ Error", "เชื่อมต่อ backend ไม่สำเร็จ", "error");
+    }
   });
 }
-
 
     
 function filterByCard(type, el) {

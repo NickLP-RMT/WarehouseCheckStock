@@ -777,6 +777,12 @@ const body = document.getElementById("searchTableBody");
   const headersRaw = Object.keys(data[0]);
   const headers = headersRaw.filter(h => h !== "ID");
 
+  // ➕ เพิ่ม Edit column
+if (!headers.includes("Edit")) {
+  headers.push("Edit");
+}
+
+
   if (!headers.includes("Delta +/-")) {
     const insertIndex = headers.indexOf("Act_Package") + 1;
     headers.splice(insertIndex, 0, "Delta +/-");
@@ -884,17 +890,36 @@ for (let i = 0; i < rows.length; i++) {
       continue;
     }
 
-    if (h === "Delta +/-") {
-      html += `<td class="${deltaClass}">${deltaText}</td>`;
-    } else if (h === "Timestamp") {
-      html += `<td>${convertToBangkokTime(row[h])}</td>`;
-    } else if (h === "Rack") {
-      html += `<td>${displayRack(row[h])}</td>`;
-    } else if (h === "Act_Rack") {
-      html += `<td>${displayRack(row[h])}</td>`;
-    } else {
-      html += `<td>${row[h] ?? ""}</td>`;
-    }
+if (h === "Delta +/-") {
+  html += `<td class="${deltaClass}">${deltaText}</td>`;
+
+} else if (h === "Timestamp") {
+  html += `<td>${convertToBangkokTime(row[h])}</td>`;
+
+} else if (h === "Rack") {
+  html += `<td>${displayRack(row[h])}</td>`;
+
+} else if (h === "Act_Rack") {
+  html += `<td>${displayRack(row[h])}</td>`;
+
+} else if (h === "Edit") {
+  if (String(row.ID).trim() === "1") {
+    html += `
+      <td>
+        <button class="btn btn-sm btn-outline-primary"
+          onclick='openEditSumQty(${JSON.stringify(row)})'>
+          ✏️ Edit
+        </button>
+      </td>
+    `;
+  } else {
+    html += "<td></td>";
+  }
+
+} else {
+  html += `<td>${row[h] ?? ""}</td>`;
+}
+
   }
 
   html += `</tr>`;
@@ -1236,6 +1261,66 @@ function updateSummary(data) {
 
   document.getElementById("summaryBox").style.display = "block";
 }
+    
+function openEditSumQty(row) {
+
+  const currentQty = row.SumOfQty || row["Sum of Qty"] || 0;
+
+  Swal.fire({
+    title: "✏️ Edit Sum of Qty",
+    customClass: "swal-wide",
+    html: `
+      <div class="text-start">
+        <label class="form-label">Customer</label>
+        <input class="form-control mb-2" value="${row.Customer}" disabled>
+
+        <label class="form-label">File5digit</label>
+        <input class="form-control mb-2" value="${row.File5digit}" disabled>
+
+        <label class="form-label">Lot</label>
+        <input class="form-control mb-2" value="${row.Lot}" disabled>
+
+        <label class="form-label">Rack</label>
+        <input class="form-control mb-2" value="${row.Rack}" disabled>
+
+        <label class="form-label fw-bold text-primary">
+          Sum of Qty (Editable)
+        </label>
+        <input id="editSumQty"
+          type="number"
+          class="form-control"
+          value="${currentQty}">
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: "💾 Save",
+    cancelButtonText: "Cancel",
+    preConfirm: () => {
+      const v = document.getElementById("editSumQty").value;
+      if (v === "" || isNaN(v)) {
+        Swal.showValidationMessage("กรุณากรอกตัวเลข Sum of Qty");
+        return false;
+      }
+      return v;
+    }
+  }).then(res => {
+    if (!res.isConfirmed) return;
+
+    // 🔧 ตอนนี้ยังไม่ยิง backend
+    console.log("EDIT SUM QTY:", {
+      Customer: row.Customer,
+      File5digit: row.File5digit,
+      Lot: row.Lot,
+      Rack: row.Rack,
+      NewSumQty: res.value
+    });
+
+    Swal.fire("✅ Saved (Frontend)", "ค่าถูกส่งเตรียมบันทึกแล้ว", "success");
+  });
+}
+
+
+    
 function filterByCard(type, el) {
   if (!allData || allData.length === 0) return;
 

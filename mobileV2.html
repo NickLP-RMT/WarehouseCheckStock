@@ -392,6 +392,11 @@ const rackMap = {
     "D-A09","D-A10","D-A11","D-A12","D-A13","D-A14","D-A15","D-A16","D-A17","D-A18","D-A19","D-A20","D-A21","D-A22",
     "D-B01","D-B02","D-B03","D-B04","D-B05","D-B06","D-B07","D-B08",
     "D-B09","D-B10","D-B11","D-B12","D-B13","D-B14","D-B15","D-B16","D-B17","D-B18","D-B19","D-B20","D-B21","D-B22"
+  ],
+
+  PCBKKAREA: [
+    "BKK-A1","BKK-A2","BKK-A3","BKK-A4","BKK-A5","BKK-A6","BKK-A7",
+    "BKK-B1","BKK-B2","BKK-B3","BKK-B4","BKK-B5","BKK-B6","BKK-B7"
   ]
 };
 
@@ -664,7 +669,9 @@ function showDetail() {
 
       const isMaster = (idStr === "1");
 
-      const actRack   = row.Act_Rack    || "";
+      const actRackRaw = row.Act_Rack || "";
+      const actRack = actRackRaw === "PCBKKAREA" ? "" : actRackRaw;
+      const isLegacyPcbkk = actRackRaw === "PCBKKAREA";
       const rawActLot = row.Act_Lot;
       const actLotVal = rawActLot || row.Lot || "";
       const actPkg    = row.Act_Package || "";
@@ -690,11 +697,11 @@ function showDetail() {
               <select class="rackGroup" onchange="updateRackSub(this)" ${actRack ? "disabled" : ""}>
                 <option value="">--เลือก--</option>
                 <option value="A" ${actRack.startsWith("A") ? "selected" : ""}>A</option>
-                <option value="B" ${actRack.startsWith("B") ? "selected" : ""}>B</option>
+                <option value="B" ${actRack.startsWith("B") && !actRack.startsWith("BKK-") ? "selected" : ""}>B</option>
                 <option value="C" ${actRack.startsWith("C") ? "selected" : ""}>C</option>
                 <option value="D" ${actRack.startsWith("D") ? "selected" : ""}>D</option>
                 <option value="PCCHPAREA" ${actRack === "PCCHPAREA" ? "selected" : ""}>PCCHPAREA</option>
-                <option value="PCBKKAREA" ${actRack === "PCBKKAREA" ? "selected" : ""}>PCBKKAREA</option>
+                <option value="PCBKKAREA" ${(isLegacyPcbkk || actRack.startsWith("BKK-")) ? "selected" : ""}>PCBKKAREA</option>
                 <option value="PCSUBSTORE" ${actRack === "PCSUBSTORE" ? "selected" : ""}>PCSUBSTORE</option>
               </select>
             </div>
@@ -804,6 +811,10 @@ function showDetail() {
 
     document.getElementById("rackZone").innerHTML = htmlRack;
     refreshRackSets();
+    document.querySelectorAll("#rackZone .rack-set .rackGroup").forEach(sel => {
+      const sub = sel.closest(".rack-set").querySelector(".rackSub");
+      if (sel.value && sub && !sub.value) updateRackSub(sel);
+    });
 
   } catch (err) {
     console.error("showDetail error:", err);
@@ -816,13 +827,20 @@ function updateRackSub(select) {
   const subSelect = select.closest(".rack-set").querySelector(".rackSub");
   const group = select.value;
 
-  if (group === "PCCHPAREA" || group === "PCBKKAREA" || group === "PCSUBSTORE") {
+  if (group === "PCCHPAREA" || group === "PCSUBSTORE") {
     subSelect.innerHTML = `<option value="${group}" selected>${group}</option>`;
     return;
   }
 
+  if (group === "PCBKKAREA") {
+    const list = [...(rackMap.PCBKKAREA || []), "PCBKKAREA"];
+    subSelect.innerHTML = list.map(v => `<option value="${v}">${v}</option>`).join("");
+    return;
+  }
+
 if (group) {
-  const sorted = rackMap[group].sort((a, b) => {
+  const source = rackMap[group] || [];
+  const sorted = source.sort((a, b) => {
     const pa = a.split("-");
     const pb = b.split("-");
     const sectionA = pa[1].substring(0, 1);
